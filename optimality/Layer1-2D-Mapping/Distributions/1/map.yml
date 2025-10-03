@@ -1,0 +1,45 @@
+meta:
+  name: distribution1
+  version: 1
+  author: "Oriol Farrés"
+  width: 10
+  height: 10
+  cell_size_m: 0.5
+  origin: "bottom-left (x right, y up)"
+  created: "2025-10-03"
+
+# Adoneu-vos que les majúsculues són objectes i les minúscules són diferents tipus de camins: 
+# Proposo utilitzar com a convenció:
+# b (blue): Per a camins de 1.5m/s
+# g (green): Per a camins de 1.25m/s
+# r (red): Per a camins de 1m/s
+legend:
+  X: "restricted"
+  '#': "obstacle"
+  C: "charger"
+  P: "packet"
+  b: "path_blue (1.5 m/s)"
+  g: "path_green (1.25 m/s)"
+  r: "path_red (1 m/s)"
+  ".": "empty"
+
+
+ascii_map: |
+  X X X . . P P P P P
+  X X X . # r r r r P
+  . . . . . . r . . .
+  . # b b . . r . X X
+  . b # b . . r # X X
+  . b . b . # r . X X
+  C C C C r # r r . .
+  C C C C . # . r g P
+  C C C C g g # g g .          
+  C C C C . . . . g P
+
+
+notes: |
+  - ASCII map uses spaces to separate chars for readability.
+  - Rows are top-first. On load invert rows to compute y.
+
+
+# TODO falta fer un parser de YAML a JSON (si apel ho vol pel frontend). Dp ho parlem a classe.
