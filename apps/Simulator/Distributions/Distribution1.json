@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "name": "distribution1",
+    "version": 1,
+    "author": "Oriol Farrés",
+    "width": 10,
+    "height": 10,
+    "cell_size_m": 0.5,
+    "origin": "bottom-left (x right, y up)",
+    "created": "2025-10-03"
+  },
+  "legend": {
+    "X": "restricted",
+    "#": "obstacle",
+    "C": "charger",
+    "P": "packet",
+    "b": "path_blue (1.5 m/s)",
+    "g": "path_green (1.25 m/s)",
+    "r": "path_red (1 m/s)",
+    ".": "empty"
+  },
+  "ascii_map": [
+    "XXX..PPPPP",
+    "XXX.#rrrrP",
+    "......r...",
+    ".#bb..r.XX",
+    ".b#b..r#XX",
+    ".b.b.#r.XX",
+    "CCCCr#rr..",
+    "CCCC.#.rgP",
+    "CCCCgg#gg.",
+    "CCCC....gP"
+  ],
+  "objects": {
+    "chargers": [
+      {
+        "id": "C1",
+        "x": 0,
+        "y": 3,
+        "capacity": 1
+      },
+      {
+        "id": "C2",
+        "x": 1,
+        "y": 3,
+        "capacity": 1
+      },
+      {
+        "id": "C3",
+        "x": 2,
+        "y": 3,
+        "capacity": 1
+      },
+      {
+        "id": "C4",
+        "x": 3,
+        "y": 3,
+        "capacity": 1
+      },
+      {
+        "id": "C5",
+        "x": 0,
+        "y": 2,
+        "capacity": 1
+      },
+      {
+        "id": "C6",
+        "x": 1,
+        "y": 2,
+        "capacity": 1
+      },
+      {
+        "id": "C7",
+        "x": 2,
+        "y": 2,
+        "capacity": 1
+      },
+      {
+        "id": "C8",
+        "x": 3,
+        "y": 2,
+        "capacity": 1
+      },
+      {
+        "id": "C9",
+        "x": 0,
+        "y": 1,
+        "capacity": 1
+      },
+      {
+        "id": "C10",
+        "x": 1,
+        "y": 1,
+        "capacity": 1
+      },
+      {
+        "id": "C11",
+        "x": 2,
+        "y": 1,
+        "capacity": 1
+      },
+      {
+        "id": "C12",
+        "x": 3,
+        "y": 1,
+        "capacity": 1
+      },
+      {
+        "id": "C13",
+        "x": 0,
+        "y": 0,
+        "capacity": 1
+      },
+      {
+        "id": "C14",
+        "x": 1,
+        "y": 0,
+        "capacity": 1
+      },
+      {
+        "id": "C15",
+        "x": 2,
+        "y": 0,
+        "capacity": 1
+      },
+      {
+        "id": "C16",
+        "x": 3,
+        "y": 0,
+        "capacity": 1
+      }
+    ],
+    "packets": [
+      {
+        "id": "P1",
+        "x": 5,
+        "y": 9,
+        "weight": 1
+      },
+      {
+        "id": "P2",
+        "x": 6,
+        "y": 9,
+        "weight": 1
+      },
+      {
+        "id": "P3",
+        "x": 7,
+        "y": 9,
+        "weight": 1
+      },
+      {
+        "id": "P4",
+        "x": 8,
+        "y": 9,
+        "weight": 1
+      },
+      {
+        "id": "P5",
+        "x": 9,
+        "y": 9,
+        "weight": 1
+      },
+      {
+        "id": "P6",
+        "x": 9,
+        "y": 8,
+        "weight": 1
+      },
+      {
+        "id": "P7",
+        "x": 9,
+        "y": 2,
+        "weight": 1
+      },
+      {
+        "id": "P8",
+        "x": 9,
+        "y": 0,
+        "weight": 1
+      }
+    ]
+  },
+  "notes": "- ASCII map uses spaces to separate chars for readability.\n- Rows are top-first. On load invert rows to compute y.\n"
+}
