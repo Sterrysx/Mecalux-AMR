@@ -1,13 +1,16 @@
 {
-  "name": "Mecalux-AMR",
+  "name": "mecalux-amr",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "cd apps/simulator && vite",
+    "dev:fleet": "cd apps/fleet_manager && vite",
     "build": "cd apps/simulator && tsc && vite build",
-    "lint": "eslint apps/simulator",
-    "preview": "cd apps/simulator && vite preview"
+    "build:fleet": "cd apps/fleet_manager && tsc && vite build",
+    "lint": "eslint apps/simulator apps/fleet_manager",
+    "preview": "cd apps/simulator && vite preview",
+    "preview:fleet": "cd apps/fleet_manager && vite preview"
   },
   "dependencies": {
     "react": "^19.1.1",
