@@ -1,15 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-
-type Meta = { name: string; width: number; height: number; cell_size_m: number };
-type Packet = { id: string; x: number; y: number; weight?: number };
-type Charger = { id: string; x: number; y: number; capacity?: number };
-type DistFile = {
-  meta: Meta;
-  legend?: Record<string,string>;
-  ascii_map: string[]; // top-first
-  objects?: { packets?: Packet[]; chargers?: Charger[] };
-  notes?: string;
-};
+import { useRef, useState } from "react";
+import { useDistribution } from "../contexts/DistributionContext";
 
 type BrushKey = "EMPTY" | "PATH" | "OBSTACLE" | "RESTRICTED" | "CHARGER" | "PACKET";
 const BRUSH_TO_CHAR: Record<BrushKey, string> = {
@@ -21,57 +11,41 @@ const CELL_COLORS: Record<string,string> = {
 };
 
 export default function GridEditor() {
-  const [data, setData] = useState<DistFile | null>(null);
-  const [grid, setGrid] = useState<string[][]>([]);
+  const { distribution, grid, updateGrid, saveDistribution, isLoading, error } = useDistribution();
   const [brush, setBrush] = useState<BrushKey>("PATH");
-  const [err, setErr] = useState<string | null>(null);
   const painting = useRef(false);
 
-  useEffect(() => {
-    fetch("/distributions/Distribution1.json")
-      .then(r => r.json())
-      .then((d: DistFile) => {
-        const W = d.meta.width, H = d.meta.height;
-        const rows = d.ascii_map.map(r => r.replace(/\s+/g,""));
-        const g: string[][] = Array.from({length: H}, () => Array(W).fill("."));
-        for (let r = 0; r < rows.length; r++) {
-          const y = (H - 1) - r;
-          for (let x = 0; x < Math.min(W, rows[r].length); x++) g[y][x] = rows[r][x];
-        }
-        setData(d); setGrid(g);
-      })
-      .catch(e => setErr(String(e)));
-  }, []);
+  const W = distribution?.meta.width ?? 0;
+  const H = distribution?.meta.height ?? 0;
 
-  const W = data?.meta.width ?? 0, H = data?.meta.height ?? 0;
-
-  const paint = (x:number,y:number,val:string)=>{
-    setGrid(prev => { const n = prev.map(r=>r.slice()); n[y][x]=val; return n; });
+  const paint = (x: number, y: number, val: string) => {
+    const newGrid = grid.map(r => r.slice());
+    newGrid[y][x] = val;
+    updateGrid(newGrid);
   };
 
-  const exportJSON = ()=>{
-    if (!data) return;
-    const rowsTop:string[]=[]; for (let r=H-1;r>=0;r--) rowsTop.push(grid[r].join(""));
-    const chargers:Charger[]=[], packets:Packet[]=[]; let ci=1,pi=1;
-    for (let y=0;y<H;y++) for (let x=0;x<W;x++){
-      const ch=grid[y][x]; if(ch==="C") chargers.push({id:`C${ci++}`,x,y,capacity:1});
-      if(ch==="P") packets.push({id:`P${pi++}`,x,y,weight:1});
+  const exportJSON = async () => {
+    try {
+      await saveDistribution();
+      // The save function handles the download
+    } catch (err) {
+      console.error('Failed to export:', err);
     }
-    const out:DistFile={ meta: data.meta, legend: data.legend, ascii_map: rowsTop, objects:{chargers,packets}, notes: data.notes };
-    const blob = new Blob([JSON.stringify(out,null,2)],{type:"application/json"});
-    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`${data.meta.name||"distribution"}-edited.json`; a.click(); URL.revokeObjectURL(a.href);
   };
 
-  const CELL=40, svgW=W*CELL, svgH=H*CELL;
-  if (err) return <div className="p-6 text-red-600">Error: {err}</div>;
-  if (!data) return <div className="p-6">Loading…</div>;
+  const CELL = 40;
+  const svgW = W * CELL;
+  const svgH = H * CELL;
+  
+  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
+  if (isLoading || !distribution) return <div className="p-6">Loading…</div>;
 
   return (
     <div className="mx-auto max-w-[1100px] p-6 space-y-4" onMouseUp={()=>painting.current=false} onMouseLeave={()=>painting.current=false}>
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{data.meta.name} <span className="text-slate-500">({W}×{H})</span></h1>
-          <p className="text-sm text-slate-600">cell size: {data.meta.cell_size_m} m</p>
+          <h1 className="text-2xl font-semibold">{distribution.meta.name} <span className="text-slate-500">({W}×{H})</span></h1>
+          <p className="text-sm text-slate-600">cell size: {distribution.meta.cell_size_m} m</p>
         </div>
         <button onClick={exportJSON} className="rounded-md bg-slate-900 px-3 py-2 text-white hover:bg-slate-800">Export JSON</button>
       </div>
