@@ -27,7 +27,7 @@ void printUsage(const char* progname) {
     cerr << "  increment        : Increment per case (e.g., 10)" << endl;
     cerr << "  seed             : Random seed (optional, default: current time)" << endl;
     cerr << endl;
-    cerr << "Output: Generates files in ../generated_packets/graph2/" << endl;
+    cerr << "Output: Generates files in ../../tests/graph2/" << endl;
     cerr << "        Format: graph2_caseN.inp (N = 1 to num_cases)" << endl;
     cerr << endl;
     cerr << "Examples:" << endl;
@@ -100,11 +100,11 @@ int main(int argc, char* argv[]) {
         cout << "Packets per case: " << packetsPerCase << endl;
     }
     cout << "Random seed: " << seed << endl;
-    cout << "Output directory: ../generated_packets/graph2/" << endl;
+    cout << "Output directory: ../../tests/graph2/" << endl;
     cout << endl;
     
     // Create output directory (Linux/Unix command)
-    system("mkdir -p ../generated_packets/graph2");
+    system("mkdir -p ../../tests/graph2");
     
     // Initialize random number generator
     mt19937 rng(seed);
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
     for (int caseNum = 1; caseNum <= numCases; caseNum++) {
         int currentPackets = incrementalMode ? (startPackets + (caseNum - 1) * increment) : packetsPerCase;
 
-        string filename = "../generated_packets/graph2/graph2_case" + to_string(caseNum) + ".inp";
+        string filename = "../../tests/graph2/graph2_case" + to_string(caseNum) + ".inp";
         ofstream outFile(filename);
         
         if (!outFile.is_open()) {

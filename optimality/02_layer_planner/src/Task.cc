@@ -31,19 +31,3 @@ void Task::setOriginNode(int originNode) {
 void Task::setDestinationNode(int destinationNode) {
     this->destinationNode = destinationNode;
 }
-
-void Task::readFromFile(const string& filename) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Error: Could not open file " << filename << endl;
-        return;
-    }
-
-    int id, origin, destination;
-    while (file >> id >> origin >> destination) {
-        Task task(id, origin, destination);
-        // Add task to the queue
-    }
-
-    file.close();
-}

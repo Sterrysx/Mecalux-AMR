@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
 
     // Create Task T with all the input from file case1.inp
     Task T;
-    queue<Task> QT = read_tasks("../generated_packets/graph1/graph1_case1.inp");
+    queue<Task> QT = read_tasks("tests/graph1/graph1_case1.inp");
 
     cout << "Loaded " << QT.size() << " tasks from file" << endl;
 

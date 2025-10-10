@@ -1,18 +1,10 @@
 #ifndef TASK_HH
 #define TASK_HH
 
-#include <vector>
-#include <unordered_map>
-#include <set>
-#include <utility>
 #include <iostream>
-#include <string>
-#include <queue>
-#include "Graph.hh"
-#include "Robot.hh"
 using namespace std;
 
-//Where node is 
+//Task class for warehouse robot system
 class Task {
 
 public:

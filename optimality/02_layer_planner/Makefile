@@ -2,8 +2,7 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -g
 SRCDIR = src
 INCDIR = include
-OBJDIR = obj
-OUTDIR = output
+BUILDDIR = build
 
 # Path to 01_layer_mapping directory
 GRAPH_DIR = ../01_layer_mapping
@@ -11,8 +10,8 @@ GRAPH_INC = $(GRAPH_DIR)/include
 GRAPH_SRC = $(GRAPH_DIR)/src
 
 # Source files
-SOURCES = $(SRCDIR)/Planifier.cc $(SRCDIR)/Robot.cc $(GRAPH_SRC)/Graph.cc main.cc
-OBJECTS = $(OBJDIR)/Planifier.o $(OBJDIR)/Robot.o $(OBJDIR)/Graph.o $(OBJDIR)/main.o
+SOURCES = $(SRCDIR)/Planifier.cc $(SRCDIR)/Robot.cc $(SRCDIR)/Task.cc $(GRAPH_SRC)/Graph.cc main.cc
+OBJECTS = $(BUILDDIR)/Planifier.o $(BUILDDIR)/Robot.o $(BUILDDIR)/Task.o $(BUILDDIR)/Graph.o $(BUILDDIR)/main.o
 
 # Target executable
 TARGET = planner
@@ -20,41 +19,41 @@ TARGET = planner
 # Default target
 all: $(TARGET)
 
-# Create output directory
-$(OUTDIR):
-	mkdir -p $(OUTDIR)
-
-# Create object directory
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
+# Create build directory
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
 
 # Build target
-$(TARGET): $(OBJDIR) $(OBJECTS)
+$(TARGET): $(BUILDDIR) $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
 
 # Compile Planifier.cc
-$(OBJDIR)/Planifier.o: $(SRCDIR)/Planifier.cc $(INCDIR)/Planifier.hh $(GRAPH_INC)/Graph.hh $(INCDIR)/Robot.hh | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/Planifier.cc -o $(OBJDIR)/Planifier.o
+$(BUILDDIR)/Planifier.o: $(SRCDIR)/Planifier.cc $(INCDIR)/Planifier.hh $(INCDIR)/Task.hh $(GRAPH_INC)/Graph.hh $(INCDIR)/Robot.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/Planifier.cc -o $(BUILDDIR)/Planifier.o
 
 # Compile Robot.cc
-$(OBJDIR)/Robot.o: $(SRCDIR)/Robot.cc $(INCDIR)/Robot.hh | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $(SRCDIR)/Robot.cc -o $(OBJDIR)/Robot.o
+$(BUILDDIR)/Robot.o: $(SRCDIR)/Robot.cc $(INCDIR)/Robot.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $(SRCDIR)/Robot.cc -o $(BUILDDIR)/Robot.o
+
+# Compile Task.cc
+$(BUILDDIR)/Task.o: $(SRCDIR)/Task.cc $(INCDIR)/Task.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $(SRCDIR)/Task.cc -o $(BUILDDIR)/Task.o
 
 # Compile Graph.cc from 01_layer_mapping
-$(OBJDIR)/Graph.o: $(GRAPH_SRC)/Graph.cc $(GRAPH_INC)/Graph.hh | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -I$(GRAPH_INC) -c $(GRAPH_SRC)/Graph.cc -o $(OBJDIR)/Graph.o
+$(BUILDDIR)/Graph.o: $(GRAPH_SRC)/Graph.cc $(GRAPH_INC)/Graph.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(GRAPH_INC) -c $(GRAPH_SRC)/Graph.cc -o $(BUILDDIR)/Graph.o
 
 # Compile main.cc
-$(OBJDIR)/main.o: main.cc $(INCDIR)/Planifier.hh $(INCDIR)/Robot.hh $(GRAPH_INC)/Graph.hh | $(OBJDIR)
-	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c main.cc -o $(OBJDIR)/main.o
+$(BUILDDIR)/main.o: main.cc $(INCDIR)/Planifier.hh $(INCDIR)/Task.hh $(INCDIR)/Robot.hh $(GRAPH_INC)/Graph.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c main.cc -o $(BUILDDIR)/main.o
 
 # Clean build files
 clean:
-	rm -rf $(TARGET) $(OBJDIR)
+	rm -rf $(TARGET) $(BUILDDIR)
 
-# Clean everything including generated outputs
+# Clean everything including old directories
 clean-all: clean
-	rm -rf $(OUTDIR)
+	rm -rf obj output
 
 # Run the program
 run: $(TARGET)
@@ -72,17 +71,18 @@ help:
 	@echo "  make run          - Build and run the program"
 	@echo "  make test         - Build and run (alias)"
 	@echo "  make clean        - Remove compiled files"
-	@echo "  make clean-all    - Remove compiled files and outputs"
+	@echo "  make clean-all    - Remove compiled files and old directories"
 	@echo "  make help         - Show this help message"
 	@echo ""
-	@echo "Packet Generators:"
-	@echo "  cd packet_generators && make       - Build packet generators"
-	@echo "  cd packet_generators && ./generate_packets_graph1 10 15  - Generate test cases"
+	@echo "Task Generators:"
+	@echo "  cd utils && make                              - Build task generators"
+	@echo "  cd utils && ./build/generate_tasks_graph1 10 15  - Generate test cases"
 	@echo ""
-	@echo "Documentation:"
-	@echo "  README.md                - Main documentation"
-	@echo "  PACKET_FORMAT.md         - Packet file format specification"
-	@echo "  QUICKSTART_PACKETS.md    - Quick start guide for packet generation"
-	@echo "  packet_generators/README.md - Generator documentation"
+	@echo "Directory Structure:"
+	@echo "  src/              - Source files (.cc)"
+	@echo "  include/          - Header files (.hh)"
+	@echo "  build/            - Object files (.o)"
+	@echo "  tests/            - Test cases (graph1/, graph2/)"
+	@echo "  utils/            - Task generators (src/, build/)"
 
 .PHONY: all clean clean-all run test help
