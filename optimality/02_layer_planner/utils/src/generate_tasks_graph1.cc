@@ -27,7 +27,7 @@ void printUsage(const char* progname) {
     cerr << "  increment        : Increment per case (e.g., 10)" << endl;
     cerr << "  seed             : Random seed (optional, default: current time)" << endl;
     cerr << endl;
-    cerr << "Output: Generates files in ../../tests/graph1/" << endl;
+    cerr << "Output: Generates files in ../tests/graph1/" << endl;
     cerr << "        Format: graph1_caseN.inp (N = 1 to num_cases)" << endl;
     cerr << endl;
     cerr << "Examples:" << endl;
@@ -103,8 +103,12 @@ int main(int argc, char* argv[]) {
     cout << "Output directory: ../../tests/graph1/" << endl;
     cout << endl;
     
-    // Create output directory (Linux/Unix command)
+    // Create output directory (Cross-platform command)
+#ifdef _WIN32
+    system("if not exist \"..\\..\\tests\\graph1\" mkdir \"..\\..\\tests\\graph1\"");
+#else
     system("mkdir -p ../../tests/graph1");
+#endif
     
     // Initialize random number generator
     mt19937 rng(seed);
