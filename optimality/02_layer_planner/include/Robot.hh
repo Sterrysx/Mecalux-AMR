@@ -35,6 +35,7 @@ public:
     void setMaxSpeed(float speed);
     void setLoadCapacity(int capacity);
     void setAvailability(bool available);
+    void freeRobot(); //posa currentTask a -1 i isAvailable a true
 
 private:
     int robotId;

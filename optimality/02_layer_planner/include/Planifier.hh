@@ -40,6 +40,7 @@ public:
 
     // Planning methods
     void plan(int algorithm = 0);  // 0 = interactive, 1-4 = direct selection
+    void bruteforce_algorithm();   // Brute force planning algorithm
 
 
 private:
