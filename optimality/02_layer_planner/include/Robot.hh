@@ -1,0 +1,49 @@
+#ifndef ROBOT_H
+#define ROBOT_H
+
+#include <vector>
+#include <unordered_map>
+#include <set>
+#include <utility>
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+
+class Robot {
+
+public:
+    // Constructors and Destructor
+    Robot();
+    Robot(int id, pair<double, double> pos, double battery, string task, float speed, float capacity, bool available);
+    ~Robot();
+
+    // Getters
+    int getId() const;
+    pair<double, double> getPosition() const;
+    double getBatteryLevel() const;
+    string getCurrentTask() const;
+    float getMaxSpeed() const;
+    float getLoadCapacity() const;
+    bool getAvailability() const;
+
+    // Setters
+    void setPosition(const pair<double, double>& pos);
+    void setBatteryLevel(double battery);
+    void setCurrentTask(const string& task);
+    void setMaxSpeed(float speed);
+    void setLoadCapacity(int capacity);
+    void setAvailability(bool available);
+
+private:
+    int robotId;
+    pair<double, double> position;
+    double batteryLevel;
+    string currentTask;
+    float maxSpeed;
+    int loadCapacity;
+    bool isAvailable;
+};
+
+#endif // ROBOT_H
