@@ -1,27 +1,17 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-using namespace std;
-#include <bits/stdc++.h>
+#include <vector>
+#include <unordered_map>
+#include <utility>
+#include <iostream>
+#include <string>
 
 //Where node is 
 class Graph {
 
 public:
-    //Constructor and Destructor
-    Graph();
-    ~Graph();
-
-    //Helper Functions
-
-
-private:
-    //Private Members
-    int numVertices;
-    int nextNodeId;
-
-
-    //NODE
+    //NODE TYPE ENUM
     enum class NodeType {
         Waypoint = 0,
         Charging,
@@ -32,27 +22,51 @@ private:
         ForbiddenCorner
     };
 
+    //NODE STRUCT
     struct Node {
         int nodeId { -1 };
         NodeType type { NodeType::Waypoint };
-        pair<double, double> coordinates { {0.0, 0.0} };
+        std::pair<double, double> coordinates { 0.0, 0.0 };
         Node() = default;
-        Node(int id, NodeType t, double x, double y) : nodeId(id), type(t), coordinates{x,y} {};
+        Node(int id, NodeType t, double x, double y) : nodeId(id), type(t), coordinates{x,y} {}
     };
-    //NODE
 
-    //EDGE
+    //EDGE STRUCT
     struct Edge {
         double speed { 1.6 };     // edge weight as requested
         double distance { 0.0 };
         int nodeDestinationId { -1 };
         Edge() = default;
-        Edge(double s, double d, int destId) : speed(s), distance(d), nodeDestinationId(destId) {};
+        Edge(double s, double d, int destId) : speed(s), distance(d), nodeDestinationId(destId) {}
     };
-    //EDGE
+
+    //Constructor and Destructor
+    Graph();
+    ~Graph();
+
+    //Helper Functions
+    int addNode(int nodeId, NodeType type, double x, double y);
+    bool addEdge(int fromNodeId, int toNodeId, double distance = 0.0, double speed = 1.6);
+    const Node* getNode(int nodeId) const;
+    const std::vector<Edge>& getEdges(int nodeId) const;
+    int getNumVertices() const;
+    void printGraph() const;
+    
+    // File I/O methods
+    bool loadFromFile(const std::string& filename);
+    NodeType charToNodeType(char c) const;
+    
+    // Visualization methods
+    bool generateSVG(const std::string& filename, int width = 800, int height = 600) const;
+
+private:
+    //Private Members
+    int numVertices;
+    int nextNodeId;
 
     //Graph Definition
-    priority_queue<int, set<Edge>, greater<int>> Graph;
+    std::unordered_map<int, Node> nodes;  // Store nodes by ID
+    std::vector<std::vector<Edge>> adjacencyList;  // Adjacency list representation
 };
 
 #endif // GRAPH_H

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Visualization Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            max-width: 95%;
+        }
+        .info {
+            color: white;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗺️ Graph Visualization</h1>
+    <div class="info">
+        Graph loaded from graph1.inp - 17 nodes, 27 edges
+    </div>
+    <div class="container">
+        <object data="graph_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+</body>
+</html>
