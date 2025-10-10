@@ -7,6 +7,8 @@
 #include <cmath>
 #include <iomanip>
 #include <set>
+using namespace std;
+
 
 // Constructor
 Graph::Graph() : numVertices(0), nextNodeId(0) {
@@ -18,6 +20,59 @@ Graph::Graph() : numVertices(0), nextNodeId(0) {
 Graph::~Graph() {
     std::cout << "Graph destructor called" << std::endl;
 }
+
+
+// Load graph from input stream (optimized - no temporary objects)
+void Graph::loadFromStream(std::istream& in) {
+    int num_vertices, num_edges;
+    pair<int, int> mapSize;
+    in >> num_vertices >> num_edges >> mapSize.first >> mapSize.second;
+
+    // Read nodes
+    int nodeId;
+    pair<double, double> coords;
+    string type;
+    for (int i = 0; i < num_vertices; i++) {
+        in >> nodeId >> coords.first >> coords.second >> type;
+        addNode(nodeId, charToNodeType(type[0]), coords.first, coords.second);
+    }
+
+    // Read edges
+    int fromNode, toNode;
+    for (int i = 0; i < num_edges; i++) {
+        in >> fromNode >> toNode;
+        addEdge(fromNode, toNode);
+        addEdge(toNode, fromNode);
+    }
+}
+
+
+Graph Graph::read_graph() {
+    Graph G;
+    int num_vertices, num_edges;
+    pair<int, int> mapSize;
+    cin >> num_vertices >> num_edges >> mapSize.first >> mapSize.second;
+
+    // Read nodes
+    int nodeId;
+    pair<double, double> coords;
+    string type;
+    for (int i = 0; i < num_vertices; i++) {
+        cin >> nodeId >> coords.first >> coords.second >> type;
+        G.addNode(nodeId, G.charToNodeType(type[0]), coords.first, coords.second);
+    }
+
+    // Read edges
+    int fromNode, toNode;
+    for (int i = 0; i < num_edges; i++) {
+        cin >> fromNode >> toNode;
+        G.addEdge(fromNode, toNode);
+        G.addEdge(toNode, fromNode);
+    }
+
+    return G;
+}
+
 
 // Convert character to NodeType
 Graph::NodeType Graph::charToNodeType(char c) const {

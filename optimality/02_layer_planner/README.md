@@ -3,24 +3,6 @@
 ## Overview
 This layer implements the planning algorithms for the multi-robot warehouse system. It uses the Graph data structure from Layer 1 (01_layer_mapping) and manages Robot instances.
 
-## Components
-
-### Robot Class (`Robot.hh` / `Robot.cc`)
-Represents an individual robot with the following properties:
-- **ID**: Unique identifier
-- **Position**: Current coordinates (x, y)
-- **Battery Level**: Current battery percentage
-- **Current Task**: Task being executed
-- **Max Speed**: Maximum velocity
-- **Load Capacity**: Maximum weight capacity
-- **Availability**: Whether the robot is available for tasks
-
-### Planifier Class (`Planifier.hh` / `Planifier.cc`)
-Manages the fleet of robots and executes planning algorithms:
-- **Graph**: Warehouse map (from Layer 1)
-- **Robot Queues**: Available, busy, and charging robots
-- **Planning Algorithms**: Multiple strategies (1-4)
-
 ## Building and Running
 
 ### Compile
@@ -28,14 +10,28 @@ Manages the fleet of robots and executes planning algorithms:
 make
 ```
 
-### Run (Interactive Mode)
+### Usage
 ```bash
-make run
-# or
-./planner
+./planner [graph_number] [algorithm]
 ```
 
-You will be prompted to choose an algorithm (1-4):
+#### Arguments
+- **graph_number**: Number from 1-10 (default: 1)
+  - Loads from `../01_layer_mapping/distributions/graphN.inp`
+- **algorithm**: Algorithm selection (default: 1)
+  - `0` = Interactive mode (prompts for algorithm selection)
+  - `1-4` = Direct algorithm selection
+
+#### Examples
+```bash
+./planner              # Use graph1.inp with algorithm 1
+./planner 5            # Use graph5.inp with algorithm 1
+./planner 3 2          # Use graph3.inp with algorithm 2
+./planner 1 0          # Use graph1.inp with interactive mode
+```
+
+### Interactive Mode
+When using algorithm 0 or running without arguments, you'll be prompted:
 ```
 === Algorithm Selection ===
 Available algorithms:
@@ -46,8 +42,6 @@ Available algorithms:
 Choose an algorithm (1-4):
 ```
 
-### Run with Specific Algorithm
-Modify `main.cc` to call `P.plan(n)` where n is 1-4:
 ```cpp
 P.plan(1);  // Algorithm 1
 P.plan(2);  // Algorithm 2
@@ -82,17 +76,49 @@ make clean-all   # Remove everything including outputs
 
 ```
 02_layer_planner/
-├── Makefile              # Build configuration
-├── main.cc               # Main entry point
-├── README.md             # This file
+├── Makefile                  # Build configuration
+├── main.cc                   # Main entry point
+├── README.md                 # This file
 ├── include/
-│   ├── Planifier.hh      # Planner class header
-│   └── Robot.hh          # Robot class header
+│   ├── Planifier.hh          # Planner class header
+│   └── Robot.hh              # Robot class header
 ├── src/
-│   ├── Planifier.cc      # Planner implementation
-│   └── Robot.cc          # Robot implementation
-└── obj/                  # Compiled object files (generated)
+│   ├── Planifier.cc          # Planner implementation
+│   └── Robot.cc              # Robot implementation
+├── obj/                      # Compiled object files (generated)
+├── packets/                  # Manual/original test packets
+│   └── packet1.inp           # Example packet file
+├── packet_generators/        # Packet generation tools
+│   ├── generate_packets_graph1.cc
+│   ├── Makefile
+│   └── README.md             # Generator documentation
+└── generated_packets/        # Auto-generated test cases
+    └── graph1/
+        ├── graph1_case1.inp
+        ├── graph1_case2.inp
+        └── ...
 ```
+
+## Test Packet Generation
+
+The system includes packet generators for creating random test cases:
+
+### Building Generators
+```bash
+cd packet_generators
+make
+```
+
+### Generating Test Cases
+```bash
+# Generate 10 test cases with 15 packets each for graph1
+./generate_packets_graph1 10 15
+
+# Generate with specific seed for reproducibility
+./generate_packets_graph1 10 15 42
+```
+
+See `packet_generators/README.md` for detailed documentation.
 
 ## Algorithm Placeholders
 

@@ -74,5 +74,15 @@ help:
 	@echo "  make clean        - Remove compiled files"
 	@echo "  make clean-all    - Remove compiled files and outputs"
 	@echo "  make help         - Show this help message"
+	@echo ""
+	@echo "Packet Generators:"
+	@echo "  cd packet_generators && make       - Build packet generators"
+	@echo "  cd packet_generators && ./generate_packets_graph1 10 15  - Generate test cases"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  README.md                - Main documentation"
+	@echo "  PACKET_FORMAT.md         - Packet file format specification"
+	@echo "  QUICKSTART_PACKETS.md    - Quick start guide for packet generation"
+	@echo "  packet_generators/README.md - Generator documentation"
 
 .PHONY: all clean clean-all run test help
