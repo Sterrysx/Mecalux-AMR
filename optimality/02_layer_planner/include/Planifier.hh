@@ -10,6 +10,7 @@
 #include <queue>
 #include "Graph.hh"
 #include "Robot.hh"
+#include "Task.hh"
 using namespace std;
 
 //Where node is 
@@ -18,7 +19,7 @@ class Planifier {
 public:
     // Constructors and Destructor
     Planifier();
-    Planifier(const Graph& graph, int numRobots);
+    Planifier(const Graph& graph, int numRobots, queue<Task> tasks);
     ~Planifier();
 
     // Getters
@@ -27,6 +28,7 @@ public:
     int getBusyRobots() const;
     int getChargingRobots() const;
     Graph getGraph() const;
+    queue<Task> getPendingTasks() const;
 
     // Setters
     void setGraph(const Graph& graph);
@@ -34,6 +36,7 @@ public:
     void setAvailableRobots(int num);
     void setBusyRobots(int num);
     void setChargingRobots(int num);
+    void setPendingTasks(int num);
 
     // Planning methods
     void plan(int algorithm = 0);  // 0 = interactive, 1-4 = direct selection
@@ -44,7 +47,8 @@ private:
     queue<Robot> availableRobots;
     queue<Robot> busyRobots;
     queue<Robot> chargingRobots;
-    const int numRobots;
+    const int totalRobots;
+    queue<Task> pendingTasks;
 };
 
 #endif // PLANIFIER_H
