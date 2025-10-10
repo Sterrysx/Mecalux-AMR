@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900">
+<rect width="100%" height="100%" fill="#f9fafb"/>
+<text x="600" y="30" font-family="Arial" font-size="20" text-anchor="middle" font-weight="bold">Graph Visualization</text>
+<g id="edges">
+<line x1="525" y1="50" x2="350" y2="225" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="437.5" y="137.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">9.9</text>
+<line x1="525.0" y1="50.0" x2="600.0" y2="225.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="562.5" y="137.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.6</text>
+<line x1="525.0" y1="50.0" x2="225.0" y2="125.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="375.0" y="87.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">12.4</text>
+<line x1="525.0" y1="50.0" x2="725.0" y2="125.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="625.0" y="87.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.5</text>
+<line x1="600.0" y1="225.0" x2="675.0" y2="300.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="637.5" y="262.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">4.2</text>
+<line x1="600.0" y1="225.0" x2="725.0" y2="125.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="662.5" y="175.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">6.4</text>
+<line x1="350.0" y1="225.0" x2="275.0" y2="300.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="312.5" y="262.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">4.2</text>
+<line x1="350.0" y1="225.0" x2="225.0" y2="125.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="287.5" y="175.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">6.4</text>
+<line x1="600.0" y1="525.0" x2="525.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="562.5" y="575.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.0</text>
+<line x1="600.0" y1="525.0" x2="600.0" y2="725.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="600.0" y="625.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.0</text>
+<line x1="475.0" y1="525.0" x2="525.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="500.0" y="575.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">4.5</text>
+<line x1="475.0" y1="525.0" x2="475.0" y2="725.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="475.0" y="625.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.0</text>
+<line x1="350.0" y1="525.0" x2="125.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="237.5" y="575.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">9.8</text>
+<line x1="350.0" y1="525.0" x2="350.0" y2="725.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="350.0" y="625.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.0</text>
+<line x1="225.0" y1="525.0" x2="125.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="175.0" y="575.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.7</text>
+<line x1="225.0" y1="525.0" x2="225.0" y2="725.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="225.0" y="625.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.0</text>
+<line x1="225.0" y1="525.0" x2="225.0" y2="125.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="225.0" y="325.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">16.0</text>
+<line x1="850.0" y1="725.0" x2="675.0" y2="800.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="762.5" y="762.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.6</text>
+<line x1="850.0" y1="725.0" x2="925.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="887.5" y="675.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.0</text>
+<line x1="850.0" y1="725.0" x2="850.0" y2="525.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="850.0" y="625.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.0</text>
+<line x1="725.0" y1="725.0" x2="675.0" y2="800.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="700.0" y="762.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">3.6</text>
+<line x1="725.0" y1="725.0" x2="925.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="825.0" y="675.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.9</text>
+<line x1="725.0" y1="725.0" x2="725.0" y2="525.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="725.0" y="625.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.0</text>
+<line x1="600.0" y1="725.0" x2="525.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="562.5" y="675.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.0</text>
+<line x1="475.0" y1="725.0" x2="525.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="500.0" y="675.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">4.5</text>
+<line x1="350.0" y1="725.0" x2="275.0" y2="800.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="312.5" y="762.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">4.2</text>
+<line x1="350.0" y1="725.0" x2="125.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="237.5" y="675.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">9.8</text>
+<line x1="225.0" y1="725.0" x2="275.0" y2="800.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="250.0" y="762.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">3.6</text>
+<line x1="225.0" y1="725.0" x2="125.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="175.0" y="675.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.7</text>
+<line x1="525.0" y1="850.0" x2="525.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="525.0" y="737.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">9.0</text>
+<line x1="1025.0" y1="850.0" x2="675.0" y2="800.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="850.0" y="825.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">14.1</text>
+<line x1="50.0" y1="850.0" x2="275.0" y2="800.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="162.5" y="825.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">9.2</text>
+<line x1="725.0" y1="525.0" x2="925.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="825.0" y="575.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.9</text>
+<line x1="850.0" y1="525.0" x2="925.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="887.5" y="575.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.0</text>
+<line x1="850.0" y1="525.0" x2="725.0" y2="125.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="787.5" y="325.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">16.8</text>
+<line x1="225.0" y1="125.0" x2="275.0" y2="300.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="250.0" y="212.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.3</text>
+<line x1="725.0" y1="125.0" x2="675.0" y2="300.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="700.0" y="212.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.3</text>
+<line x1="125.0" y1="625.0" x2="275.0" y2="300.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="200.0" y="462.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">14.3</text>
+<line x1="125.0" y1="625.0" x2="525.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="325.0" y="625.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">16.0</text>
+<line x1="925.0" y1="625.0" x2="675.0" y2="300.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="800.0" y="462.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">16.4</text>
+<line x1="925.0" y1="625.0" x2="525.0" y2="625.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="725.0" y="625.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">16.0</text>
+<line x1="525.0" y1="625.0" x2="525.0" y2="425.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="525.0" y="525.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.0</text>
+<line x1="275.0" y1="800.0" x2="50.0" y2="725.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="162.5" y="762.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">9.5</text>
+<line x1="275.0" y1="800.0" x2="675.0" y2="800.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="475.0" y="800.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">16.0</text>
+<line x1="675.0" y1="800.0" x2="1025.0" y2="725.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="850.0" y="762.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">14.3</text>
+<line x1="275.0" y1="300.0" x2="525.0" y2="425.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="400.0" y="362.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">11.2</text>
+<line x1="275.0" y1="300.0" x2="50.0" y2="175.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="162.5" y="237.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">10.3</text>
+<line x1="675.0" y1="300.0" x2="525.0" y2="425.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="600.0" y="362.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.8</text>
+<line x1="675.0" y1="300.0" x2="1025.0" y2="175.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="850.0" y="237.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">14.9</text>
+<line x1="50.0" y1="725.0" x2="50.0" y2="175.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="50.0" y="450.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">22.0</text>
+<line x1="1025.0" y1="725.0" x2="1025.0" y2="175.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="1025.0" y="450.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">22.0</text>
+</g>
+<g id="nodes">
+<circle cx="525.0" cy="50.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="525.0" y="55.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">31</text>
+<text x="525.0" y="85.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="525.0" y="98.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(22.0,35.0)</text>
+<circle cx="600.0" cy="225.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="600.0" y="230.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">30</text>
+<text x="600.0" y="260.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="600.0" y="273.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(25.0,28.0)</text>
+<circle cx="350.0" cy="225.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="350.0" y="230.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">29</text>
+<text x="350.0" y="260.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="350.0" y="273.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(15.0,28.0)</text>
+<circle cx="600.0" cy="525.0" r="20" fill="#f59e0b" stroke="#1e293b" stroke-width="2"/>
+<text x="600.0" y="530.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">12</text>
+<text x="600.0" y="560.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Dropoff</text>
+<text x="600.0" y="573.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(25.0,16.0)</text>
+<circle cx="475.0" cy="525.0" r="20" fill="#f59e0b" stroke="#1e293b" stroke-width="2"/>
+<text x="475.0" y="530.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">11</text>
+<text x="475.0" y="560.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Dropoff</text>
+<text x="475.0" y="573.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(20.0,16.0)</text>
+<circle cx="350.0" cy="525.0" r="20" fill="#f59e0b" stroke="#1e293b" stroke-width="2"/>
+<text x="350.0" y="530.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">10</text>
+<text x="350.0" y="560.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Dropoff</text>
+<text x="350.0" y="573.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(15.0,16.0)</text>
+<circle cx="225.0" cy="525.0" r="20" fill="#f59e0b" stroke="#1e293b" stroke-width="2"/>
+<text x="225.0" y="530.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">9</text>
+<text x="225.0" y="560.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Dropoff</text>
+<text x="225.0" y="573.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(10.0,16.0)</text>
+<circle cx="850.0" cy="725.0" r="20" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+<text x="850.0" y="730.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">8</text>
+<text x="850.0" y="760.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Pickup</text>
+<text x="850.0" y="773.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(35.0,8.0)</text>
+<circle cx="725.0" cy="725.0" r="20" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+<text x="725.0" y="730.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">7</text>
+<text x="725.0" y="760.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Pickup</text>
+<text x="725.0" y="773.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(30.0,8.0)</text>
+<circle cx="600.0" cy="725.0" r="20" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+<text x="600.0" y="730.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">6</text>
+<text x="600.0" y="760.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Pickup</text>
+<text x="600.0" y="773.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(25.0,8.0)</text>
+<circle cx="475.0" cy="725.0" r="20" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+<text x="475.0" y="730.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">5</text>
+<text x="475.0" y="760.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Pickup</text>
+<text x="475.0" y="773.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(20.0,8.0)</text>
+<circle cx="350.0" cy="725.0" r="20" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+<text x="350.0" y="730.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">4</text>
+<text x="350.0" y="760.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Pickup</text>
+<text x="350.0" y="773.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(15.0,8.0)</text>
+<circle cx="225.0" cy="725.0" r="20" fill="#3b82f6" stroke="#1e293b" stroke-width="2"/>
+<text x="225.0" y="730.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">3</text>
+<text x="225.0" y="760.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Pickup</text>
+<text x="225.0" y="773.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(10.0,8.0)</text>
+<circle cx="525.0" cy="850.0" r="20" fill="#22c55e" stroke="#1e293b" stroke-width="2"/>
+<text x="525.0" y="855.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">2</text>
+<text x="525.0" y="885.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Charging</text>
+<text x="525.0" y="898.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(22.0,3.0)</text>
+<circle cx="1025.0" cy="850.0" r="20" fill="#22c55e" stroke="#1e293b" stroke-width="2"/>
+<text x="1025.0" y="855.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">1</text>
+<text x="1025.0" y="885.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Charging</text>
+<text x="1025.0" y="898.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(42.0,3.0)</text>
+<circle cx="50.0" cy="850.0" r="20" fill="#22c55e" stroke="#1e293b" stroke-width="2"/>
+<text x="50.0" y="855.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">0</text>
+<text x="50.0" y="885.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Charging</text>
+<text x="50.0" y="898.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(3.0,3.0)</text>
+<circle cx="725.0" cy="525.0" r="20" fill="#f59e0b" stroke="#1e293b" stroke-width="2"/>
+<text x="725.0" y="530.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">13</text>
+<text x="725.0" y="560.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Dropoff</text>
+<text x="725.0" y="573.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(30.0,16.0)</text>
+<circle cx="850.0" cy="525.0" r="20" fill="#f59e0b" stroke="#1e293b" stroke-width="2"/>
+<text x="850.0" y="530.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">14</text>
+<text x="850.0" y="560.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Dropoff</text>
+<text x="850.0" y="573.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(35.0,16.0)</text>
+<circle cx="225.0" cy="125.0" r="20" fill="#f59e0b" stroke="#1e293b" stroke-width="2"/>
+<text x="225.0" y="130.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">15</text>
+<text x="225.0" y="160.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Dropoff</text>
+<text x="225.0" y="173.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(10.0,32.0)</text>
+<circle cx="725.0" cy="125.0" r="20" fill="#f59e0b" stroke="#1e293b" stroke-width="2"/>
+<text x="725.0" y="130.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">16</text>
+<text x="725.0" y="160.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Dropoff</text>
+<text x="725.0" y="173.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(30.0,32.0)</text>
+<circle cx="125.0" cy="625.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="125.0" y="630.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">17</text>
+<text x="125.0" y="660.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="125.0" y="673.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(6.0,12.0)</text>
+<circle cx="925.0" cy="625.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="925.0" y="630.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">18</text>
+<text x="925.0" y="660.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="925.0" y="673.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(38.0,12.0)</text>
+<circle cx="525.0" cy="625.0" r="20" fill="#8b5cf6" stroke="#1e293b" stroke-width="2"/>
+<text x="525.0" y="630.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">19</text>
+<text x="525.0" y="660.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">AFK</text>
+<text x="525.0" y="673.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(22.0,12.0)</text>
+<circle cx="275.0" cy="800.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="275.0" y="805.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">20</text>
+<text x="275.0" y="835.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="275.0" y="848.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(12.0,5.0)</text>
+<circle cx="675.0" cy="800.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="675.0" y="805.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">21</text>
+<text x="675.0" y="835.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="675.0" y="848.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(28.0,5.0)</text>
+<circle cx="275.0" cy="300.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="275.0" y="305.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">22</text>
+<text x="275.0" y="335.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="275.0" y="348.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(12.0,25.0)</text>
+<circle cx="675.0" cy="300.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="675.0" y="305.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">23</text>
+<text x="675.0" y="335.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="675.0" y="348.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(28.0,25.0)</text>
+<circle cx="525.0" cy="425.0" r="20" fill="#6b7280" stroke="#1e293b" stroke-width="2"/>
+<text x="525.0" y="430.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">24</text>
+<text x="525.0" y="460.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Waypoint</text>
+<text x="525.0" y="473.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(22.0,20.0)</text>
+<circle cx="50.0" cy="725.0" r="20" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+<text x="50.0" y="730.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">25</text>
+<text x="50.0" y="760.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Forbidden</text>
+<text x="50.0" y="773.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(3.0,8.0)</text>
+<circle cx="1025.0" cy="725.0" r="20" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+<text x="1025.0" y="730.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">26</text>
+<text x="1025.0" y="760.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Forbidden</text>
+<text x="1025.0" y="773.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(42.0,8.0)</text>
+<circle cx="50.0" cy="175.0" r="20" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+<text x="50.0" y="180.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">27</text>
+<text x="50.0" y="210.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Forbidden</text>
+<text x="50.0" y="223.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(3.0,30.0)</text>
+<circle cx="1025.0" cy="175.0" r="20" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+<text x="1025.0" y="180.0" font-family="Arial" font-size="14" font-weight="bold" fill="white" text-anchor="middle">28</text>
+<text x="1025.0" y="210.0" font-family="Arial" font-size="11" fill="#1e293b" text-anchor="middle">Forbidden</text>
+<text x="1025.0" y="223.0" font-family="Arial" font-size="9" fill="#64748b" text-anchor="middle">(42.0,30.0)</text>
+</g>
+<g id="legend">
+<rect x="10" y="60" width="150" height="200" fill="white" stroke="#cbd5e1" stroke-width="1" opacity="0.9" rx="5"/>
+<text x="20" y="80" font-family="Arial" font-size="12" font-weight="bold">Legend</text>
+<circle cx="30" cy="100" r="8" fill="#22c55e"/>
+<text x="45" y="104" font-family="Arial" font-size="11">Charging</text>
+<circle cx="30" cy="125" r="8" fill="#3b82f6"/>
+<text x="45" y="129" font-family="Arial" font-size="11">Pickup</text>
+<circle cx="30" cy="150" r="8" fill="#f59e0b"/>
+<text x="45" y="154" font-family="Arial" font-size="11">Dropoff</text>
+<circle cx="30" cy="175" r="8" fill="#6b7280"/>
+<text x="45" y="179" font-family="Arial" font-size="11">Waypoint</text>
+<circle cx="30" cy="200" r="8" fill="#8b5cf6"/>
+<text x="45" y="204" font-family="Arial" font-size="11">AFK</text>
+<circle cx="30" cy="225" r="8" fill="#ef4444"/>
+<text x="45" y="229" font-family="Arial" font-size="11">Forbidden</text>
+</g>
+</svg>
