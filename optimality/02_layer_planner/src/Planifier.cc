@@ -55,7 +55,7 @@ void Planifier::plan(int algorithm, Graph& G, vector<Robot>& robots, vector<Pack
     switch (selectedAlgorithm) {
         case 1:
             cout << "Placeholder for Algorithm 1" << endl;
-            bruteforce_algorithm(G, robots, packets);
+            bruteforce_algorithm(packets);
             cout << "End Algorithm 1" << endl;
             break;
         case 2:

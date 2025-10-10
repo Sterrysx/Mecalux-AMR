@@ -28,6 +28,25 @@ void usage(const char* progname) {
     exit(1);
 }
 
+queue<Task> read_tasks(const string& filename) {
+    ifstream file(filename);
+    queue<Task> QT;
+    
+    if (!file.is_open()) {
+        cerr << "Error: Could not open task file " << filename << endl;
+        return QT;
+    }
+    
+    int id, origin, destination;
+    while (file >> id >> origin >> destination) {
+        Task task(id, origin, destination);
+        QT.push(task);
+    }
+    
+    file.close();
+    return QT;
+}
+
 int main(int argc, char* argv[]) {
     // Parse command-line arguments
     int graphNumber = 1;
@@ -79,8 +98,15 @@ int main(int argc, char* argv[]) {
     
     cout << "Graph loaded successfully with " << G.getNumVertices() << " vertices" << endl;
     
+
+    // Create Task T with all the input from file case1.inp
+    Task T;
+    queue<Task> QT = read_tasks("../generated_packets/graph1/graph1_case1.inp");
+
+    cout << "Loaded " << QT.size() << " tasks from file" << endl;
+
     // Create planner
-    Planifier P(G, NUM_ROBOTS);
+    Planifier P(G, NUM_ROBOTS, QT);
     
     cout << "Planner created with " << P.getNumRobots() << " robots" << endl;
     cout << endl;
