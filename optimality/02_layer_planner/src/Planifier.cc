@@ -29,8 +29,14 @@ void Planifier::setChargingRobots(int num) {
     while (chargingRobots.size() > num) chargingRobots.pop();
 }
 
+
+void bruteforce_algorithm(vector<Packet>& packets) {
+    cout << "Bruteforce algorithm placeholder - to be implemented" << endl;
+    // Placeholder for the actual brute-force algorithm implementation
+}
+
 // Planning method with algorithm selection
-void Planifier::plan(int algorithm) {
+void Planifier::plan(int algorithm, Graph& G, vector<Robot>& robots, vector<Packet>& packets) {
     int selectedAlgorithm = algorithm;
     
     // Interactive mode: ask user if algorithm is not 1 (default)
@@ -49,6 +55,8 @@ void Planifier::plan(int algorithm) {
     switch (selectedAlgorithm) {
         case 1:
             cout << "Placeholder for Algorithm 1" << endl;
+            bruteforce_algorithm(G, robots, packets);
+            cout << "End Algorithm 1" << endl;
             break;
         case 2:
             cout << "Placeholder for Algorithm 2" << endl;

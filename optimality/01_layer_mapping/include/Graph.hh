@@ -51,8 +51,10 @@ public:
     const std::vector<Edge>& getEdges(int nodeId) const;
     int getNumVertices() const;
     void printGraph() const;
+    Graph read_graph();
     
     // File I/O methods
+    void loadFromStream(std::istream& in);
     bool loadFromFile(const std::string& filename);
     NodeType charToNodeType(char c) const;
     

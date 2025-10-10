@@ -1,35 +1,92 @@
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdlib>
 #include "../01_layer_mapping/include/Graph.hh"
 #include "include/Planifier.hh"
 #include "include/Robot.hh"
 using namespace std;
 
 const int NUM_ROBOTS = 2;
+const string DEFAULT_GRAPH = "../01_layer_mapping/distributions/graph1.inp";
+const int DEFAULT_ALGORITHM = 1;
 
-int main() {
-    // Create a simple test graph
+void usage(const char* progname) {
+    cerr << "Usage: " << progname << " [graph_number] [algorithm]" << endl;
+    cerr << endl;
+    cerr << "Arguments:" << endl;
+    cerr << "  graph_number  : Number from 1-10 (default: 1)" << endl;
+    cerr << "                  Loads from ../01_layer_mapping/distributions/graphN.inp" << endl;
+    cerr << "  algorithm     : Algorithm selection (default: 1)" << endl;
+    cerr << "                  0 = Interactive mode" << endl;
+    cerr << "                  1-4 = Direct algorithm selection" << endl;
+    cerr << endl;
+    cerr << "Examples:" << endl;
+    cerr << "  " << progname << "              # Use graph1.inp with algorithm 1" << endl;
+    cerr << "  " << progname << " 5           # Use graph5.inp with algorithm 1" << endl;
+    cerr << "  " << progname << " 3 2         # Use graph3.inp with algorithm 2" << endl;
+    exit(1);
+}
+
+int main(int argc, char* argv[]) {
+    // Parse command-line arguments
+    int graphNumber = 1;
+    int algorithm = DEFAULT_ALGORITHM;
+    
+    if (argc > 3) {
+        cerr << "Error: Too many arguments" << endl;
+        usage(argv[0]);
+    }
+    
+    if (argc >= 2) {
+        graphNumber = atoi(argv[1]);
+        if (graphNumber < 1 || graphNumber > 10) {
+            cerr << "Error: graph_number must be between 1 and 10" << endl;
+            usage(argv[0]);
+        }
+    }
+    
+    if (argc == 3) {
+        algorithm = atoi(argv[2]);
+        if (algorithm < 0 || algorithm > 4) {
+            cerr << "Error: algorithm must be between 0 and 4" << endl;
+            usage(argv[0]);
+        }
+    }
+    
+    // Construct graph file path
+    string graphFile = "../01_layer_mapping/distributions/graph" + 
+                       to_string(graphNumber) + ".inp";
+    
+    cout << "=== Layer 02: Planner ===" << endl;
+    cout << "Loading graph from: " << graphFile << endl;
+    cout << "Algorithm: " << algorithm << endl;
+    cout << "Number of robots: " << NUM_ROBOTS << endl;
+    cout << endl;
+    
+    // Open and redirect stdin to the graph file
+    ifstream inputFile(graphFile);
+    if (!inputFile.is_open()) {
+        cerr << "Error: Could not open file " << graphFile << endl;
+        return 1;
+    }
+    
+    // Create graph using efficient loadFromStream method
     Graph G;
+    G.loadFromStream(inputFile);
     
-    // Add some test nodes
-    G.addNode(0, Graph::NodeType::Charging, 0, 0);
-    G.addNode(1, Graph::NodeType::Pickup, 10, 0);
-    G.addNode(2, Graph::NodeType::Dropoff, 20, 0);
-    G.addNode(3, Graph::NodeType::Waypoint, 30, 0);
+    inputFile.close();
     
-    // Add some edges
-    G.addEdge(0, 1);
-    G.addEdge(1, 2);
-    G.addEdge(2, 3);
-    
-    cout << "Graph created with " << G.getNumVertices() << " vertices" << endl;
+    cout << "Graph loaded successfully with " << G.getNumVertices() << " vertices" << endl;
     
     // Create planner
     Planifier P(G, NUM_ROBOTS);
     
     cout << "Planner created with " << P.getNumRobots() << " robots" << endl;
+    cout << endl;
     
-    // Run planning algorithm (interactive mode by default)
-    P.plan();
+    // Run planning algorithm
+    P.plan(algorithm);
 
     return 0;
 }
