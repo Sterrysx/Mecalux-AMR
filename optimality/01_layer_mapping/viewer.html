@@ -9,38 +9,247 @@
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
-            background-color: #1e293b;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
         }
         h1 {
-            color: white;
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            color: #94a3b8;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
             margin-bottom: 20px;
         }
-        .container {
+        .tab {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: #475569;
+        }
+        .tab.active {
+            background: white;
+            color: #1e293b;
+        }
+        .graph-container {
+            display: none;
             background: white;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
             padding: 20px;
-            max-width: 95%;
+            max-width: 1240px;
+            margin: 0 auto;
         }
-        .info {
-            color: white;
-            margin-bottom: 15px;
+        .graph-container.active {
+            display: block;
+        }
+        .graph-info {
             text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: 6px;
+        }
+        .graph-info h2 {
+            margin: 0 0 5px 0;
+            color: #1e293b;
+        }
+        .graph-info p {
+            margin: 0;
+            color: #64748b;
+        }
+        svg {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+        .legend-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .legend-box h3 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+        }
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #1e293b;
         }
     </style>
 </head>
 <body>
-    <h1>🗺️ Graph Visualization</h1>
-    <div class="info">
-        Graph loaded from graph1.inp - 17 nodes, 27 edges
+    <div class="header">
+        <h1>🗺️ Graph Visualization Dashboard</h1>
+        <p class="subtitle">AMR Warehouse Navigation Graphs</p>
     </div>
-    <div class="container">
-        <object data="graph_visualization.svg" type="image/svg+xml" width="1200" height="900">
+
+    <div class="tabs">
+        <button class="tab active" onclick="showGraph(1)">Graph 1</button>
+        <button class="tab" onclick="showGraph(2)">Graph 2</button>
+        <button class="tab" onclick="showGraph(3)">Graph 3</button>
+        <button class="tab" onclick="showGraph(4)">Graph 4</button>
+        <button class="tab" onclick="showGraph(5)">Graph 5</button>
+        <button class="tab" onclick="showGraph(6)">Graph 6</button>
+        <button class="tab" onclick="showGraph(7)">Graph 7</button>
+        <button class="tab" onclick="showGraph(8)">Graph 8</button>
+        <button class="tab" onclick="showGraph(9)">Graph 9</button>
+        <button class="tab" onclick="showGraph(10)">Graph 10</button>
+    </div>
+
+    <div id="graph1" class="graph-container active">
+        <div class="graph-info">
+            <h2>Graph 1 - Complex Warehouse Layout</h2>
+            <p>17 nodes, 27 edges | Zone: 20×30</p>
+        </div>
+        <object data="output/graph1_visualization.svg" type="image/svg+xml" width="1200" height="900">
             Your browser doesn't support SVG
         </object>
     </div>
+
+    <div id="graph2" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 2 - Symmetric Distribution</h2>
+            <p>12 nodes, 15 edges | Zone: 25×20</p>
+        </div>
+        <object data="output/graph2_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <div id="graph3" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 3 - Large Scale Network</h2>
+            <p>20 nodes, 28 edges | Zone: 30×25</p>
+        </div>
+        <object data="output/graph3_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <div id="graph4" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 4 - Medium Warehouse Layout</h2>
+            <p>22 nodes, 35 edges | Zone: 35×28</p>
+        </div>
+        <object data="output/graph4_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <div id="graph5" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 5 - Dense Distribution Network</h2>
+            <p>28 nodes, 48 edges | Zone: 40×35</p>
+        </div>
+        <object data="output/graph5_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <div id="graph6" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 6 - Expanded Warehouse</h2>
+            <p>32 nodes, 56 edges | Zone: 45×40</p>
+        </div>
+        <object data="output/graph6_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <div id="graph7" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 7 - Multi-Level Complex</h2>
+            <p>38 nodes, 68 edges | Zone: 50×45</p>
+        </div>
+        <object data="output/graph7_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <div id="graph8" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 8 - Large Scale Facility</h2>
+            <p>42 nodes, 78 edges | Zone: 55×50</p>
+        </div>
+        <object data="output/graph8_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <div id="graph9" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 9 - Mega Distribution Center</h2>
+            <p>46 nodes, 88 edges | Zone: 60×52</p>
+        </div>
+        <object data="output/graph9_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <div id="graph10" class="graph-container">
+        <div class="graph-info">
+            <h2>Graph 10 - Maximum Complexity Warehouse</h2>
+            <p>50 nodes, 95 edges | Zone: 65×55</p>
+        </div>
+        <object data="output/graph10_visualization.svg" type="image/svg+xml" width="1200" height="900">
+            Your browser doesn't support SVG
+        </object>
+    </div>
+
+    <script>
+        function showGraph(num) {
+            // Hide all graphs
+            document.querySelectorAll('.graph-container').forEach(container => {
+                container.classList.remove('active');
+            });
+            
+            // Remove active from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected graph
+            document.getElementById('graph' + num).classList.add('active');
+            
+            // Activate selected tab
+            document.querySelectorAll('.tab')[num - 1].classList.add('active');
+        }
+    </script>
 </body>
 </html>
