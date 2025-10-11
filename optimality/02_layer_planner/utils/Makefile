@@ -5,6 +5,9 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 SRCDIR = src
 BUILDDIR = build
 
+# Set MECALUX_ROOT to workspace root (two levels up from utils/)
+export MECALUX_ROOT := $(shell cd ../..; pwd)
+
 # Binaries
 GENERATORS = generate_tasks_graph1 generate_tasks_graph2
 
@@ -42,6 +45,16 @@ help:
 	@echo "  make clean        - Remove build/ and generated test files"
 	@echo "  make help         - Show this help message"
 	@echo ""
+	@echo "Environment Variables:"
+	@echo "  MECALUX_ROOT      - Set to workspace root for absolute paths"
+	@echo "                      (automatically set during build)"
+	@echo ""
 	@echo "Usage examples:"
-	@echo "  ./build/generate_tasks_graph1 10 15        # 10 cases, 15 tasks each"
-	@echo "  ./build/generate_tasks_graph1 -i 10 10 10  # 10 cases: 10, 20, ..., 100 tasks"
+	@echo "  From workspace root:"
+	@echo "    export MECALUX_ROOT=\$$(pwd)"
+	@echo "    ./optimality/02_layer_planner/utils/build/generate_tasks_graph1 10 15"
+	@echo "    ./optimality/02_layer_planner/utils/build/generate_tasks_graph1 -i 10 10 10"
+	@echo ""
+	@echo "  From utils/ directory:"
+	@echo "    ./build/generate_tasks_graph1 10 15        # Uses relative paths"
+	@echo "    ./build/generate_tasks_graph2 -i 10 5 5    # 10 cases: 5, 10, ..., 50 tasks"

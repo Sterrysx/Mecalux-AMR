@@ -4,12 +4,21 @@
 #include <random>
 #include <string>
 #include <ctime>
+#include <cstdlib>
 using namespace std;
 
 // Node type identifiers for graph2
 const vector<int> PICKUP_NODES = {2, 3, 4, 5};      // P nodes
 const vector<int> DROPOFF_NODES = {6, 7, 8, 9};     // D nodes
 const int NUM_NODES = 11;  // Total nodes in graph2
+
+string getOutputDirectory() {
+    const char* mecaluxRoot = getenv("MECALUX_ROOT");
+    if (mecaluxRoot != nullptr) {
+        return string(mecaluxRoot) + "/optimality/02_layer_planner/tests/graph2";
+    }
+    return "../../tests/graph2";
+}
 
 void printUsage(const char* progname) {
     cerr << "Usage: " << progname << " <num_cases> <packets_per_case> [seed]" << endl;
@@ -27,8 +36,9 @@ void printUsage(const char* progname) {
     cerr << "  increment        : Increment per case (e.g., 10)" << endl;
     cerr << "  seed             : Random seed (optional, default: current time)" << endl;
     cerr << endl;
-    cerr << "Output: Generates files in ../../tests/graph2/" << endl;
+    cerr << "Output: Generates files in tests/graph2/" << endl;
     cerr << "        Format: graph2_caseN.inp (N = 1 to num_cases)" << endl;
+    cerr << "        Uses MECALUX_ROOT env var if set, otherwise relative path" << endl;
     cerr << endl;
     cerr << "Examples:" << endl;
     cerr << "  " << progname << " 10 15           # 10 cases with 15 packets each" << endl;
@@ -100,11 +110,14 @@ int main(int argc, char* argv[]) {
         cout << "Packets per case: " << packetsPerCase << endl;
     }
     cout << "Random seed: " << seed << endl;
-    cout << "Output directory: ../../tests/graph2/" << endl;
+    
+    string outputDir = getOutputDirectory();
+    cout << "Output directory: " << outputDir << "/" << endl;
     cout << endl;
     
-    // Create output directory (Linux/Unix command)
-    system("mkdir -p ../../tests/graph2");
+    // Create output directory
+    string mkdirCmd = "mkdir -p " + outputDir;
+    system(mkdirCmd.c_str());
     
     // Initialize random number generator
     mt19937 rng(seed);
@@ -115,7 +128,7 @@ int main(int argc, char* argv[]) {
     for (int caseNum = 1; caseNum <= numCases; caseNum++) {
         int currentPackets = incrementalMode ? (startPackets + (caseNum - 1) * increment) : packetsPerCase;
 
-        string filename = "../../tests/graph2/graph2_case" + to_string(caseNum) + ".inp";
+        string filename = outputDir + "/graph2_case" + to_string(caseNum) + ".inp";
         ofstream outFile(filename);
         
         if (!outFile.is_open()) {

@@ -4,12 +4,23 @@
 #include <random>
 #include <string>
 #include <ctime>
+#include <cstdlib>
 using namespace std;
 
 // Node type identifiers for graph1
 const vector<int> PICKUP_NODES = {2, 3, 4, 5};      // P nodes
 const vector<int> DROPOFF_NODES = {11, 12, 13};     // D nodes
 const int NUM_NODES = 17;  // Total nodes in graph1
+
+string getOutputDirectory() {
+    // Check if MECALUX_ROOT environment variable is set
+    const char* rootEnv = getenv("MECALUX_ROOT");
+    if (rootEnv != nullptr) {
+        return string(rootEnv) + "/optimality/02_layer_planner/tests/graph1";
+    }
+    // Fallback to relative path from utils/build/
+    return "../../tests/graph1";
+}
 
 void printUsage(const char* progname) {
     cerr << "Usage: " << progname << " <num_cases> <packets_per_case> [seed]" << endl;
@@ -27,8 +38,9 @@ void printUsage(const char* progname) {
     cerr << "  increment        : Increment per case (e.g., 10)" << endl;
     cerr << "  seed             : Random seed (optional, default: current time)" << endl;
     cerr << endl;
-    cerr << "Output: Generates files in ../tests/graph1/" << endl;
+    cerr << "Output: Generates files in tests/graph1/" << endl;
     cerr << "        Format: graph1_caseN.inp (N = 1 to num_cases)" << endl;
+    cerr << "        Uses MECALUX_ROOT env var if set, otherwise relative path" << endl;
     cerr << endl;
     cerr << "Examples:" << endl;
     cerr << "  " << progname << " 10 15           # 10 cases with 15 packets each" << endl;
@@ -100,15 +112,14 @@ int main(int argc, char* argv[]) {
         cout << "Packets per case: " << packetsPerCase << endl;
     }
     cout << "Random seed: " << seed << endl;
-    cout << "Output directory: ../../tests/graph1/" << endl;
+    
+    string outputDir = getOutputDirectory();
+    cout << "Output directory: " << outputDir << "/" << endl;
     cout << endl;
     
     // Create output directory (Cross-platform command)
-#ifdef _WIN32
-    system("if not exist \"..\\..\\tests\\graph1\" mkdir \"..\\..\\tests\\graph1\"");
-#else
-    system("mkdir -p ../../tests/graph1");
-#endif
+    string mkdirCmd = "mkdir -p " + outputDir;
+    system(mkdirCmd.c_str());
     
     // Initialize random number generator
     mt19937 rng(seed);
@@ -119,7 +130,7 @@ int main(int argc, char* argv[]) {
     for (int caseNum = 1; caseNum <= numCases; caseNum++) {
         int currentPackets = incrementalMode ? (startPackets + (caseNum - 1) * increment) : packetsPerCase;
         
-        string filename = "../../tests/graph1/graph1_case" + to_string(caseNum) + ".inp";
+        string filename = outputDir + "/graph1_case" + to_string(caseNum) + ".inp";
         ofstream outFile(filename);
         
         if (!outFile.is_open()) {
