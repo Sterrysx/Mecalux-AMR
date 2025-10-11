@@ -18,8 +18,8 @@ string getOutputDirectory() {
     if (rootEnv != nullptr) {
         return string(rootEnv) + "/optimality/02_layer_planner/tests/graph1";
     }
-    // Fallback to relative path from utils/build/
-    return "../../tests/graph1";
+    // Fallback to relative path from utils/ directory (one level up from build/)
+    return "../tests/graph1";
 }
 
 void printUsage(const char* progname) {

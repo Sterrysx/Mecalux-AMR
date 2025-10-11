@@ -5,10 +5,15 @@ This directory contains utilities for generating random test cases for the layer
 ## Building
 
 ```bash
-make        # Build all generators
+make        # Build generator binaries
 make clean  # Remove build artifacts and generated test files
 make help   # Show detailed help
 ```
+
+The build process creates:
+- **Binary executables**: `build/generate_tasks_graph1`, `build/generate_tasks_graph2`
+
+Note: The Makefile no longer generates wrapper scripts. Use the binaries directly or set `MECALUX_ROOT` for absolute output paths.
 
 ## Generators
 
@@ -24,7 +29,15 @@ Generates test cases for graph2 (11-node graph).
 
 ## Usage
 
-### Fixed Mode
+### Direct Binary Usage
+
+Use the binaries produced in `build/`.
+
+### Direct Binary Usage
+
+If you prefer to use the binaries directly:
+
+#### Fixed Mode
 Generate test cases with a fixed number of tasks per case:
 
 ```bash
@@ -37,7 +50,7 @@ Generate test cases with a fixed number of tasks per case:
 ./build/generate_tasks_graph1 5 20 42      # 5 cases with 20 tasks, seed=42
 ```
 
-### Incremental Mode
+#### Incremental Mode
 Generate test cases with incrementing number of tasks:
 
 ```bash
@@ -52,31 +65,27 @@ Generate test cases with incrementing number of tasks:
 
 ## Output Paths
 
-The generators support two modes for determining output paths:
+The generators use the `MECALUX_ROOT` environment variable to determine output paths:
 
-1. **With MECALUX_ROOT environment variable** (recommended for scripts):
-   - Files are written to absolute path: `$MECALUX_ROOT/optimality/02_layer_planner/tests/graphN/`
-   - This works regardless of where you run the generator from
+- **Direct binaries**: If `MECALUX_ROOT` is set, files are written to `$MECALUX_ROOT/optimality/02_layer_planner/tests/graphN/` regardless of current working directory.
+- If `MECALUX_ROOT` is not set, binaries fall back to `../../tests/graphN/` (this only works correctly when run from the `utils/` directory).
 
-2. **Without MECALUX_ROOT** (fallback):
-   - Files are written to relative path: `../../tests/graphN/`
-   - Only works correctly when run from the `utils/` directory
+### Recommended Approach
 
-### Recommended Usage from Workspace Root
+Either:
+
+1. Run binaries from the `utils/` directory (uses relative paths):
 
 ```bash
-# From /path/to/Mecalux-AMR
-export MECALUX_ROOT=$(pwd)
-./optimality/02_layer_planner/utils/build/generate_tasks_graph1 -i 10 10 10
-./optimality/02_layer_planner/utils/build/generate_tasks_graph2 -i 10 10 10
+cd optimality/02_layer_planner/utils
+./build/generate_tasks_graph1 10 15
 ```
 
-### Usage from utils/ Directory
+2. Or set `MECALUX_ROOT` (recommended) and run from anywhere:
 
 ```bash
-# From /path/to/Mecalux-AMR/optimality/02_layer_planner/utils
-./build/generate_tasks_graph1 10 15
-./build/generate_tasks_graph2 10 15
+export MECALUX_ROOT=$(pwd)
+./optimality/02_layer_planner/utils/build/generate_tasks_graph1 -i 10 10 19 179
 ```
 
 ## Output Format

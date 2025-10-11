@@ -8,7 +8,7 @@
 using namespace std;
 
 const int NUM_ROBOTS = 2;
-const string DEFAULT_GRAPH = "../01_layer_mapping/distributions/graph1.inp";
+const string DEFAULT_GRAPH = "../01_layer_mapping/tests/distributions/graph1.inp";
 const int DEFAULT_ALGORITHM = 1;
 
 void usage(const char* progname) {
@@ -16,7 +16,7 @@ void usage(const char* progname) {
     cerr << endl;
     cerr << "Arguments:" << endl;
     cerr << "  graph_number  : Number from 1-10 (default: 1)" << endl;
-    cerr << "                  Loads from ../01_layer_mapping/distributions/graphN.inp" << endl;
+    cerr << "                  Loads from ../01_layer_mapping/tests/distributions/graphN.inp" << endl;
     cerr << "  algorithm     : Algorithm selection (default: 1)" << endl;
     cerr << "                  0 = Interactive mode" << endl;
     cerr << "                  1-4 = Direct algorithm selection" << endl;
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Construct graph file path
-    string graphFile = "../01_layer_mapping/distributions/graph" + 
+    string graphFile = "../01_layer_mapping/tests/distributions/graph" + 
                        to_string(graphNumber) + ".inp";
     
     cout << "=== Layer 02: Planner ===" << endl;

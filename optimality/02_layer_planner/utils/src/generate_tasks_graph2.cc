@@ -17,7 +17,8 @@ string getOutputDirectory() {
     if (mecaluxRoot != nullptr) {
         return string(mecaluxRoot) + "/optimality/02_layer_planner/tests/graph2";
     }
-    return "../../tests/graph2";
+    // Fallback to relative path from utils/ directory (one level up from build/)
+    return "../tests/graph2";
 }
 
 void printUsage(const char* progname) {
