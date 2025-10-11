@@ -144,16 +144,15 @@ const Graph::Node* Graph::getNode(int nodeId) const {
 
 // Get all edges from a node
 const std::vector<Graph::Edge>& Graph::getEdges(int nodeId) const {
-    static const std::vector<Edge> emptyVector;
     static std::vector<Edge> result;
     
     auto it = adjacencyList.find(nodeId);
     if (it != adjacencyList.end()) {
         result.clear();
         result.insert(result.end(), it->second.begin(), it->second.end());
-        return result;
+
     }
-    return emptyVector;
+    return result;
 }
 
 // Get number of vertices
