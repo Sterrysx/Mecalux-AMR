@@ -8,9 +8,11 @@
 #include <iostream>
 #include <string>
 #include <queue>
+#include <memory>
 #include "Graph.hh"
 #include "Robot.hh"
 #include "Task.hh"
+#include "Algorithm.hh"
 using namespace std;
 
 //Where node is 
@@ -38,9 +40,12 @@ public:
     void setChargingRobots(int num);
     void setPendingTasks(int num);
 
+    // Strategy Pattern: Set the planning algorithm
+    void setAlgorithm(unique_ptr<Algorithm> algorithm);
+
     // Planning methods
-    void plan(int algorithm = 0);  // 0 = interactive, 1-4 = direct selection
-    void bruteforce_algorithm();   // Brute force planning algorithm
+    void plan(int algorithmChoice = 0);  // 0 = interactive, 1-4 = direct selection
+    void executePlan();                  // Execute the currently set algorithm
 
 
 private:
@@ -50,6 +55,9 @@ private:
     queue<Robot> chargingRobots;
     const int totalRobots;
     queue<Task> pendingTasks;
+    
+    // Strategy Pattern: Current planning algorithm
+    unique_ptr<Algorithm> currentAlgorithm;
 };
 
 #endif // PLANIFIER_H

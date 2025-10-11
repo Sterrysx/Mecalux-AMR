@@ -10,8 +10,14 @@ GRAPH_INC = $(GRAPH_DIR)/include
 GRAPH_SRC = $(GRAPH_DIR)/src
 
 # Source files
-SOURCES = $(SRCDIR)/Planifier.cc $(SRCDIR)/Robot.cc $(SRCDIR)/Task.cc $(GRAPH_SRC)/Graph.cc main.cc
-OBJECTS = $(BUILDDIR)/Planifier.o $(BUILDDIR)/Robot.o $(BUILDDIR)/Task.o $(BUILDDIR)/Graph.o $(BUILDDIR)/main.o
+SOURCES = $(SRCDIR)/Planifier.cc $(SRCDIR)/Robot.cc $(SRCDIR)/Task.cc \
+          $(SRCDIR)/BruteForceAlgorithm.cc $(SRCDIR)/GreedyAlgorithm.cc \
+          $(SRCDIR)/PriorityAlgorithm.cc $(SRCDIR)/HybridAlgorithm.cc \
+          $(GRAPH_SRC)/Graph.cc main.cc
+OBJECTS = $(BUILDDIR)/Planifier.o $(BUILDDIR)/Robot.o $(BUILDDIR)/Task.o \
+          $(BUILDDIR)/BruteForceAlgorithm.o $(BUILDDIR)/GreedyAlgorithm.o \
+          $(BUILDDIR)/PriorityAlgorithm.o $(BUILDDIR)/HybridAlgorithm.o \
+          $(BUILDDIR)/Graph.o $(BUILDDIR)/main.o
 
 # Target executable
 TARGET = planner
@@ -28,7 +34,7 @@ $(TARGET): $(BUILDDIR) $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
 
 # Compile Planifier.cc
-$(BUILDDIR)/Planifier.o: $(SRCDIR)/Planifier.cc $(INCDIR)/Planifier.hh $(INCDIR)/Task.hh $(GRAPH_INC)/Graph.hh $(INCDIR)/Robot.hh | $(BUILDDIR)
+$(BUILDDIR)/Planifier.o: $(SRCDIR)/Planifier.cc $(INCDIR)/Planifier.hh $(INCDIR)/Algorithm.hh $(INCDIR)/Task.hh $(GRAPH_INC)/Graph.hh $(INCDIR)/Robot.hh | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/Planifier.cc -o $(BUILDDIR)/Planifier.o
 
 # Compile Robot.cc
@@ -38,6 +44,19 @@ $(BUILDDIR)/Robot.o: $(SRCDIR)/Robot.cc $(INCDIR)/Robot.hh | $(BUILDDIR)
 # Compile Task.cc
 $(BUILDDIR)/Task.o: $(SRCDIR)/Task.cc $(INCDIR)/Task.hh | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $(SRCDIR)/Task.cc -o $(BUILDDIR)/Task.o
+
+# Compile Algorithm implementations
+$(BUILDDIR)/BruteForceAlgorithm.o: $(SRCDIR)/BruteForceAlgorithm.cc $(INCDIR)/BruteForceAlgorithm.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/BruteForceAlgorithm.cc -o $(BUILDDIR)/BruteForceAlgorithm.o
+
+$(BUILDDIR)/GreedyAlgorithm.o: $(SRCDIR)/GreedyAlgorithm.cc $(INCDIR)/GreedyAlgorithm.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/GreedyAlgorithm.cc -o $(BUILDDIR)/GreedyAlgorithm.o
+
+$(BUILDDIR)/PriorityAlgorithm.o: $(SRCDIR)/PriorityAlgorithm.cc $(INCDIR)/PriorityAlgorithm.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/PriorityAlgorithm.cc -o $(BUILDDIR)/PriorityAlgorithm.o
+
+$(BUILDDIR)/HybridAlgorithm.o: $(SRCDIR)/HybridAlgorithm.cc $(INCDIR)/HybridAlgorithm.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/HybridAlgorithm.cc -o $(BUILDDIR)/HybridAlgorithm.o
 
 # Compile Graph.cc from 01_layer_mapping
 $(BUILDDIR)/Graph.o: $(GRAPH_SRC)/Graph.cc $(GRAPH_INC)/Graph.hh | $(BUILDDIR)
