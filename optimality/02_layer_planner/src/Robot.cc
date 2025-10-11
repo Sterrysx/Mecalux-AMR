@@ -21,6 +21,7 @@ int Robot::getCurrentTask() const { return currentTask; }
 float Robot::getMaxSpeed() const { return maxSpeed; }
 float Robot::getLoadCapacity() const { return static_cast<float>(loadCapacity); }
 bool Robot::getAvailability() const { return currentTask!=-1; }
+double Robot::getAlpha() const { return alpha; }
 
 // Setters
 void Robot::setPosition(const pair<double, double>& pos) { position = pos; }

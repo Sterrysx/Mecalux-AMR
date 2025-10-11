@@ -1,0 +1,16 @@
+1
+1
+../01_layer_mapping/tests/distributions/graph1.inp
+tests/graph1/battery_test_tasks.inp
+1 0 0 25 1.6 100
+10
+0 2 11
+1 4 11
+2 4 11
+3 2 11
+4 3 13
+5 2 11
+6 4 12
+7 2 13
+8 2 13
+9 3 12

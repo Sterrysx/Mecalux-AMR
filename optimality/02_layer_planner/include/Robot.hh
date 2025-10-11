@@ -25,6 +25,7 @@ public:
     float getMaxSpeed() const;
     float getLoadCapacity() const;
     bool getAvailability() const;
+    double getAlpha() const;
 
     // Setters
     void setPosition(const std::pair<double, double>& pos);
@@ -41,7 +42,8 @@ private:
     int currentTask;
     float maxSpeed;
     int loadCapacity;
-    const int batteryLifeSpan = 3600;    
+    const int batteryLifeSpan = 100; // Battery life span in seconds
+    const int batteryRechargeTime = 20; // Battery time to recharge from 0% to 100% in seconds
     const double alpha = 2;
 };
 

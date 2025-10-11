@@ -39,6 +39,9 @@ public:
         const Graph& graph
     );
 
+    // Helper method to get the charging node from the graph
+    int getChargingNodeId(const Graph& graph);
+
     // Recursive function to find the best assignment using backtracking.
     void findBestAssignment(
         int taskIndex,
