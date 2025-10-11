@@ -254,7 +254,6 @@ void DynamicProgramming::execute(
         Robot robot = robotsVec[i];
         if (!bestState.assignment[i].empty()) {
             robot.setCurrentTask(bestState.assignment[i][0].getTaskId());
-            robot.setAvailability(false);
             busyRobots.push(robot);
         } else {
             availableRobots.push(robot);

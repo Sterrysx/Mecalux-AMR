@@ -13,17 +13,17 @@ using namespace std;
 // Constructor
 Graph::Graph() : numVertices(0), nextNodeId(0) {
     // Initialize empty graph
-    std::cout << "Graph constructor called" << std::endl;
+    cout << "Graph constructor called" << endl;
 }
 
 // Destructor
 Graph::~Graph() {
-    std::cout << "Graph destructor called" << std::endl;
+    cout << "Graph destructor called" << endl;
 }
 
 
 // Load graph from input stream (optimized - no temporary objects)
-void Graph::loadFromStream(std::istream& in) {
+void Graph::loadFromStream(istream& in) {
     int num_vertices, num_edges;
     pair<int, int> mapSize;
     in >> num_vertices >> num_edges >> mapSize.first >> mapSize.second;
@@ -94,7 +94,7 @@ int Graph::addNode(int nodeId, NodeType type, double x, double y) {
     
     // Initialize empty set of edges for this node if it doesn't exist
     if (adjacencyList.find(nodeId) == adjacencyList.end()) {
-        adjacencyList[nodeId] = std::set<Edge>();
+        adjacencyList[nodeId] = set<Edge>();
     }
     
     numVertices++;
@@ -119,7 +119,7 @@ bool Graph::addEdge(int fromNodeId, int toNodeId, double distance, double speed)
         if (fromNode && toNode) {
             double dx = fromNode->coordinates.first - toNode->coordinates.first;
             double dy = fromNode->coordinates.second - toNode->coordinates.second;
-            distance = std::sqrt(dx * dx + dy * dy);
+            distance = sqrt(dx * dx + dy * dy);
         }
     }
     
@@ -143,8 +143,8 @@ const Graph::Node* Graph::getNode(int nodeId) const {
 }
 
 // Get all edges from a node
-const std::vector<Graph::Edge>& Graph::getEdges(int nodeId) const {
-    static std::vector<Edge> result;
+const vector<Graph::Edge>& Graph::getEdges(int nodeId) const {
+    static vector<Edge> result;
     
     auto it = adjacencyList.find(nodeId);
     if (it != adjacencyList.end()) {
@@ -161,10 +161,10 @@ int Graph::getNumVertices() const {
 }
 
 // Load graph from file
-bool Graph::loadFromFile(const std::string& filename) {
-    std::ifstream file(filename);
+bool Graph::loadFromFile(const string& filename) {
+    ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "Error: Cannot open file " << filename << std::endl;
+        cerr << "Error: Cannot open file " << filename << endl;
         return false;
     }
     
@@ -174,35 +174,35 @@ bool Graph::loadFromFile(const std::string& filename) {
     numVertices = 0;
     nextNodeId = 0;
     
-    std::string line;
+    string line;
     
     // Read first line: numVertices, numEdges, width, height
-    if (!std::getline(file, line)) {
-        std::cerr << "Error: Cannot read header line" << std::endl;
+    if (!getline(file, line)) {
+        cerr << "Error: Cannot read header line" << endl;
         return false;
     }
     
-    std::istringstream headerStream(line);
+    istringstream headerStream(line);
     int expectedVertices, expectedEdges, width, height;
     headerStream >> expectedVertices >> expectedEdges >> width >> height;
     
-    std::cout << "Loading graph: " << expectedVertices << " vertices, " 
-              << expectedEdges << " edges, zone: " << width << "x" << height << std::endl;
+    cout << "Loading graph: " << expectedVertices << " vertices, " 
+              << expectedEdges << " edges, zone: " << width << "x" << height << endl;
     
     // Skip empty line
-    std::getline(file, line);
+    getline(file, line);
     
     // Read vertices
     for (int i = 0; i < expectedVertices; i++) {
-        if (!std::getline(file, line)) {
-            std::cerr << "Error: Cannot read vertex " << i << std::endl;
+        if (!getline(file, line)) {
+            cerr << "Error: Cannot read vertex " << i << endl;
             return false;
         }
         
-        std::istringstream vertexStream(line);
+        istringstream vertexStream(line);
         int nodeId;
         double x, y;
-        std::string typeStr;
+        string typeStr;
         
         vertexStream >> nodeId >> x >> y >> typeStr;
         
@@ -212,30 +212,30 @@ bool Graph::loadFromFile(const std::string& filename) {
         
         addNode(nodeId, type, x, y);
         
-        std::cout << "Added node " << nodeId << " at (" << x << ", " << y 
-                  << ") type: " << typeStr << std::endl;
+        cout << "Added node " << nodeId << " at (" << x << ", " << y 
+                  << ") type: " << typeStr << endl;
     }
     
     // Skip empty line before edges
-    std::getline(file, line);
+    getline(file, line);
     
     // Read edges
     int edgeCount = 0;
-    while (std::getline(file, line) && !line.empty()) {
-        std::istringstream edgeStream(line);
+    while (getline(file, line) && !line.empty()) {
+        istringstream edgeStream(line);
         int fromNode, toNode;
         edgeStream >> fromNode >> toNode;
         
         if (addEdge(fromNode, toNode)) {
             edgeCount++;
-            std::cout << "Added edge: " << fromNode << " <-> " << toNode << std::endl;
+            cout << "Added edge: " << fromNode << " <-> " << toNode << endl;
         } else {
-            std::cerr << "Warning: Failed to add edge " << fromNode << " <-> " << toNode << std::endl;
+            cerr << "Warning: Failed to add edge " << fromNode << " <-> " << toNode << endl;
         }
     }
     
-    std::cout << "Successfully loaded " << numVertices << " vertices and " 
-              << edgeCount << " edges" << std::endl;
+    cout << "Successfully loaded " << numVertices << " vertices and " 
+              << edgeCount << " edges" << endl;
     
     file.close();
     return true;
@@ -243,43 +243,43 @@ bool Graph::loadFromFile(const std::string& filename) {
 
 // Print graph information (for debugging)
 void Graph::printGraph() const {
-    std::cout << "\n=== GRAPH SUMMARY ===" << std::endl;
-    std::cout << "Total vertices: " << numVertices << std::endl;
+    cout << "\n=== GRAPH SUMMARY ===" << endl;
+    cout << "Total vertices: " << numVertices << endl;
     
     for (const auto& [nodeId, node] : nodes) {
-        std::cout << "\nNode " << nodeId << ": ";
+        cout << "\nNode " << nodeId << ": ";
         
         // Print node type
         switch (node.type) {
-            case NodeType::Waypoint: std::cout << "Waypoint"; break;
-            case NodeType::Charging: std::cout << "Charging"; break;
-            case NodeType::AFK: std::cout << "AFK"; break;
-            case NodeType::Pickup: std::cout << "Pickup"; break;
-            case NodeType::Dropoff: std::cout << "Dropoff"; break;
-            case NodeType::ObstacleCorner: std::cout << "ObstacleCorner"; break;
-            case NodeType::ForbiddenCorner: std::cout << "ForbiddenCorner"; break;
+            case NodeType::Waypoint: cout << "Waypoint"; break;
+            case NodeType::Charging: cout << "Charging"; break;
+            case NodeType::AFK: cout << "AFK"; break;
+            case NodeType::Pickup: cout << "Pickup"; break;
+            case NodeType::Dropoff: cout << "Dropoff"; break;
+            case NodeType::ObstacleCorner: cout << "ObstacleCorner"; break;
+            case NodeType::ForbiddenCorner: cout << "ForbiddenCorner"; break;
         }
         
-        std::cout << " at (" << node.coordinates.first << ", " << node.coordinates.second << ")" << std::endl;
+        cout << " at (" << node.coordinates.first << ", " << node.coordinates.second << ")" << endl;
         
         // Print edges - Fixed access to adjacencyList
         auto edgeIt = adjacencyList.find(nodeId);
         if (edgeIt != adjacencyList.end() && !edgeIt->second.empty()) {
-            std::cout << "  Connections: ";
+            cout << "  Connections: ";
             for (const auto& edge : edgeIt->second) {
-                std::cout << edge.nodeDestinationId << "(d:" << edge.distance << ") ";
+                cout << edge.nodeDestinationId << "(d:" << edge.distance << ") ";
             }
-            std::cout << std::endl;
+            cout << endl;
         }
     }
-    std::cout << "===================" << std::endl;
+    cout << "===================" << endl;
 }
 
 // Generate SVG visualization of the graph
-bool Graph::generateSVG(const std::string& filename, int width, int height) const {
-    std::ofstream file(filename);
+bool Graph::generateSVG(const string& filename, int width, int height) const {
+    ofstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "Error: Cannot create SVG file " << filename << std::endl;
+        cerr << "Error: Cannot create SVG file " << filename << endl;
         return false;
     }
     
@@ -293,10 +293,10 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
             minY = maxY = node.coordinates.second;
             first = false;
         } else {
-            minX = std::min(minX, node.coordinates.first);
-            maxX = std::max(maxX, node.coordinates.first);
-            minY = std::min(minY, node.coordinates.second);
-            maxY = std::max(maxY, node.coordinates.second);
+            minX = min(minX, node.coordinates.first);
+            maxX = max(maxX, node.coordinates.first);
+            minY = min(minY, node.coordinates.second);
+            maxY = max(maxY, node.coordinates.second);
         }
     }
     
@@ -311,7 +311,7 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
     // Calculate scale
     double scaleX = (width - 2 * padding) / rangeX;
     double scaleY = (height - 2 * padding) / rangeY;
-    double scale = std::min(scaleX, scaleY);
+    double scale = min(scaleX, scaleY);
     
     // Lambda to transform coordinates
     auto transformX = [&](double x) {
@@ -363,7 +363,7 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
     
     // Draw edges first (so they appear behind nodes)
     file << "<g id=\"edges\">\n";
-    std::set<std::pair<int, int>> drawnEdges; // Track drawn edges to avoid duplicates
+    set<pair<int, int>> drawnEdges; // Track drawn edges to avoid duplicates
     
     for (const auto& [nodeId, node] : nodes) {
         double x1 = transformX(node.coordinates.first);
@@ -375,7 +375,7 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
                 int destId = edge.nodeDestinationId;
                 
                 // Only draw each edge once (for undirected graph)
-                auto edgePair = std::make_pair(std::min(nodeId, destId), std::max(nodeId, destId));
+                auto edgePair = make_pair(min(nodeId, destId), max(nodeId, destId));
                 if (drawnEdges.count(edgePair)) continue;
                 drawnEdges.insert(edgePair);
                 
@@ -393,7 +393,7 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
                     double midY = (y1 + y2) / 2;
                     file << "<text x=\"" << midX << "\" y=\"" << midY 
                          << "\" font-family=\"Arial\" font-size=\"10\" fill=\"#64748b\" "
-                         << "text-anchor=\"middle\">" << std::fixed << std::setprecision(1) 
+                         << "text-anchor=\"middle\">" << fixed << setprecision(1) 
                          << edge.distance << "</text>\n";
                 }
             }
@@ -406,7 +406,7 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
     for (const auto& [nodeId, node] : nodes) {
         double x = transformX(node.coordinates.first);
         double y = transformY(node.coordinates.second);
-        std::string color = getNodeColor(node.type);
+        string color = getNodeColor(node.type);
         
         // Draw node circle
         file << "<circle cx=\"" << x << "\" cy=\"" << y << "\" r=\"20\" "
@@ -440,7 +440,7 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
     file << "<text x=\"" << legendX + 10 << "\" y=\"" << legendY + 20 
          << "\" font-family=\"Arial\" font-size=\"12\" font-weight=\"bold\">Legend</text>\n";
     
-    std::vector<std::pair<NodeType, std::string>> legendItems = {
+    vector<pair<NodeType, string>> legendItems = {
         {NodeType::Charging, "Charging"},
         {NodeType::Pickup, "Pickup"},
         {NodeType::Dropoff, "Dropoff"},
@@ -462,6 +462,6 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
     file << "</svg>\n";
     file.close();
     
-    std::cout << "SVG visualization saved to: " << filename << std::endl;
+    cout << "SVG visualization saved to: " << filename << endl;
     return true;
 }
