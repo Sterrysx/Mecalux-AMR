@@ -22,6 +22,9 @@ float Robot::getMaxSpeed() const { return maxSpeed; }
 float Robot::getLoadCapacity() const { return static_cast<float>(loadCapacity); }
 bool Robot::getAvailability() const { return currentTask!=-1; }
 double Robot::getAlpha() const { return alpha; }
+int Robot::getBatteryLifeSpan() const { return batteryLifeSpan; }
+int Robot::getBatteryRechargeTime() const { return batteryRechargeTime; }
+double Robot::getBatteryRechargeRate() const { return 100.0 / batteryRechargeTime; } // % per second
 
 // Setters
 void Robot::setPosition(const pair<double, double>& pos) { position = pos; }

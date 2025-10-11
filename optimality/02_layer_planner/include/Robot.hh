@@ -26,6 +26,9 @@ public:
     float getLoadCapacity() const;
     bool getAvailability() const;
     double getAlpha() const;
+    int getBatteryLifeSpan() const;
+    int getBatteryRechargeTime() const;
+    double getBatteryRechargeRate() const; // Returns percentage per second
 
     // Setters
     void setPosition(const std::pair<double, double>& pos);
@@ -42,8 +45,8 @@ private:
     int currentTask;
     float maxSpeed;
     int loadCapacity;
-    const int batteryLifeSpan = 100; // Battery life span in seconds
-    const int batteryRechargeTime = 20; // Battery time to recharge from 0% to 100% in seconds
+    const int batteryLifeSpan = 300; // Battery life span in seconds
+    const int batteryRechargeTime = 50; // Battery time to recharge from 0% to 100% in seconds
     const double alpha = 2;
 };
 

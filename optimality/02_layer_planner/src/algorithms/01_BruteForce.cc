@@ -159,7 +159,7 @@ void BruteForce::execute(
 /**
  * @brief Calculates the Euclidean distance between two points.
  */
-double BruteForce::calculateDistance(pair<double, double> pos1, pair<double, double> pos2) {
+double BruteForce::calculateDistance(pair<double, double> pos1, pair<double, double> pos2) const {
     return sqrt(pow(pos2.first - pos1.first, 2) + pow(pos2.second - pos1.second, 2));
 }
 
@@ -178,6 +178,78 @@ int BruteForce::getChargingNodeId(const Graph& graph) {
 }
 
 /**
+ * @brief Calculates battery consumption for a task.
+ */
+BruteForce::TaskBatteryInfo BruteForce::calculateTaskBatteryConsumption(
+    const pair<double, double>& currentPos,
+    const Graph::Node* originNode,
+    const Graph::Node* destNode,
+    double currentBattery,
+    const BatteryConfig& config
+) const {
+    TaskBatteryInfo info;
+    
+    double percentageConsumePerSecond = 100.0 / config.batteryLifeSpan;
+    
+    // Calculate travel to origin (empty robot, uses alpha)
+    info.distanceToOrigin = calculateDistance(currentPos, originNode->coordinates);
+    info.timeToOrigin = info.distanceToOrigin / config.robotSpeed;
+    info.batteryToOrigin = info.timeToOrigin * percentageConsumePerSecond * config.alpha;
+    
+    // Calculate task execution (loaded robot, no alpha)
+    info.distanceForTask = calculateDistance(originNode->coordinates, destNode->coordinates);
+    info.timeForTask = info.distanceForTask / config.robotSpeed;
+    info.batteryForTask = info.timeForTask * percentageConsumePerSecond;
+    
+    // Calculate totals
+    info.totalBatteryNeeded = info.batteryToOrigin + info.batteryForTask;
+    info.batteryAfterTask = currentBattery - info.totalBatteryNeeded;
+    
+    return info;
+}
+
+/**
+ * @brief Checks if battery level requires charging.
+ */
+bool BruteForce::shouldCharge(double batteryAfterTask, double threshold) const {
+    return batteryAfterTask < threshold;
+}
+
+/**
+ * @brief Performs charging operation and updates robot state.
+ */
+void BruteForce::performCharging(
+    pair<double, double>& currentPos,
+    double& currentBattery,
+    double& totalTime,
+    int chargingNodeId,
+    const Graph& graph,
+    const BatteryConfig& config
+) {
+    const Graph::Node* chargingNode = graph.getNode(chargingNodeId);
+    if (!chargingNode) return;
+    
+    double percentageConsumePerSecond = 100.0 / config.batteryLifeSpan;
+    
+    // 1. Travel to charging station
+    double distToCharging = calculateDistance(currentPos, chargingNode->coordinates);
+    double timeToCharging = distToCharging / config.robotSpeed;
+    
+    // Update battery for travel to charging station (without load, uses alpha)
+    currentBattery -= timeToCharging * percentageConsumePerSecond * config.alpha;
+    totalTime += timeToCharging;
+    
+    // 2. Charge battery to full
+    double batteryNeeded = config.fullBattery - currentBattery;
+    double chargingTime = batteryNeeded / config.batteryRechargeRate;
+    currentBattery = config.fullBattery;
+    totalTime += chargingTime;
+    
+    // 3. Update position to charging station
+    currentPos = chargingNode->coordinates;
+}
+
+/**
  * @brief Calculates the makespan (maximum completion time) for a complete assignment.
  * Includes battery management: robots must charge if battery drops below 20%.
  */
@@ -186,17 +258,18 @@ double BruteForce::calculateMakespan(
     vector<Robot>& robots,
     const Graph& graph
 ) {
-    const double ROBOT_SPEED = 1.6; // m/s, as specified
-    const double LOW_BATTERY_THRESHOLD = 20.0; // Battery threshold for charging
-    const double BATTERY_RECHARGE_RATE = 0.5; // 0.5% per second (200 seconds for 0% to 100%)
-    const double FULL_BATTERY = 100.0;
-    double maxTime = 0.0;
-
+    if (robots.empty()) return 0.0;
+    
+    // Get configuration from first robot (all robots should have same config)
+    BatteryConfig config(robots[0]);
+    
     // Get the charging node
     int chargingNodeId = getChargingNodeId(graph);
     if (chargingNodeId == -1) {
         cerr << "Warning: No charging node found in graph. Battery constraints ignored." << endl;
     }
+
+    double maxTime = 0.0;
 
     for (size_t i = 0; i < robots.size(); ++i) {
         double robotTotalTime = 0.0;
@@ -208,69 +281,33 @@ double BruteForce::calculateMakespan(
             const Graph::Node* destNode = graph.getNode(task.getDestinationNode());
 
             if (!originNode || !destNode) {
-                // Should not happen with a valid graph and tasks
                 cerr << "Error: Invalid node ID in task " << task.getTaskId() << endl;
                 continue; 
             }
             
             // Calculate battery consumption for this task
-            const double BATTERY_LIFE_SPAN = robots[i].getBatteryLevel();
-            const double ALPHA = robots[i].getAlpha();
-            double percentageConsumePerSecond = 100.0 / BATTERY_LIFE_SPAN;
-            
-            double distToOrigin = calculateDistance(currentPos, originNode->coordinates);
-            double timeToOrigin = distToOrigin / ROBOT_SPEED;
-            double batteryToOrigin = timeToOrigin * percentageConsumePerSecond * ALPHA;
-            
-            double distTask = calculateDistance(originNode->coordinates, destNode->coordinates);
-            double taskTime = distTask / ROBOT_SPEED;
-            double batteryForTask = taskTime * percentageConsumePerSecond;
-            
-            double totalBatteryNeeded = batteryToOrigin + batteryForTask;
-            double batteryAfterTask = currentBattery - totalBatteryNeeded;
+            TaskBatteryInfo taskInfo = calculateTaskBatteryConsumption(
+                currentPos, originNode, destNode, currentBattery, config
+            );
             
             // Check if doing this task will bring battery below threshold
-            if (chargingNodeId != -1 && batteryAfterTask < LOW_BATTERY_THRESHOLD) {
-                const Graph::Node* chargingNode = graph.getNode(chargingNodeId);
-                if (chargingNode) {
-                    // 1. Travel to charging station
-                    double distToCharging = calculateDistance(currentPos, chargingNode->coordinates);
-                    double timeToCharging = distToCharging / ROBOT_SPEED;
-                    
-                    // Update battery for travel to charging station (without load, so alpha = 2)
-                    currentBattery -= timeToCharging * percentageConsumePerSecond * ALPHA;
-                    robotTotalTime += timeToCharging;
-                    
-                    // 2. Charge battery to full
-                    double batteryNeeded = FULL_BATTERY - currentBattery;
-                    double chargingTime = batteryNeeded / BATTERY_RECHARGE_RATE;
-                    currentBattery = FULL_BATTERY;
-                    robotTotalTime += chargingTime;
-                    
-                    // Update position to charging station
-                    currentPos = chargingNode->coordinates;
-                    
-                    // Recalculate battery consumption for task from charging station
-                    distToOrigin = calculateDistance(currentPos, originNode->coordinates);
-                    timeToOrigin = distToOrigin / ROBOT_SPEED;
-                    batteryToOrigin = timeToOrigin * percentageConsumePerSecond * ALPHA;
-                }
+            if (chargingNodeId != -1 && shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
+                // Perform charging before attempting the task
+                performCharging(currentPos, currentBattery, robotTotalTime, chargingNodeId, graph, config);
+                
+                // Recalculate task battery consumption from charging station
+                taskInfo = calculateTaskBatteryConsumption(
+                    currentPos, originNode, destNode, currentBattery, config
+                );
             }
             
-            // 1. Time from robot's current position to task's origin
-            currentBattery -= batteryToOrigin;
-            robotTotalTime += timeToOrigin;
-            
-            // 2. Time from task's origin to its destination
-            currentBattery -= batteryForTask;
-            robotTotalTime += taskTime;
-
-            // 3. Update robot's position for the next task
+            // Execute task: travel to origin and perform task
+            currentBattery -= taskInfo.totalBatteryNeeded;
+            robotTotalTime += taskInfo.timeToOrigin + taskInfo.timeForTask;
             currentPos = destNode->coordinates;
             
             // Safety check: if battery goes negative, this is an invalid assignment
             if (currentBattery < 0) {
-                // This assignment is infeasible
                 return numeric_limits<double>::max();
             }
         }
@@ -333,13 +370,11 @@ void BruteForce::printBeautifiedAssignment(
     const vector<vector<Task>>& assignment,
     const Graph& graph
 ) {
-    const double ROBOT_SPEED = 1.6; // m/s
-    const double LOW_BATTERY_THRESHOLD = 20.0;
-    const double BATTERY_RECHARGE_RATE = 0.5; // 0.5% per second
-    const double FULL_BATTERY = 100.0;
-    const double BATTERY_LIFE_SPAN = robots[0].getBatteryLevel();
-    const double ALPHA = robots[0].getAlpha();
-
+    if (robots.empty()) return;
+    
+    // Get configuration from first robot
+    BatteryConfig config(robots[0]);
+    
     // Get charging node
     int chargingNodeId = getChargingNodeId(graph);
 
@@ -361,7 +396,6 @@ void BruteForce::printBeautifiedAssignment(
         pair<double, double> currentPos = robot.getPosition();
         double cumulativeTime = 0.0;
         double currentBattery = robot.getBatteryLevel();
-        double percentageConsumePerSecond = 100.0 / BATTERY_LIFE_SPAN;
 
         for (size_t taskIdx = 0; taskIdx < assignment[i].size(); ++taskIdx) {
             const Task& task = assignment[i][taskIdx];
@@ -374,76 +408,63 @@ void BruteForce::printBeautifiedAssignment(
             }
 
             // Calculate battery consumption for this task
-            double distToOrigin = calculateDistance(currentPos, originNode->coordinates);
-            double timeToOrigin = distToOrigin / ROBOT_SPEED;
-            double batteryToOrigin = timeToOrigin * percentageConsumePerSecond * ALPHA;
-            
-            double distTask = calculateDistance(originNode->coordinates, destNode->coordinates);
-            double taskTime = distTask / ROBOT_SPEED;
-            double batteryForTask = taskTime * percentageConsumePerSecond;
-            
-            double totalBatteryNeeded = batteryToOrigin + batteryForTask;
-            double batteryAfterTask = currentBattery - totalBatteryNeeded;
+            TaskBatteryInfo taskInfo = calculateTaskBatteryConsumption(
+                currentPos, originNode, destNode, currentBattery, config
+            );
 
             // Check if robot needs charging before this task
-            if (chargingNodeId != -1 && batteryAfterTask < LOW_BATTERY_THRESHOLD) {
+            if (chargingNodeId != -1 && shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
                 const Graph::Node* chargingNode = graph.getNode(chargingNodeId);
                 if (chargingNode) {
+                    // Display charging decision
                     cout << "│" << endl;
                     cout << "│  ⚡ CHARGING DECISION (Preventive)" << endl;
                     cout << "│    Current battery: " << fixed << setprecision(2) << currentBattery << "%" << endl;
                     cout << "│    Next task (ID " << task.getTaskId() << ") would consume: " 
-                         << fixed << setprecision(2) << totalBatteryNeeded << "%" << endl;
+                         << fixed << setprecision(2) << taskInfo.totalBatteryNeeded << "%" << endl;
                     cout << "│    Battery after task would be: " << fixed << setprecision(2) 
-                         << batteryAfterTask << "% (BELOW " << LOW_BATTERY_THRESHOLD << "% threshold)" << endl;
+                         << taskInfo.batteryAfterTask << "% (BELOW " << config.lowBatteryThreshold << "% threshold)" << endl;
                     cout << "│    Decision: Go to charging station before attempting task" << endl;
                     cout << "│" << endl;
                     
-                    // Travel to charging station
+                    // Calculate charging details for display
                     double distToCharging = calculateDistance(currentPos, chargingNode->coordinates);
-                    double timeToCharging = distToCharging / ROBOT_SPEED;
-                    currentBattery -= timeToCharging * percentageConsumePerSecond * ALPHA;
-                    cumulativeTime += timeToCharging;
+                    double timeToCharging = distToCharging / config.robotSpeed;
+                    double percentageConsumePerSecond = 100.0 / config.batteryLifeSpan;
+                    double batteryOnArrival = currentBattery - (timeToCharging * percentageConsumePerSecond * config.alpha);
+                    double batteryNeeded = config.fullBattery - batteryOnArrival;
+                    double chargingTime = batteryNeeded / config.batteryRechargeRate;
                     
                     cout << "│  ⚡ CHARGING EVENT" << endl;
                     cout << "│    Travel to charging station (Node " << chargingNodeId << "): " 
                          << fixed << setprecision(2) << timeToCharging << "s" << endl;
-                    cout << "│    Battery on arrival: " << fixed << setprecision(2) << currentBattery << "%" << endl;
-                    
-                    // Charge to full
-                    double batteryNeeded = FULL_BATTERY - currentBattery;
-                    double chargingTime = batteryNeeded / BATTERY_RECHARGE_RATE;
-                    currentBattery = FULL_BATTERY;
-                    cumulativeTime += chargingTime;
-                    
+                    cout << "│    Battery on arrival: " << fixed << setprecision(2) << batteryOnArrival << "%" << endl;
                     cout << "│    Charging time: " << fixed << setprecision(2) << chargingTime << "s" << endl;
-                    cout << "│    Battery after charging: " << fixed << setprecision(2) << currentBattery << "%" << endl;
-                    
-                    currentPos = chargingNode->coordinates;
+                    cout << "│    Battery after charging: " << fixed << setprecision(2) << config.fullBattery << "%" << endl;
                     cout << "│" << endl;
                     
-                    // Recalculate from charging station
-                    distToOrigin = calculateDistance(currentPos, originNode->coordinates);
-                    timeToOrigin = distToOrigin / ROBOT_SPEED;
-                    batteryToOrigin = timeToOrigin * percentageConsumePerSecond * ALPHA;
+                    // Perform the charging
+                    performCharging(currentPos, currentBattery, cumulativeTime, chargingNodeId, graph, config);
+                    
+                    // Recalculate task info from charging station
+                    taskInfo = calculateTaskBatteryConsumption(
+                        currentPos, originNode, destNode, currentBattery, config
+                    );
                 }
             }
 
-            // Time to travel to task origin
-            currentBattery -= batteryToOrigin;
-            
-            // Time from task's origin to its destination
-            currentBattery -= batteryForTask;
-            
-            cumulativeTime += timeToOrigin + taskTime;
+            // Execute the task
+            currentBattery -= taskInfo.totalBatteryNeeded;
+            cumulativeTime += taskInfo.timeToOrigin + taskInfo.timeForTask;
 
+            // Display task information
             cout << "│  Task ID " << task.getTaskId() << ":" << endl;
             cout << "│    From: Node " << task.getOriginNode() 
                  << " (" << originNode->coordinates.first << ", " << originNode->coordinates.second << ")" << endl;
             cout << "│    To:   Node " << task.getDestinationNode() 
                  << " (" << destNode->coordinates.first << ", " << destNode->coordinates.second << ")" << endl;
-            cout << "│    Travel to origin: " << fixed << setprecision(2) << timeToOrigin << "s" << endl;
-            cout << "│    Task execution:   " << fixed << setprecision(2) << taskTime << "s" << endl;
+            cout << "│    Travel to origin: " << fixed << setprecision(2) << taskInfo.timeToOrigin << "s" << endl;
+            cout << "│    Task execution:   " << fixed << setprecision(2) << taskInfo.timeForTask << "s" << endl;
             cout << "│    Cumulative time:  " << fixed << setprecision(2) << cumulativeTime << "s" << endl;
             cout << "│    Battery level:    " << fixed << setprecision(2) << currentBattery << "%" << endl;
             

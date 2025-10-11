@@ -30,7 +30,7 @@ public:
     std::string getDescription() const override;
 
     // Calculates the Euclidean distance between two coordinate pairs.
-    double calculateDistance(std::pair<double, double> pos1, std::pair<double, double> pos2);
+    double calculateDistance(std::pair<double, double> pos1, std::pair<double, double> pos2) const;
 
     // Calculates the makespan for a given assignment of tasks to robots.
     double calculateMakespan(
@@ -58,6 +58,57 @@ public:
          std::vector<Robot>& robots,
         const std::vector<std::vector<Task>>& assignment,
         const Graph& graph
+    );
+
+private:
+    // Battery and task computation helper structure
+    struct TaskBatteryInfo {
+        double distanceToOrigin;
+        double timeToOrigin;
+        double batteryToOrigin;
+        double distanceForTask;
+        double timeForTask;
+        double batteryForTask;
+        double totalBatteryNeeded;
+        double batteryAfterTask;
+    };
+
+    // Configuration constants
+    struct BatteryConfig {
+        double lowBatteryThreshold;
+        double fullBattery;
+        double batteryLifeSpan;
+        double batteryRechargeRate;
+        double alpha;
+        double robotSpeed;
+        
+        BatteryConfig(const Robot& robot, double speed = 1.6) 
+            : lowBatteryThreshold(20.0),
+              fullBattery(100.0),
+              batteryLifeSpan(robot.getBatteryLifeSpan()),
+              batteryRechargeRate(robot.getBatteryRechargeRate()),
+              alpha(robot.getAlpha()),
+              robotSpeed(speed) {}
+    };
+
+    // Helper methods to reduce code duplication
+    TaskBatteryInfo calculateTaskBatteryConsumption(
+        const std::pair<double, double>& currentPos,
+        const Graph::Node* originNode,
+        const Graph::Node* destNode,
+        double currentBattery,
+        const BatteryConfig& config
+    ) const;
+
+    bool shouldCharge(double batteryAfterTask, double threshold) const;
+
+    void performCharging(
+        std::pair<double, double>& currentPos,
+        double& currentBattery,
+        double& totalTime,
+        int chargingNodeId,
+        const Graph& graph,
+        const BatteryConfig& config
     );
 };
 
