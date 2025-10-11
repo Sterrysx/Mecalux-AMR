@@ -47,8 +47,7 @@ void Graph::loadFromStream(std::istream& in) {
 }
 
 
-Graph Graph::read_graph() {
-    Graph G;
+void Graph::read_graph() {
     int num_vertices, num_edges;
     pair<int, int> mapSize;
     cin >> num_vertices >> num_edges >> mapSize.first >> mapSize.second;
@@ -59,18 +58,18 @@ Graph Graph::read_graph() {
     string type;
     for (int i = 0; i < num_vertices; i++) {
         cin >> nodeId >> coords.first >> coords.second >> type;
-        G.addNode(nodeId, G.charToNodeType(type[0]), coords.first, coords.second);
+        addNode(nodeId, charToNodeType(type[0]), coords.first, coords.second);
     }
 
     // Read edges
     int fromNode, toNode;
     for (int i = 0; i < num_edges; i++) {
         cin >> fromNode >> toNode;
-        G.addEdge(fromNode, toNode);
-        G.addEdge(toNode, fromNode);
+        addEdge(fromNode, toNode);
+        addEdge(toNode, fromNode);
     }
 
-    return G;
+
 }
 
 
