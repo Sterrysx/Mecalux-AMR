@@ -18,8 +18,9 @@ string getOutputDirectory() {
     if (rootEnv != nullptr) {
         return string(rootEnv) + "/optimality/02_layer_planner/tests/graph1";
     }
-    // Fallback to relative path from utils/ directory (one level up from build/)
-    return "../tests/graph1";
+    // Use absolute path from current working directory
+    // When called from planner, cwd is 02_layer_planner/
+    return "tests/graph1";
 }
 
 void printUsage(const char* progname) {
@@ -39,14 +40,14 @@ void printUsage(const char* progname) {
     cerr << "  seed             : Random seed (optional, default: current time)" << endl;
     cerr << endl;
     cerr << "Output: Generates files in tests/graph1/" << endl;
-    cerr << "        Format: graph1_caseN.inp (N = 1 to num_cases)" << endl;
+    cerr << "        Format: M_tasks.inp (M = number of packets)" << endl;
     cerr << "        Uses MECALUX_ROOT env var if set, otherwise relative path" << endl;
     cerr << endl;
     cerr << "Examples:" << endl;
-    cerr << "  " << progname << " 10 15           # 10 cases with 15 packets each" << endl;
-    cerr << "  " << progname << " 5 20 42         # 5 cases with 20 packets, seed=42" << endl;
-    cerr << "  " << progname << " -i 10 10 10     # 10 cases: 10, 20, 30, ..., 100 packets" << endl;
-    cerr << "  " << progname << " -i 5 5 5 999    # 5 cases: 5, 10, 15, 20, 25 packets, seed=999" << endl;
+    cerr << "  " << progname << " 10 15           # 10 files with 15 packets each (15_tasks.inp)" << endl;
+    cerr << "  " << progname << " 5 20 42         # 5 files with 20 packets (20_tasks.inp), seed=42" << endl;
+    cerr << "  " << progname << " -i 10 10 10     # 10 files: 10_tasks.inp, 20_tasks.inp, ..., 100_tasks.inp" << endl;
+    cerr << "  " << progname << " -i 5 5 5 999    # 5 files: 5_tasks.inp, 10_tasks.inp, ..., 25_tasks.inp, seed=999" << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -130,7 +131,7 @@ int main(int argc, char* argv[]) {
     for (int caseNum = 1; caseNum <= numCases; caseNum++) {
         int currentPackets = incrementalMode ? (startPackets + (caseNum - 1) * increment) : packetsPerCase;
         
-        string filename = outputDir + "/graph1_case" + to_string(caseNum) + ".inp";
+        string filename = outputDir + "/" + to_string(currentPackets) + "_tasks.inp";
         ofstream outFile(filename);
         
         if (!outFile.is_open()) {
@@ -138,7 +139,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         
-        // Write number of packets
+        // Write number of packets (first line is the total count)
         outFile << currentPackets << endl;
         
         // Generate random packets

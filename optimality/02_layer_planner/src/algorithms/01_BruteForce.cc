@@ -18,6 +18,9 @@ string BruteForce::getDescription() const {
 
 // --- Main Method Implementation ---
 
+
+// Let N be the number of Robots and M the number of Tasks
+// The cost is O(N^M)
 void BruteForce::execute(
     const Graph& graph,
     queue<Robot>& availableRobots,

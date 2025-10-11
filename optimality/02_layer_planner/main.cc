@@ -15,7 +15,7 @@ bool fileExists(const string& filename) {
 }
 
 void usage(const char* progname) {
-    cerr << "Usage: " << progname << " [algorithmID] [graphID] [taskID] [numRobots]" << endl;
+    cerr << "Usage: " << progname << " [algorithmID] [graphID] [numTasks] [numRobots]" << endl;
     cerr << "       " << progname << " -h | --help" << endl;
     cerr << endl;
     cerr << "Arguments:" << endl;
@@ -25,19 +25,20 @@ void usage(const char* progname) {
     cerr << "                  3 = Greedy" << endl;
     cerr << "  graphID       : Graph number from 1-10 (default: 1)" << endl;
     cerr << "                  Loads from ../01_layer_mapping/tests/distributions/graphN.inp" << endl;
-    cerr << "  taskID        : Task case number from 1-10 (default: 1)" << endl;
-    cerr << "                  Loads from tests/graphN/graphN_caseM.inp" << endl;
+    cerr << "  numTasks      : Number of tasks (default: 15)" << endl;
+    cerr << "                  Loads from tests/graphN/M_tasks.inp (M = numTasks)" << endl;
+    cerr << "                  If file doesn't exist, generates it automatically with seed=16" << endl;
     cerr << "  numRobots     : Number of robots (default: 2, range: 1-10)" << endl;
     cerr << endl;
     cerr << "Options:" << endl;
     cerr << "  -h, --help    : Show this help message" << endl;
     cerr << endl;
     cerr << "Examples:" << endl;
-    cerr << "  " << progname << "                # Use algorithm 1, graph1, case1, 2 robots" << endl;
-    cerr << "  " << progname << " 2             # Use algorithm 2, graph1, case1, 2 robots" << endl;
-    cerr << "  " << progname << " 1 5           # Use algorithm 1, graph5, case1, 2 robots" << endl;
-    cerr << "  " << progname << " 3 2 5         # Use algorithm 3, graph2, case5, 2 robots" << endl;
-    cerr << "  " << progname << " 1 1 1 4       # Use algorithm 1, graph1, case1, 4 robots" << endl;
+    cerr << "  " << progname << "                # Use algorithm 1, graph1, 15 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " 2             # Use algorithm 2, graph1, 15 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " 1 2           # Use algorithm 1, graph2, 15 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " 3 1 20        # Use algorithm 3, graph1, 20 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " 1 1 10 4      # Use algorithm 1, graph1, 10 tasks, 4 robots" << endl;
     exit(1);
 }
 
@@ -49,6 +50,10 @@ queue<Task> read_tasks(const string& filename) {
         cerr << "Error: Could not open task file " << filename << endl;
         return QT;
     }
+    
+    // Skip the first line (number of tasks)
+    int numTasks;
+    file >> numTasks;
     
     int id, origin, destination;
     while (file >> id >> origin >> destination) {
@@ -69,7 +74,7 @@ int main(int argc, char* argv[]) {
     // Parse command-line arguments with defaults
     int algorithm = 1;    // Default: Brute Force
     int graphID = 1;      // Default: graph1
-    int taskID = 1;       // Default: case1
+    int numTasks = 15;    // Default: 15 tasks
     int numRobots = 2;    // Default: 2 robots
     
     if (argc > 5) {
@@ -95,11 +100,11 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    // Parse taskID
+    // Parse numTasks
     if (argc >= 4) {
-        taskID = atoi(argv[3]);
-        if (taskID < 1 || taskID > 10) {
-            cerr << "Error: taskID must be between 1 and 10" << endl;
+        numTasks = atoi(argv[3]);
+        if (numTasks < 1 || numTasks > 1000) {
+            cerr << "Error: numTasks must be between 1 and 1000" << endl;
             usage(argv[0]);
         }
     }
@@ -116,21 +121,41 @@ int main(int argc, char* argv[]) {
     // Construct file paths
     string graphFile = "../01_layer_mapping/tests/distributions/graph" + 
                        to_string(graphID) + ".inp";
-    string taskFile = "tests/graph" + to_string(graphID) + "/graph" + 
-                      to_string(graphID) + "_case" + to_string(taskID) + ".inp";
+    string taskFile = "tests/graph" + to_string(graphID) + "/" + 
+                      to_string(numTasks) + "_tasks.inp";
     
-    // Verify files exist
+    // Verify graph file exists
     if (!fileExists(graphFile)) {
         cerr << "Error: Graph file does not exist: " << graphFile << endl;
         cerr << "Available graphs are graph1.inp through graph10.inp" << endl;
         return 1;
     }
     
+    // Check if task file exists, if not generate it
     if (!fileExists(taskFile)) {
-        cerr << "Error: Task file does not exist: " << taskFile << endl;
-        cerr << "Available task files for graph" << graphID << " are:" << endl;
-        cerr << "  tests/graph" << graphID << "/graph" << graphID << "_case1.inp through _case10.inp" << endl;
-        return 1;
+        cout << "Task file not found: " << taskFile << endl;
+        cout << "Generating task file with " << numTasks << " tasks (seed=16)..." << endl;
+        
+        // Call the task generator
+        string generatorCmd = "./utils/build/generate_tasks_graph" + to_string(graphID) + 
+                             " 1 " + to_string(numTasks) + " 16";
+        
+        int result = system(generatorCmd.c_str());
+        
+        if (result != 0) {
+            cerr << "Error: Failed to generate task file" << endl;
+            cerr << "Generator command: " << generatorCmd << endl;
+            return 1;
+        }
+        
+        // Verify the file was created
+        if (!fileExists(taskFile)) {
+            cerr << "Error: Task file generation failed" << endl;
+            return 1;
+        }
+        
+        cout << "Task file generated successfully!" << endl;
+        cout << endl;
     }
     
     cout << "=== Layer 02: Planner ===" << endl;
