@@ -3,20 +3,22 @@
 #include <vector>
 #include <string>
 
-void processGraph(const std::string& inputFile, const std::string& outputFile, int graphNum) {
-    std::cout << "\n";
-    std::cout << "========================================" << std::endl;
-    std::cout << "  Processing Graph " << graphNum << std::endl;
-    std::cout << "========================================" << std::endl;
+using namespace std;
+
+void processGraph(const string& inputFile, const string& outputFile, int graphNum) {
+    cout << "\n";
+    cout << "========================================" << endl;
+    cout << "  Processing Graph " << graphNum << endl;
+    cout << "========================================" << endl;
     
     Graph graph;
     
     if (graph.loadFromFile(inputFile)) {
-        std::cout << "\n✓ Graph loaded successfully!" << std::endl;
+        cout << "\n✓ Graph loaded successfully!" << endl;
         
         // Print summary
-        std::cout << "\n--- Quick Summary ---" << std::endl;
-        std::cout << "Total vertices: " << graph.getNumVertices() << std::endl;
+        cout << "\n--- Quick Summary ---" << endl;
+        cout << "Total vertices: " << graph.getNumVertices() << endl;
         
         // Count node types
         int charging = 0, pickup = 0, dropoff = 0, waypoint = 0, afk = 0, forbidden = 0;
@@ -35,35 +37,35 @@ void processGraph(const std::string& inputFile, const std::string& outputFile, i
             }
         }
         
-        std::cout << "  Charging stations: " << charging << std::endl;
-        std::cout << "  Pickup points: " << pickup << std::endl;
-        std::cout << "  Dropoff points: " << dropoff << std::endl;
-        std::cout << "  Waypoints: " << waypoint << std::endl;
-        std::cout << "  AFK zones: " << afk << std::endl;
-        std::cout << "  Forbidden corners: " << forbidden << std::endl;
+        cout << "  Charging stations: " << charging << endl;
+        cout << "  Pickup points: " << pickup << endl;
+        cout << "  Dropoff points: " << dropoff << endl;
+        cout << "  Waypoints: " << waypoint << endl;
+        cout << "  AFK zones: " << afk << endl;
+        cout << "  Forbidden corners: " << forbidden << endl;
         
         // Generate SVG
-        std::cout << "\n--- Generating Visualization ---" << std::endl;
+        cout << "\n--- Generating Visualization ---" << endl;
         if (graph.generateSVG(outputFile, 1200, 900)) {
-            std::cout << "✓ Saved to: " << outputFile << std::endl;
+            cout << "✓ Saved to: " << outputFile << endl;
         } else {
-            std::cerr << "✗ Failed to generate visualization" << std::endl;
+            cerr << "✗ Failed to generate visualization" << endl;
         }
         
     } else {
-        std::cerr << "✗ Failed to load graph from " << inputFile << std::endl;
+        cerr << "✗ Failed to load graph from " << inputFile << endl;
     }
 }
 
 int main() {
-    std::cout << "\n";
-    std::cout << "╔════════════════════════════════════════╗" << std::endl;
-    std::cout << "║   GRAPH VISUALIZATION GENERATOR       ║" << std::endl;
-    std::cout << "║   Processing Multiple Graph Files     ║" << std::endl;
-    std::cout << "╚════════════════════════════════════════╝" << std::endl;
+    cout << "\n";
+    cout << "╔════════════════════════════════════════╗" << endl;
+    cout << "║   GRAPH VISUALIZATION GENERATOR       ║" << endl;
+    cout << "║   Processing Multiple Graph Files     ║" << endl;
+    cout << "╚════════════════════════════════════════╝" << endl;
     
     // Process all ten graphs
-    std::vector<std::pair<std::string, std::string>> graphs = {
+    vector<pair<string, string>> graphs = {
         {"tests/distributions/graph1.inp", "utils/output/graph1_visualization.svg"},
         {"tests/distributions/graph2.inp", "utils/output/graph2_visualization.svg"},
         {"tests/distributions/graph3.inp", "utils/output/graph3_visualization.svg"},
@@ -80,23 +82,23 @@ int main() {
         processGraph(graphs[i].first, graphs[i].second, i + 1);
     }
     
-    std::cout << "\n";
-    std::cout << "========================================" << std::endl;
-    std::cout << "  ALL GRAPHS PROCESSED SUCCESSFULLY!   " << std::endl;
-    std::cout << "========================================" << std::endl;
-    std::cout << "\nOpen the following files in your browser:" << std::endl;
-    std::cout << "  1. utils/output/graph1_visualization.svg" << std::endl;
-    std::cout << "  2. utils/output/graph2_visualization.svg" << std::endl;
-    std::cout << "  3. utils/output/graph3_visualization.svg" << std::endl;
-    std::cout << "  4. utils/output/graph4_visualization.svg" << std::endl;
-    std::cout << "  5. utils/output/graph5_visualization.svg" << std::endl;
-    std::cout << "  6. utils/output/graph6_visualization.svg" << std::endl;
-    std::cout << "  7. utils/output/graph7_visualization.svg" << std::endl;
-    std::cout << "  8. utils/output/graph8_visualization.svg" << std::endl;
-    std::cout << "  9. utils/output/graph9_visualization.svg" << std::endl;
-    std::cout << " 10. utils/output/graph10_visualization.svg" << std::endl;
-    std::cout << "\nOr open utils/viewer.html for all visualizations!" << std::endl;
-    std::cout << "\n";
+    cout << "\n";
+    cout << "========================================" << endl;
+    cout << "  ALL GRAPHS PROCESSED SUCCESSFULLY!   " << endl;
+    cout << "========================================" << endl;
+    cout << "\nOpen the following files in your browser:" << endl;
+    cout << "  1. utils/output/graph1_visualization.svg" << endl;
+    cout << "  2. utils/output/graph2_visualization.svg" << endl;
+    cout << "  3. utils/output/graph3_visualization.svg" << endl;
+    cout << "  4. utils/output/graph4_visualization.svg" << endl;
+    cout << "  5. utils/output/graph5_visualization.svg" << endl;
+    cout << "  6. utils/output/graph6_visualization.svg" << endl;
+    cout << "  7. utils/output/graph7_visualization.svg" << endl;
+    cout << "  8. utils/output/graph8_visualization.svg" << endl;
+    cout << "  9. utils/output/graph9_visualization.svg" << endl;
+    cout << " 10. utils/output/graph10_visualization.svg" << endl;
+    cout << "\nOr open utils/viewer.html for all visualizations!" << endl;
+    cout << "\n";
     
     return 0;
 }

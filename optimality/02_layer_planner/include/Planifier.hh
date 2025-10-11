@@ -13,7 +13,6 @@
 #include "Robot.hh"
 #include "Task.hh"
 #include "Algorithm.hh"
-using namespace std;
 
 //Where node is 
 class Planifier {
@@ -21,7 +20,7 @@ class Planifier {
 public:
     // Constructors and Destructor
     Planifier();
-    Planifier(const Graph& graph, int numRobots, queue<Task> tasks);
+    Planifier(const Graph& graph, int numRobots, std::queue<Task> tasks);
     ~Planifier();
 
     // Getters
@@ -30,7 +29,7 @@ public:
     int getBusyRobots() const;
     int getChargingRobots() const;
     Graph getGraph() const;
-    queue<Task> getPendingTasks() const;
+    std::queue<Task> getPendingTasks() const;
 
     // Setters
     void setGraph(const Graph& graph);
@@ -41,7 +40,7 @@ public:
     void setPendingTasks(int num);
 
     // Strategy Pattern: Set the planning algorithm
-    void setAlgorithm(unique_ptr<Algorithm> algorithm);
+    void setAlgorithm(std::unique_ptr<Algorithm> algorithm);
 
     // Planning methods
     void plan(int algorithmChoice = 0);  // 0 = interactive, 1-4 = direct selection
@@ -50,14 +49,14 @@ public:
 
 private:
     Graph G;
-    queue<Robot> availableRobots;
-    queue<Robot> busyRobots;
-    queue<Robot> chargingRobots;
+    std::queue<Robot> availableRobots;
+    std::queue<Robot> busyRobots;
+    std::queue<Robot> chargingRobots;
     const int totalRobots;
-    queue<Task> pendingTasks;
+    std::queue<Task> pendingTasks;
     
     // Strategy Pattern: Current planning algorithm
-    unique_ptr<Algorithm> currentAlgorithm;
+    std::unique_ptr<Algorithm> currentAlgorithm;
 };
 
 #endif // PLANIFIER_H

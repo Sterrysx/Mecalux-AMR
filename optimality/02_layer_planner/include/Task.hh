@@ -2,7 +2,6 @@
 #define TASK_HH
 
 #include <iostream>
-using namespace std;
 
 //Task class for warehouse robot system
 class Task {

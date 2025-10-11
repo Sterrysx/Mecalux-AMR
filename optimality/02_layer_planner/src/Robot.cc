@@ -1,5 +1,7 @@
 #include "../include/Robot.hh"
 
+using namespace std;
+
 // Constructors and Destructor
 Robot::Robot() : robotId(-1), position({0.0, 0.0}), batteryLevel(100.0), 
                  currentTask(-1), maxSpeed(1.6), loadCapacity(100), isAvailable(true) {}

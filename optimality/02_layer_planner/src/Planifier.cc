@@ -1,8 +1,7 @@
 #include "../include/Planifier.hh"
-#include "../include/BruteForceAlgorithm.hh"
-#include "../include/GreedyAlgorithm.hh"
-#include "../include/PriorityAlgorithm.hh"
-#include "../include/HybridAlgorithm.hh"
+#include "../include/algorithms/01_BruteForce.hh"
+#include "../include/algorithms/02_DynamicProgramming.hh"
+#include "../include/algorithms/03_Greedy.hh"
 #include <memory>
 using namespace std;
 
@@ -81,10 +80,9 @@ void Planifier::plan(int algorithmChoice) {
         cout << "\n=== Algorithm Selection ===" << endl;
         cout << "Available algorithms:" << endl;
         cout << "  1. Brute Force - Explores all possible assignments" << endl;
-        cout << "  2. Greedy - Nearest available robot heuristic" << endl;
-        cout << "  3. Priority - Task priority-based assignment" << endl;
-        cout << "  4. Hybrid - Combines multiple strategies" << endl;
-        cout << "Choose an algorithm (1-4): ";
+        cout << "  2. Dynamic Programming - Optimal substructure solution" << endl;
+        cout << "  3. Greedy - Nearest available robot heuristic" << endl;
+        cout << "Choose an algorithm (1-3): ";
         cin >> selectedAlgorithm;
         cout << endl;
     }
@@ -92,19 +90,16 @@ void Planifier::plan(int algorithmChoice) {
     // Use Strategy Pattern instead of switch
     switch (selectedAlgorithm) {
         case 1:
-            setAlgorithm(make_unique<BruteForceAlgorithm>());
+            setAlgorithm(make_unique<BruteForce>());
             break;
         case 2:
-            setAlgorithm(make_unique<GreedyAlgorithm>());
+            setAlgorithm(make_unique<DynamicProgramming>());
             break;
         case 3:
-            setAlgorithm(make_unique<PriorityAlgorithm>());
-            break;
-        case 4:
-            setAlgorithm(make_unique<HybridAlgorithm>());
+            setAlgorithm(make_unique<Greedy>());
             break;
         default:
-            cout << "Invalid algorithm. Choose 1, 2, 3, or 4." << endl;
+            cout << "Invalid algorithm. Choose 1, 2, or 3." << endl;
             return;
     }
     

@@ -19,7 +19,7 @@ void usage(const char* progname) {
     cerr << "                  Loads from ../01_layer_mapping/tests/distributions/graphN.inp" << endl;
     cerr << "  algorithm     : Algorithm selection (default: 1)" << endl;
     cerr << "                  0 = Interactive mode" << endl;
-    cerr << "                  1-4 = Direct algorithm selection" << endl;
+    cerr << "                  1-3 = Direct algorithm selection" << endl;
     cerr << endl;
     cerr << "Examples:" << endl;
     cerr << "  " << progname << "              # Use graph1.inp with algorithm 1" << endl;

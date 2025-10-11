@@ -1,12 +1,12 @@
-#include "../include/algorithms/BruteForce.hh"
+#include "../../include/algorithms/01_BruteForce.hh"
 #include <iostream>
 using namespace std;
 
 void BruteForce::execute(
     const Graph& graph,
     queue<Robot>& availableRobots,
-    queue<Robot>& busyRobots,
-    queue<Robot>& chargingRobots,
+    queue<Robot>& busyRobots [[maybe_unused]],
+    queue<Robot>& chargingRobots [[maybe_unused]],
     queue<Task>& pendingTasks,
     int totalRobots
 ) {

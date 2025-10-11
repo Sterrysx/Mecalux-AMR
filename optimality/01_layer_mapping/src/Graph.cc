@@ -94,7 +94,7 @@ int Graph::addNode(int nodeId, NodeType type, double x, double y) {
     nodes[nodeId] = newNode;
     
     // Ensure adjacency list has space for this node
-    if (adjacencyList.size() <= nodeId) {
+    if (adjacencyList.size() <= static_cast<size_t>(nodeId)) {
         adjacencyList.resize(nodeId + 1);
     }
     
@@ -126,7 +126,7 @@ bool Graph::addEdge(int fromNodeId, int toNodeId, double distance, double speed)
     
     // Ensure adjacency list is large enough
     int maxId = std::max(fromNodeId, toNodeId);
-    if (adjacencyList.size() <= maxId) {
+    if (adjacencyList.size() <= static_cast<size_t>(maxId)) {
         adjacencyList.resize(maxId + 1);
     }
     
@@ -152,7 +152,7 @@ const Graph::Node* Graph::getNode(int nodeId) const {
 // Get all edges from a node
 const std::vector<Graph::Edge>& Graph::getEdges(int nodeId) const {
     static const std::vector<Edge> emptyVector;
-    if (nodeId < adjacencyList.size()) {
+    if (static_cast<size_t>(nodeId) < adjacencyList.size()) {
         return adjacencyList[nodeId];
     }
     return emptyVector;
@@ -266,7 +266,7 @@ void Graph::printGraph() const {
         std::cout << " at (" << node.coordinates.first << ", " << node.coordinates.second << ")" << std::endl;
         
         // Print edges
-        if (nodeId < adjacencyList.size() && !adjacencyList[nodeId].empty()) {
+        if (static_cast<size_t>(nodeId) < adjacencyList.size() && !adjacencyList[nodeId].empty()) {
             std::cout << "  Connections: ";
             for (const auto& edge : adjacencyList[nodeId]) {
                 std::cout << edge.nodeDestinationId << "(d:" << edge.distance << ") ";
@@ -371,7 +371,7 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
         double x1 = transformX(node.coordinates.first);
         double y1 = transformY(node.coordinates.second);
         
-        if (nodeId < adjacencyList.size()) {
+        if (static_cast<size_t>(nodeId) < adjacencyList.size()) {
             for (const auto& edge : adjacencyList[nodeId]) {
                 int destId = edge.nodeDestinationId;
                 
