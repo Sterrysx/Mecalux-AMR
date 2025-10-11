@@ -11,7 +11,7 @@ Planifier::Planifier(const Graph& graph, int numRobots, queue<Task> tasks)
     : G(graph), totalRobots(numRobots), pendingTasks(tasks), currentAlgorithm(nullptr) {
     // Initialize robots with proper IDs
     for (int i = 0; i < totalRobots; i++) {
-        Robot robot(i, {0.0, 0.0}, 100.0, -1, 1.6, 100, true);
+        Robot robot(i, {0.0, 0.0}, 100.0, -1, 1.6, 100);
         availableRobots.push(robot);
     }
 }
@@ -28,16 +28,16 @@ queue<Task> Planifier::getPendingTasks() const { return pendingTasks; }
 
 // Setters
 void Planifier::setNumRobots(int numRobots) { const_cast<int&>(this->totalRobots) = numRobots; }
-void Planifier::setAvailableRobots(int num) { 
+void Planifier::setAvailableRobots(int num) { //nomes borra robots sobrants no afegeix nous
     while (availableRobots.size() > static_cast<size_t>(num)) availableRobots.pop();
 }
-void Planifier::setBusyRobots(int num) { 
+void Planifier::setBusyRobots(int num) { //igual que el de dalt
     while (busyRobots.size() > static_cast<size_t>(num)) busyRobots.pop();
 }
-void Planifier::setChargingRobots(int num) { 
+void Planifier::setChargingRobots(int num) { //igual que el de dalt
     while (chargingRobots.size() > static_cast<size_t>(num)) chargingRobots.pop();
 }
-void Planifier::setPendingTasks(int num) {
+void Planifier::setPendingTasks(int num) { //igual que el de dalt pero amb tasks no entenc lo del static_cast
     while (pendingTasks.size() > static_cast<size_t>(num)) pendingTasks.pop();
 }
 

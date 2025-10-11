@@ -144,7 +144,6 @@ void BruteForce::execute(
         if (!bestAssignment[i].empty()) {
             // Assign the first task and update robot state
             robot.setCurrentTask(bestAssignment[i][0].getTaskId());
-            robot.setAvailability(false);
             busyRobots.push(robot);
         } else {
             // This robot was not assigned any task, remains available

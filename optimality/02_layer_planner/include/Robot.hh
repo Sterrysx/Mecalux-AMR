@@ -14,7 +14,7 @@ class Robot {
 public:
     // Constructors and Destructor
     Robot();
-    Robot(int id, std::pair<double, double> pos, double battery, int task, float speed, float capacity, bool available);
+    Robot(int id, std::pair<double, double> pos, double battery, int task, float speed, float capacity);
     ~Robot();
 
     // Getters
@@ -32,7 +32,6 @@ public:
     void setCurrentTask(int task);
     void setMaxSpeed(float speed);
     void setLoadCapacity(int capacity);
-    void setAvailability(bool available);
     void freeRobot(); //posa currentTask a -1 i isAvailable a true
 
 private:
@@ -42,7 +41,6 @@ private:
     int currentTask;
     float maxSpeed;
     int loadCapacity;
-    bool isAvailable;
 };
 
 #endif // ROBOT_H

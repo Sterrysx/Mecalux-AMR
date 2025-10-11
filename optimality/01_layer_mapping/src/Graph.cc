@@ -47,8 +47,7 @@ void Graph::loadFromStream(std::istream& in) {
 }
 
 
-Graph Graph::read_graph() {
-    Graph G;
+void Graph::read_graph() {
     int num_vertices, num_edges;
     pair<int, int> mapSize;
     cin >> num_vertices >> num_edges >> mapSize.first >> mapSize.second;
@@ -59,18 +58,18 @@ Graph Graph::read_graph() {
     string type;
     for (int i = 0; i < num_vertices; i++) {
         cin >> nodeId >> coords.first >> coords.second >> type;
-        G.addNode(nodeId, G.charToNodeType(type[0]), coords.first, coords.second);
+        addNode(nodeId, charToNodeType(type[0]), coords.first, coords.second);
     }
 
     // Read edges
     int fromNode, toNode;
     for (int i = 0; i < num_edges; i++) {
         cin >> fromNode >> toNode;
-        G.addEdge(fromNode, toNode);
-        G.addEdge(toNode, fromNode);
+        addEdge(fromNode, toNode);
+        addEdge(toNode, fromNode);
     }
 
-    return G;
+
 }
 
 
@@ -93,9 +92,9 @@ int Graph::addNode(int nodeId, NodeType type, double x, double y) {
     Node newNode(nodeId, type, x, y);
     nodes[nodeId] = newNode;
     
-    // Ensure adjacency list has space for this node
-    if (adjacencyList.size() <= static_cast<size_t>(nodeId)) {
-        adjacencyList.resize(nodeId + 1);
+    // Initialize empty set of edges for this node if it doesn't exist
+    if (adjacencyList.find(nodeId) == adjacencyList.end()) {
+        adjacencyList[nodeId] = std::set<Edge>();
     }
     
     numVertices++;
@@ -124,18 +123,12 @@ bool Graph::addEdge(int fromNodeId, int toNodeId, double distance, double speed)
         }
     }
     
-    // Ensure adjacency list is large enough
-    int maxId = std::max(fromNodeId, toNodeId);
-    if (adjacencyList.size() <= static_cast<size_t>(maxId)) {
-        adjacencyList.resize(maxId + 1);
-    }
-    
-    // Add edge (undirected graph, so add both directions)
+    // Add edges to both nodes (undirected graph)
     Edge newEdge1(speed, distance, toNodeId);
     Edge newEdge2(speed, distance, fromNodeId);
     
-    adjacencyList[fromNodeId].push_back(newEdge1);
-    adjacencyList[toNodeId].push_back(newEdge2);
+    adjacencyList[fromNodeId].insert(newEdge1);
+    adjacencyList[toNodeId].insert(newEdge2);
     
     return true;
 }
@@ -151,11 +144,15 @@ const Graph::Node* Graph::getNode(int nodeId) const {
 
 // Get all edges from a node
 const std::vector<Graph::Edge>& Graph::getEdges(int nodeId) const {
-    static const std::vector<Edge> emptyVector;
-    if (static_cast<size_t>(nodeId) < adjacencyList.size()) {
-        return adjacencyList[nodeId];
+    static std::vector<Edge> result;
+    
+    auto it = adjacencyList.find(nodeId);
+    if (it != adjacencyList.end()) {
+        result.clear();
+        result.insert(result.end(), it->second.begin(), it->second.end());
+
     }
-    return emptyVector;
+    return result;
 }
 
 // Get number of vertices
@@ -265,10 +262,11 @@ void Graph::printGraph() const {
         
         std::cout << " at (" << node.coordinates.first << ", " << node.coordinates.second << ")" << std::endl;
         
-        // Print edges
-        if (static_cast<size_t>(nodeId) < adjacencyList.size() && !adjacencyList[nodeId].empty()) {
+        // Print edges - Fixed access to adjacencyList
+        auto edgeIt = adjacencyList.find(nodeId);
+        if (edgeIt != adjacencyList.end() && !edgeIt->second.empty()) {
             std::cout << "  Connections: ";
-            for (const auto& edge : adjacencyList[nodeId]) {
+            for (const auto& edge : edgeIt->second) {
                 std::cout << edge.nodeDestinationId << "(d:" << edge.distance << ") ";
             }
             std::cout << std::endl;
@@ -371,8 +369,9 @@ bool Graph::generateSVG(const std::string& filename, int width, int height) cons
         double x1 = transformX(node.coordinates.first);
         double y1 = transformY(node.coordinates.second);
         
-        if (static_cast<size_t>(nodeId) < adjacencyList.size()) {
-            for (const auto& edge : adjacencyList[nodeId]) {
+        auto edgeIt = adjacencyList.find(nodeId);
+        if (edgeIt != adjacencyList.end()) {
+            for (const auto& edge : edgeIt->second) {
                 int destId = edge.nodeDestinationId;
                 
                 // Only draw each edge once (for undirected graph)
