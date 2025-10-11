@@ -6,6 +6,7 @@
 #include <utility>
 #include <iostream>
 #include <string>
+#include <set>
 
 //Where node is 
 class Graph {
@@ -33,11 +34,16 @@ public:
 
     //EDGE STRUCT
     struct Edge {
-        double speed { 1.6 };     // edge weight as requested
+        double speed { 1.6 };     
         double distance { 0.0 };
         int nodeDestinationId { -1 };
         Edge() = default;
         Edge(double s, double d, int destId) : speed(s), distance(d), nodeDestinationId(destId) {}
+        
+        // Add operator< for set compatibility
+        bool operator<(const Edge& other) const {
+            return nodeDestinationId < other.nodeDestinationId;
+        }
     };
 
     //Constructor and Destructor
@@ -68,7 +74,7 @@ private:
 
     //Graph Definition
     std::unordered_map<int, Node> nodes;  // Store nodes by ID
-    std::vector<std::vector<Edge>> adjacencyList;  // Adjacency list representation
+    std::unordered_map<int, std::set<Edge>> adjacencyList;  // Changed to unordered_map of sets
 };
 
 #endif // GRAPH_H

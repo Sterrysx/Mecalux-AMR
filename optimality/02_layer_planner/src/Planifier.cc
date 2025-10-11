@@ -11,7 +11,7 @@ Planifier::Planifier(const Graph& graph, int numRobots, queue<Task> tasks)
     : G(graph), totalRobots(numRobots), pendingTasks(tasks), currentAlgorithm(nullptr) {
     // Initialize robots with proper IDs
     for (int i = 0; i < totalRobots; i++) {
-        Robot robot(i, {0.0, 0.0}, 100.0, -1, 1.6, 100, true);
+        Robot robot(i, {0.0, 0.0}, 100.0, -1, 1.6, 100);
         availableRobots.push(robot);
     }
 }
