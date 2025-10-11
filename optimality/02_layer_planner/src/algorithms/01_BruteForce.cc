@@ -168,7 +168,7 @@ double BruteForce::calculateDistance(pair<double, double> pos1, pair<double, dou
  */
 double BruteForce::calculateMakespan(
     const vector<vector<Task>>& assignment,
-    const vector<Robot>& robots,
+     vector<Robot>& robots,
     const Graph& graph
 ) {
     const double ROBOT_SPEED = 1.6; // m/s, as specified
@@ -190,11 +190,17 @@ double BruteForce::calculateMakespan(
             
             // 1. Time from robot's current position to task's origin
             double distToOrigin = calculateDistance(currentPos, originNode->coordinates);
-            robotTotalTime += distToOrigin / ROBOT_SPEED;
-
+            double t =distToOrigin / ROBOT_SPEED;
+            robots[i].freeRobot();// pq no te carrega
+            robots[i].updateBattery(t);
+            robotTotalTime += t;
+            
             // 2. Time from task's origin to its destination
+            robots[i].setCurrentTask(task.getTaskId());
             double distTask = calculateDistance(originNode->coordinates, destNode->coordinates);
-            robotTotalTime += distTask / ROBOT_SPEED;
+            double t2= distTask / ROBOT_SPEED;
+            robotTotalTime += t2;
+            robots[i].updateBattery(t2);
 
             // 3. Update robot's position for the next task
             currentPos = destNode->coordinates;
@@ -289,13 +295,20 @@ void BruteForce::printBeautifiedAssignment(
 
             // Time to travel to task origin
             double distToOrigin = calculateDistance(currentPos, originNode->coordinates);
-            double timeToOrigin = distToOrigin / ROBOT_SPEED;
+            double t =distToOrigin / ROBOT_SPEED;
+            robots[i].freeRobot();// pq no te carrega
+            robots[i].updateBattery(t);
+            robotTotalTime += t;
             
-            // Time to complete the task (origin to destination)
+            // 2. Time from task's origin to its destination
+            robots[i].setCurrentTask(task.getTaskId());
             double distTask = calculateDistance(originNode->coordinates, destNode->coordinates);
-            double taskTime = distTask / ROBOT_SPEED;
+            double t2= distTask / ROBOT_SPEED;
+            robotTotalTime += t2;
+            robots[i].updateBattery(t2);
             
             cumulativeTime += timeToOrigin + taskTime;
+
 
             cout << "│  Task ID " << task.getTaskId() << ":" << endl;
             cout << "│    From: Node " << task.getOriginNode() 
@@ -305,6 +318,7 @@ void BruteForce::printBeautifiedAssignment(
             cout << "│    Travel to origin: " << fixed << setprecision(2) << timeToOrigin << "s" << endl;
             cout << "│    Task execution:   " << fixed << setprecision(2) << taskTime << "s" << endl;
             cout << "│    Cumulative time:  " << fixed << setprecision(2) << cumulativeTime << "s" << endl;
+            cout <<<"| Final battery level  " << fixed << setprecision(2) << robots[i].getBatteryLevel() << "%"<< endl;
             
             if (taskIdx < assignment[i].size() - 1) {
                 cout << "│    ↓" << endl;

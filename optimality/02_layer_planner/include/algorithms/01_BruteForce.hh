@@ -43,7 +43,7 @@ public:
     void findBestAssignment(
         int taskIndex,
         const std::vector<Task>& tasks,
-        const std::vector<Robot>& robots,
+         std::vector<Robot>& robots,
         const Graph& graph,
         std::vector<std::vector<Task>>& currentAssignment,
         std::vector<std::vector<Task>>& bestAssignment,
