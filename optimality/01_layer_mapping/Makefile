@@ -2,16 +2,15 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -g
 SRCDIR = src
 INCDIR = include
-OBJDIR = obj
-OUTDIR = output
+BUILDDIR = build
+OUTDIR = utils/output
 
 # Source files
-SOURCES = $(SRCDIR)/Graph.cc main.cpp
-OBJECTS = $(SOURCES:.cc=.o)
-OBJECTS := $(OBJECTS:.cpp=.o)
+SOURCES = $(SRCDIR)/Graph.cc main.cc
+OBJECTS = $(BUILDDIR)/Graph.o $(BUILDDIR)/main.o
 
 # Target executable
-TARGET = graph_demo
+TARGET = $(BUILDDIR)/graph_demo
 
 # Default target
 all: $(TARGET)
@@ -20,17 +19,24 @@ all: $(TARGET)
 $(OUTDIR):
 	mkdir -p $(OUTDIR)
 
-# Create object directory
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
+# Create build directory
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
 
-# Build target
-$(TARGET): $(SOURCES) | $(OUTDIR)
-	$(CXX) $(CXXFLAGS) -I$(INCDIR) $(SOURCES) -o $(TARGET)
+# Build object files
+$(BUILDDIR)/Graph.o: $(SRCDIR)/Graph.cc | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
+
+$(BUILDDIR)/main.o: main.cc | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -c $< -o $@
+
+# Build target executable
+$(TARGET): $(OBJECTS) | $(OUTDIR)
+	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
 
 # Clean build files
 clean:
-	rm -f $(TARGET) $(OBJDIR)/*.o
+	rm -rf $(BUILDDIR)
 
 # Clean everything including generated visualizations
 clean-all: clean
@@ -47,10 +53,10 @@ all-run: $(TARGET)
 # View visualizations in browser
 view:
 	@echo "Opening interactive viewer..."
-	@command -v xdg-open >/dev/null 2>&1 && xdg-open viewer.html || \
-	command -v open >/dev/null 2>&1 && open viewer.html || \
-	command -v explorer.exe >/dev/null 2>&1 && explorer.exe viewer.html || \
-	echo "Please open viewer.html manually in your browser"
+	@command -v xdg-open >/dev/null 2>&1 && xdg-open utils/viewer.html || \
+	command -v open >/dev/null 2>&1 && open utils/viewer.html || \
+	command -v explorer.exe >/dev/null 2>&1 && explorer.exe utils/viewer.html || \
+	echo "Please open utils/viewer.html manually in your browser"
 
 # Help target
 help:

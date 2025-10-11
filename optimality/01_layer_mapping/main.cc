@@ -64,16 +64,16 @@ int main() {
     
     // Process all ten graphs
     std::vector<std::pair<std::string, std::string>> graphs = {
-        {"distributions/graph1.inp", "output/graph1_visualization.svg"},
-        {"distributions/graph2.inp", "output/graph2_visualization.svg"},
-        {"distributions/graph3.inp", "output/graph3_visualization.svg"},
-        {"distributions/graph4.inp", "output/graph4_visualization.svg"},
-        {"distributions/graph5.inp", "output/graph5_visualization.svg"},
-        {"distributions/graph6.inp", "output/graph6_visualization.svg"},
-        {"distributions/graph7.inp", "output/graph7_visualization.svg"},
-        {"distributions/graph8.inp", "output/graph8_visualization.svg"},
-        {"distributions/graph9.inp", "output/graph9_visualization.svg"},
-        {"distributions/graph10.inp", "output/graph10_visualization.svg"}
+        {"tests/distributions/graph1.inp", "utils/output/graph1_visualization.svg"},
+        {"tests/distributions/graph2.inp", "utils/output/graph2_visualization.svg"},
+        {"tests/distributions/graph3.inp", "utils/output/graph3_visualization.svg"},
+        {"tests/distributions/graph4.inp", "utils/output/graph4_visualization.svg"},
+        {"tests/distributions/graph5.inp", "utils/output/graph5_visualization.svg"},
+        {"tests/distributions/graph6.inp", "utils/output/graph6_visualization.svg"},
+        {"tests/distributions/graph7.inp", "utils/output/graph7_visualization.svg"},
+        {"tests/distributions/graph8.inp", "utils/output/graph8_visualization.svg"},
+        {"tests/distributions/graph9.inp", "utils/output/graph9_visualization.svg"},
+        {"tests/distributions/graph10.inp", "utils/output/graph10_visualization.svg"}
     };
     
     for (size_t i = 0; i < graphs.size(); i++) {
@@ -85,17 +85,17 @@ int main() {
     std::cout << "  ALL GRAPHS PROCESSED SUCCESSFULLY!   " << std::endl;
     std::cout << "========================================" << std::endl;
     std::cout << "\nOpen the following files in your browser:" << std::endl;
-    std::cout << "  1. output/graph1_visualization.svg" << std::endl;
-    std::cout << "  2. output/graph2_visualization.svg" << std::endl;
-    std::cout << "  3. output/graph3_visualization.svg" << std::endl;
-    std::cout << "  4. output/graph4_visualization.svg" << std::endl;
-    std::cout << "  5. output/graph5_visualization.svg" << std::endl;
-    std::cout << "  6. output/graph6_visualization.svg" << std::endl;
-    std::cout << "  7. output/graph7_visualization.svg" << std::endl;
-    std::cout << "  8. output/graph8_visualization.svg" << std::endl;
-    std::cout << "  9. output/graph9_visualization.svg" << std::endl;
-    std::cout << " 10. output/graph10_visualization.svg" << std::endl;
-    std::cout << "\nOr open viewer.html for all visualizations!" << std::endl;
+    std::cout << "  1. utils/output/graph1_visualization.svg" << std::endl;
+    std::cout << "  2. utils/output/graph2_visualization.svg" << std::endl;
+    std::cout << "  3. utils/output/graph3_visualization.svg" << std::endl;
+    std::cout << "  4. utils/output/graph4_visualization.svg" << std::endl;
+    std::cout << "  5. utils/output/graph5_visualization.svg" << std::endl;
+    std::cout << "  6. utils/output/graph6_visualization.svg" << std::endl;
+    std::cout << "  7. utils/output/graph7_visualization.svg" << std::endl;
+    std::cout << "  8. utils/output/graph8_visualization.svg" << std::endl;
+    std::cout << "  9. utils/output/graph9_visualization.svg" << std::endl;
+    std::cout << " 10. utils/output/graph10_visualization.svg" << std::endl;
+    std::cout << "\nOr open utils/viewer.html for all visualizations!" << std::endl;
     std::cout << "\n";
     
     return 0;
