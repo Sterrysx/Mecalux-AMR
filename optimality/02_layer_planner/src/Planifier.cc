@@ -7,13 +7,12 @@ using namespace std;
 
 
 // Constructors and Destructor
-Planifier::Planifier() : totalRobots(0), currentAlgorithm(nullptr) {}
-
 Planifier::Planifier(const Graph& graph, int numRobots, queue<Task> tasks) 
     : G(graph), totalRobots(numRobots), pendingTasks(tasks), currentAlgorithm(nullptr) {
-    // Initialize robots
+    // Initialize robots with proper IDs
     for (int i = 0; i < totalRobots; i++) {
-        availableRobots.push(Robot());
+        Robot robot(i, {0.0, 0.0}, 100.0, -1, 1.6, 100, true);
+        availableRobots.push(robot);
     }
 }
 
@@ -24,11 +23,10 @@ int Planifier::getNumRobots() const { return totalRobots; }
 int Planifier::getAvailableRobots() const { return availableRobots.size(); }
 int Planifier::getBusyRobots() const { return busyRobots.size(); }
 int Planifier::getChargingRobots() const { return chargingRobots.size(); }
-Graph Planifier::getGraph() const { return G; }
+const Graph& Planifier::getGraph() const { return G; }
 queue<Task> Planifier::getPendingTasks() const { return pendingTasks; }
 
 // Setters
-void Planifier::setGraph(const Graph& graph) { G = graph; }
 void Planifier::setNumRobots(int numRobots) { const_cast<int&>(this->totalRobots) = numRobots; }
 void Planifier::setAvailableRobots(int num) { 
     while (availableRobots.size() > static_cast<size_t>(num)) availableRobots.pop();

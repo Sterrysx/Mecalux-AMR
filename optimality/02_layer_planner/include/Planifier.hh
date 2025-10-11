@@ -19,7 +19,6 @@ class Planifier {
 
 public:
     // Constructors and Destructor
-    Planifier();
     Planifier(const Graph& graph, int numRobots, std::queue<Task> tasks);
     ~Planifier();
 
@@ -28,11 +27,10 @@ public:
     int getAvailableRobots() const;
     int getBusyRobots() const;
     int getChargingRobots() const;
-    Graph getGraph() const;
+    const Graph& getGraph() const;
     std::queue<Task> getPendingTasks() const;
 
     // Setters
-    void setGraph(const Graph& graph);
     void setNumRobots(int numRobots);
     void setAvailableRobots(int num);
     void setBusyRobots(int num);
@@ -48,7 +46,7 @@ public:
 
 
 private:
-    Graph G;
+    const Graph& G;
     std::queue<Robot> availableRobots;
     std::queue<Robot> busyRobots;
     std::queue<Robot> chargingRobots;

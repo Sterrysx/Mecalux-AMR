@@ -20,7 +20,7 @@ OBJECTS = $(BUILDDIR)/Planifier.o $(BUILDDIR)/Robot.o $(BUILDDIR)/Task.o \
           $(BUILDDIR)/Graph.o $(BUILDDIR)/main.o
 
 # Target executable
-TARGET = planner
+TARGET = $(BUILDDIR)/planner
 
 # Default target
 all: $(TARGET)
@@ -65,20 +65,20 @@ $(BUILDDIR)/main.o: main.cc $(INCDIR)/Planifier.hh $(INCDIR)/Task.hh $(INCDIR)/R
 
 # Clean build files
 clean:
-	rm -rf $(TARGET) $(BUILDDIR)
+	rm -rf $(BUILDDIR)
 
 # Clean everything including old directories
 clean-all: clean
-	rm -rf obj output
+	rm -rf obj output planner
 
 # Run the program
 run: $(TARGET)
-	./$(TARGET)
+	$(TARGET)
 
 # Build and run
 test: $(TARGET)
 	@echo "=== Running Planner Test ==="
-	./$(TARGET)
+	$(TARGET)
 
 # Help target
 help:
