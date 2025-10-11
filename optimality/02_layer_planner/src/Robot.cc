@@ -34,6 +34,6 @@ void Robot::freeRobot() {
 
 
 void Robot::updateBattery(double time){
-  double percentageConsume = 100/batteryLifeSpan;
+  double percentageConsume = 100/(double)batteryLifeSpan;
   batteryLevel -= time * (getAvailability() ?  percentageConsume : percentageConsume*alpha);
 }

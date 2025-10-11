@@ -35,7 +35,7 @@ public:
     // Calculates the makespan for a given assignment of tasks to robots.
     double calculateMakespan(
         const std::vector<std::vector<Task>>& assignment,
-        const std::vector<Robot>& robots,
+         std::vector<Robot>& robots,
         const Graph& graph
     );
 
@@ -52,7 +52,7 @@ public:
 
     // Outputs a beautified assignment report
     void printBeautifiedAssignment(
-        const std::vector<Robot>& robots,
+         std::vector<Robot>& robots,
         const std::vector<std::vector<Task>>& assignment,
         const Graph& graph
     );
