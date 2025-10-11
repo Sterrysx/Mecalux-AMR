@@ -2,59 +2,65 @@
 #include <iostream>
 #include <vector>
 #include <string>
-
+#include <fstream>
 using namespace std;
 
-void processGraph(const string& inputFile, const string& outputFile, int graphNum) {
+void processGraph(const string graphFile, const string& outputFile, int graphNum) {
     cout << "\n";
     cout << "========================================" << endl;
     cout << "  Processing Graph " << graphNum << endl;
     cout << "========================================" << endl;
     
     Graph graph;
+    ifstream inputFile(graphFile);
+    if (!inputFile.is_open()) {
+        cerr << "Error: Could not open file " << graphFile << endl;
+        return ;
+    }
     
-    if (graph.loadFromFile(inputFile)) {
-        cout << "\n✓ Graph loaded successfully!" << endl;
-        
-        // Print summary
-        cout << "\n--- Quick Summary ---" << endl;
-        cout << "Total vertices: " << graph.getNumVertices() << endl;
-        
-        // Count node types
-        int charging = 0, pickup = 0, dropoff = 0, waypoint = 0, afk = 0, forbidden = 0;
-        for (int i = 0; i < 100; i++) {  // Check up to 100 nodes
-            const Graph::Node* node = graph.getNode(i);
-            if (node) {
-                switch (node->type) {
-                    case Graph::NodeType::Charging: charging++; break;
-                    case Graph::NodeType::Pickup: pickup++; break;
-                    case Graph::NodeType::Dropoff: dropoff++; break;
-                    case Graph::NodeType::Waypoint: waypoint++; break;
-                    case Graph::NodeType::AFK: afk++; break;
-                    case Graph::NodeType::ForbiddenCorner: forbidden++; break;
-                    default: break;
-                }
+    // Create graph using efficient loadFromStream method
+
+    graph.loadFromStream(inputFile);
+    
+    inputFile.close();
+    cout << "\n✓ Graph loaded successfully!" << endl;
+    
+    // Print summary
+    cout << "\n--- Quick Summary ---" << endl;
+    cout << "Total vertices: " << graph.getNumVertices() << endl;
+    
+    // Count node types
+    int charging = 0, pickup = 0, dropoff = 0, waypoint = 0, afk = 0, forbidden = 0;
+    for (int i = 0; i < 100; i++) {  // Check up to 100 nodes
+        const Graph::Node* node = graph.getNode(i);
+        if (node) {
+            switch (node->type) {
+                case Graph::NodeType::Charging: charging++; break;
+                case Graph::NodeType::Pickup: pickup++; break;
+                case Graph::NodeType::Dropoff: dropoff++; break;
+                case Graph::NodeType::Waypoint: waypoint++; break;
+                case Graph::NodeType::AFK: afk++; break;
+                case Graph::NodeType::ForbiddenCorner: forbidden++; break;
+                default: break;
             }
         }
-        
-        cout << "  Charging stations: " << charging << endl;
-        cout << "  Pickup points: " << pickup << endl;
-        cout << "  Dropoff points: " << dropoff << endl;
-        cout << "  Waypoints: " << waypoint << endl;
-        cout << "  AFK zones: " << afk << endl;
-        cout << "  Forbidden corners: " << forbidden << endl;
-        
-        // Generate SVG
-        cout << "\n--- Generating Visualization ---" << endl;
-        if (graph.generateSVG(outputFile, 1200, 900)) {
-            cout << "✓ Saved to: " << outputFile << endl;
-        } else {
-            cerr << "✗ Failed to generate visualization" << endl;
-        }
-        
-    } else {
-        cerr << "✗ Failed to load graph from " << inputFile << endl;
     }
+    
+    cout << "  Charging stations: " << charging << endl;
+    cout << "  Pickup points: " << pickup << endl;
+    cout << "  Dropoff points: " << dropoff << endl;
+    cout << "  Waypoints: " << waypoint << endl;
+    cout << "  AFK zones: " << afk << endl;
+    cout << "  Forbidden corners: " << forbidden << endl;
+    
+    // Generate SVG
+    cout << "\n--- Generating Visualization ---" << endl;
+    if (graph.generateSVG(outputFile, 1200, 900)) {
+        cout << "✓ Saved to: " << outputFile << endl;
+    } else {
+        cerr << "✗ Failed to generate visualization" << endl;
+    }
+        
 }
 
 int main() {

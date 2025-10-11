@@ -61,7 +61,6 @@ public:
     
     // File I/O methods
     void loadFromStream(std::istream& in);
-    bool loadFromFile(const std::string& filename);
     NodeType charToNodeType(char c) const;
     
     // Visualization methods

@@ -31,3 +31,9 @@ void Robot::setLoadCapacity(int capacity) { loadCapacity = capacity; }
 void Robot::freeRobot() {
     currentTask = -1; 
 }
+
+
+void Robot::updateBattery(double time){
+  double percentageConsume = 100/batteryLifeSpan;
+  batteryLevel -= time * (getAvailability() ?  percentageConsume : percentageConsume*alpha);
+}

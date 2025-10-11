@@ -33,7 +33,7 @@ public:
     void setMaxSpeed(float speed);
     void setLoadCapacity(int capacity);
     void freeRobot(); //posa currentTask a -1 i isAvailable a true
-
+    void updateBattery(double time);
 private:
     int robotId;
     std::pair<double, double> position;
@@ -41,6 +41,8 @@ private:
     int currentTask;
     float maxSpeed;
     int loadCapacity;
+    const int batteryLifeSpan = 3600;    
+    const double alpha = 2;
 };
 
 #endif // ROBOT_H
