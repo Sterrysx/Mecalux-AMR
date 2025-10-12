@@ -5,8 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import GridEditor from './pages/GridEditor.tsx'
 import IsometricView from './pages/IsometricView.tsx'
-import TaskPlanner from './pages/TaskPlanner.tsx'
-import TaskPlannerTest from './pages/TaskPlannerTest.tsx'
+import TaskPlanner from './pages/TaskPlannerTest.tsx'
 import SimpleTest from './pages/SimpleTest.tsx'
 import Nav from './components/Nav.tsx'
 import { DistributionProvider } from './contexts/DistributionContext.tsx'
@@ -21,8 +20,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/" element={<Navigate to="/editor" replace />} />
             <Route path="/editor" element={<GridEditor />} />
             <Route path="/isometric" element={<IsometricView />} />
-            <Route path="/planner" element={<TaskPlannerTest />} />
-            <Route path="/test" element={<TaskPlannerTest />} />
+            <Route path="/planner" element={<TaskPlanner />} />
             <Route path="/simple" element={<SimpleTest />} />
             <Route path="/app" element={<App />} />
           </Routes>

@@ -10,14 +10,25 @@ interface PlannerParams {
 
 interface Task {
   id: string;
+  taskId: number;
+  fromNode: number | null;
+  fromCoords: { x: number; y: number } | null;
+  toNode: number | null;
+  toCoords: { x: number; y: number } | null;
+  travelTime: number;
+  executionTime: number;
+  cumulativeTime: number;
+  batteryLevel: number;
   startTime: number;
   duration: number;
-  description: string;
 }
 
 interface Robot {
   id: number;
   tasks: Task[];
+  initialBattery: number;
+  finalBattery: number;
+  completionTime: number;
 }
 
 interface ComparisonResult {
@@ -325,7 +336,7 @@ export default function TaskPlanner() {
                               left: `${leftPercent}%`,
                               width: `${widthPercent}%`,
                             }}
-                            title={`${task.description}: ${task.startTime.toFixed(1)}s - ${(task.startTime + task.duration).toFixed(1)}s (Duration: ${task.duration.toFixed(1)}s)`}
+                            title={`${task.id}: ${task.startTime.toFixed(1)}s - ${(task.startTime + task.duration).toFixed(1)}s (Duration: ${task.duration.toFixed(1)}s)\nFrom Node ${task.fromNode} to Node ${task.toNode}\nBattery: ${task.batteryLevel.toFixed(1)}%`}
                           >
                             {task.id.replace('T', '')}
                           </div>
@@ -351,38 +362,104 @@ export default function TaskPlanner() {
               )}
             </div>
 
-            {/* Robot Assignment Cards */}
+            {/* Robot Assignment Cards - Complete Details */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-slate-900">Detailed Robot Assignments</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {result.robots.map((robot) => (
-                  <div key={robot.id} className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-lg font-semibold text-slate-900">Robot {robot.id}</h4>
-                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        {robot.tasks.length} tasks
-                      </span>
+                  <div key={robot.id} className="bg-white rounded-lg shadow-lg border-t-4 border-blue-500 overflow-hidden">
+                    {/* Robot Header */}
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 border-b border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xl font-bold text-blue-900">Robot {robot.id}</h4>
+                        <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                          {robot.tasks.length} {robot.tasks.length === 1 ? 'Task' : 'Tasks'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-blue-600 font-medium">Initial Battery:</span>
+                          <div className="text-blue-900 font-bold">{robot.initialBattery.toFixed(1)}%</div>
+                        </div>
+                        <div>
+                          <span className="text-blue-600 font-medium">Final Battery:</span>
+                          <div className="text-blue-900 font-bold">{robot.finalBattery.toFixed(1)}%</div>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-blue-600 font-medium">Total Completion Time:</span>
+                          <div className="text-blue-900 font-bold text-lg">{robot.completionTime.toFixed(2)}s</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      {robot.tasks.map((task) => (
-                        <div key={task.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium text-slate-700">{task.id}</span>
-                            <span className="text-xs text-slate-500">{task.description}</span>
+                    
+                    {/* Tasks List */}
+                    <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+                      {robot.tasks.map((task, idx) => (
+                        <div key={task.id} className="border border-slate-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                              {task.id}
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              Task {idx + 1} of {robot.tasks.length}
+                            </span>
                           </div>
-                          <div className="text-xs text-slate-500">
-                            {task.startTime.toFixed(1)}s - {(task.startTime + task.duration).toFixed(1)}s
+                          
+                          {/* Route Information */}
+                          <div className="bg-slate-50 rounded p-2 mb-2 text-xs space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-600">From:</span>
+                              <span className="font-medium text-slate-900">
+                                Node {task.fromNode} ({task.fromCoords?.x.toFixed(1)}, {task.fromCoords?.y.toFixed(1)})
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-600">To:</span>
+                              <span className="font-medium text-slate-900">
+                                Node {task.toNode} ({task.toCoords?.x.toFixed(1)}, {task.toCoords?.y.toFixed(1)})
+                              </span>
+                            </div>
                           </div>
+                          
+                          {/* Timing Information */}
+                          <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                            <div className="bg-purple-50 rounded p-2">
+                              <div className="text-purple-600 font-medium">Travel Time</div>
+                              <div className="text-purple-900 font-bold">{task.travelTime.toFixed(2)}s</div>
+                            </div>
+                            <div className="bg-green-50 rounded p-2">
+                              <div className="text-green-600 font-medium">Execution Time</div>
+                              <div className="text-green-900 font-bold">{task.executionTime.toFixed(2)}s</div>
+                            </div>
+                          </div>
+                          
+                          {/* Timeline & Battery */}
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="bg-blue-50 rounded p-2">
+                              <div className="text-blue-600 font-medium">Cumulative Time</div>
+                              <div className="text-blue-900 font-bold">{task.cumulativeTime.toFixed(2)}s</div>
+                            </div>
+                            <div className={`rounded p-2 ${
+                              task.batteryLevel > 80 ? 'bg-green-50' : 
+                              task.batteryLevel > 50 ? 'bg-yellow-50' : 'bg-red-50'
+                            }`}>
+                              <div className={`font-medium ${
+                                task.batteryLevel > 80 ? 'text-green-600' : 
+                                task.batteryLevel > 50 ? 'text-yellow-600' : 'text-red-600'
+                              }`}>Battery After</div>
+                              <div className={`font-bold ${
+                                task.batteryLevel > 80 ? 'text-green-900' : 
+                                task.batteryLevel > 50 ? 'text-yellow-900' : 'text-red-900'
+                              }`}>{task.batteryLevel.toFixed(1)}%</div>
+                            </div>
+                          </div>
+                          
+                          {idx < robot.tasks.length - 1 && (
+                            <div className="mt-2 text-center text-slate-400 text-xs">↓</div>
+                          )}
                         </div>
                       ))}
                     </div>
-                    {robot.tasks.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-slate-200">
-                        <div className="text-sm text-slate-600">
-                          <strong>Completion:</strong> {Math.max(...robot.tasks.map(t => t.startTime + t.duration)).toFixed(1)}s
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

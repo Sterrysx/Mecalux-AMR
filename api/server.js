@@ -2,9 +2,29 @@ const express = require('express');
 const { exec } = require('child_process');
 const cors = require('cors');
 const path = require('path');
+const os = require('os');
 
 const app = express();
 const PORT = 3001;
+
+// OS Detection and Path Configuration
+const isWindows = os.platform() === 'win32';
+const PLANNER_DIR = path.resolve(__dirname, '../optimality/02_layer_planner');
+const GRAPH_DIR = path.resolve(__dirname, '../optimality/01_layer_mapping/tests/distributions');
+
+// Helper function to build planner command based on OS
+function buildPlannerCommand(algorithmId, graphId, numTasks, numRobots) {
+  const args = `${algorithmId} ${graphId} ${numTasks} ${numRobots}`;
+  
+  if (isWindows) {
+    // On Windows, use WSL with proper path conversion
+    const wslPlannerPath = PLANNER_DIR.replace(/\\/g, '/').replace(/^([A-Z]):/, (match, drive) => `/mnt/${drive.toLowerCase()}`);
+    return `wsl -e bash -c "cd ${wslPlannerPath} && ./build/planner ${args}"`;
+  } else {
+    // On Linux/macOS, run directly
+    return `bash -c "cd ${PLANNER_DIR} && ./build/planner ${args}"`;
+  }
+}
 
 // Middleware
 app.use(cors());
@@ -39,112 +59,147 @@ function parseOutput(output, algorithm) {
     }
   }
   
-  // Parse robot assignments from the detailed report
+  // Parse robot assignments from the detailed report with ALL information
   let currentRobotId = null;
   let currentRobotTasks = [];
-  let taskExecutionTime = null;
-  let taskStartTime = 0;
+  let currentRobotInitialBattery = 100;
+  let currentRobotFinalBattery = 100;
+  let currentRobotCompletionTime = 0;
+  let currentTaskData = null;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
     // Look for robot headers like "┌─ Robot 0 ─────────────────────────────────────────"
     const robotHeaderMatch = line.match(/Robot\s+(\d+)/);
-    if (robotHeaderMatch) {
+    if (robotHeaderMatch && line.includes('─')) {
       // Save previous robot if exists
-      if (currentRobotId !== null && currentRobotTasks.length > 0) {
+      if (currentRobotId !== null) {
         robots.push({
-          id: currentRobotId + 1, // Make it 1-indexed for display
-          tasks: currentRobotTasks
+          id: currentRobotId + 1,
+          tasks: currentRobotTasks,
+          initialBattery: currentRobotInitialBattery,
+          finalBattery: currentRobotFinalBattery,
+          completionTime: currentRobotCompletionTime
         });
       }
       
       // Start new robot
       currentRobotId = parseInt(robotHeaderMatch[1]);
       currentRobotTasks = [];
-      taskStartTime = 0;
+      currentRobotInitialBattery = 100;
+      currentRobotFinalBattery = 100;
+      currentRobotCompletionTime = 0;
+      currentTaskData = null;
+    }
+    
+    // Parse initial battery
+    const initialBatteryMatch = line.match(/Initial battery:\s*(\d+\.?\d*)%/);
+    if (initialBatteryMatch) {
+      currentRobotInitialBattery = parseFloat(initialBatteryMatch[1]);
+    }
+    
+    // Parse final battery
+    const finalBatteryMatch = line.match(/Final battery level:\s*(\d+\.?\d*)%/);
+    if (finalBatteryMatch) {
+      currentRobotFinalBattery = parseFloat(finalBatteryMatch[1]);
+    }
+    
+    // Parse total completion time
+    const completionMatch = line.match(/Total completion time:\s*(\d+\.?\d*)s/);
+    if (completionMatch) {
+      currentRobotCompletionTime = parseFloat(completionMatch[1]);
     }
     
     // Look for task lines like "│  Task ID 0:"
     const taskMatch = line.match(/Task ID\s+(\d+):/);
     if (taskMatch && currentRobotId !== null) {
-      const taskId = parseInt(taskMatch[1]);
-      
-      // Look ahead for task execution time and cumulative time
-      let taskDuration = 10; // Default
-      let cumulativeTime = taskStartTime + taskDuration;
-      
-      // Scan next few lines for timing info
-      for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
-        const nextLine = lines[j];
-        
-        // Look for task execution time
-        const execMatch = nextLine.match(/Task execution:\s*(\d+\.?\d*)s/);
-        if (execMatch) {
-          taskDuration = parseFloat(execMatch[1]);
-        }
-        
-        // Look for cumulative time
-        const cumulMatch = nextLine.match(/Cumulative time:\s*(\d+\.?\d*)s/);
-        if (cumulMatch) {
-          cumulativeTime = parseFloat(cumulMatch[1]);
-          break;
-        }
+      // If we have a previous task, save it
+      if (currentTaskData) {
+        currentRobotTasks.push(currentTaskData);
       }
       
-      // Calculate actual start time
-      const actualStartTime = Math.max(0, cumulativeTime - taskDuration);
-      
-      currentRobotTasks.push({
-        id: `T${taskId}`,
-        startTime: actualStartTime,
-        duration: taskDuration,
-        description: `Task ${taskId}`
-      });
-      
-      taskStartTime = cumulativeTime;
+      // Start new task
+      currentTaskData = {
+        id: `T${taskMatch[1]}`,
+        taskId: parseInt(taskMatch[1]),
+        fromNode: null,
+        fromCoords: null,
+        toNode: null,
+        toCoords: null,
+        travelTime: 0,
+        executionTime: 0,
+        cumulativeTime: 0,
+        batteryLevel: 100,
+        startTime: 0,
+        duration: 0
+      };
+    }
+    
+    // Parse From node
+    const fromMatch = line.match(/From:\s*Node\s+(\d+)\s*\((\d+\.?\d*),\s*(\d+\.?\d*)\)/);
+    if (fromMatch && currentTaskData) {
+      currentTaskData.fromNode = parseInt(fromMatch[1]);
+      currentTaskData.fromCoords = { x: parseFloat(fromMatch[2]), y: parseFloat(fromMatch[3]) };
+    }
+    
+    // Parse To node
+    const toMatch = line.match(/To:\s*Node\s+(\d+)\s*\((\d+\.?\d*),\s*(\d+\.?\d*)\)/);
+    if (toMatch && currentTaskData) {
+      currentTaskData.toNode = parseInt(toMatch[1]);
+      currentTaskData.toCoords = { x: parseFloat(toMatch[2]), y: parseFloat(toMatch[3]) };
+    }
+    
+    // Parse travel time
+    const travelMatch = line.match(/Travel to origin:\s*(\d+\.?\d*)s/);
+    if (travelMatch && currentTaskData) {
+      currentTaskData.travelTime = parseFloat(travelMatch[1]);
+    }
+    
+    // Parse execution time
+    const execMatch = line.match(/Task execution:\s*(\d+\.?\d*)s/);
+    if (execMatch && currentTaskData) {
+      currentTaskData.executionTime = parseFloat(execMatch[1]);
+      currentTaskData.duration = currentTaskData.executionTime;
+    }
+    
+    // Parse cumulative time
+    const cumulMatch = line.match(/Cumulative time:\s*(\d+\.?\d*)s/);
+    if (cumulMatch && currentTaskData) {
+      currentTaskData.cumulativeTime = parseFloat(cumulMatch[1]);
+      currentTaskData.startTime = Math.max(0, currentTaskData.cumulativeTime - currentTaskData.executionTime);
+    }
+    
+    // Parse battery level
+    const batteryMatch = line.match(/Battery level:\s*(\d+\.?\d*)%/);
+    if (batteryMatch && currentTaskData) {
+      currentTaskData.batteryLevel = parseFloat(batteryMatch[1]);
     }
   }
   
-  // Save the last robot
-  if (currentRobotId !== null && currentRobotTasks.length > 0) {
+  // Save the last task and robot
+  if (currentTaskData && currentRobotId !== null) {
+    currentRobotTasks.push(currentTaskData);
+  }
+  if (currentRobotId !== null) {
     robots.push({
       id: currentRobotId + 1,
-      tasks: currentRobotTasks
+      tasks: currentRobotTasks,
+      initialBattery: currentRobotInitialBattery,
+      finalBattery: currentRobotFinalBattery,
+      completionTime: currentRobotCompletionTime
     });
-  }
-  
-  // If parsing failed, create fallback robots
-  if (robots.length === 0 && makespan > 0) {
-    const numRobots = 2; // Default from your tests
-    for (let i = 0; i < numRobots; i++) {
-      const numTasks = Math.floor(Math.random() * 4) + 3; // 3-6 tasks per robot
-      const tasks = [];
-      for (let j = 0; j < numTasks; j++) {
-        tasks.push({
-          id: `T${i * 10 + j}`,
-          startTime: j * (makespan / numTasks),
-          duration: (makespan / numTasks) * 0.8,
-          description: `Task ${i * 10 + j}`
-        });
-      }
-      robots.push({ id: i + 1, tasks });
-    }
   }
   
   // Calculate actual makespan from robot completion times if parsing failed
   if (makespan === 0 && robots.length > 0) {
-    makespan = Math.max(...robots.map(robot => 
-      robot.tasks.length > 0 
-        ? Math.max(...robot.tasks.map(task => task.startTime + task.duration))
-        : 0
-    ));
+    makespan = Math.max(...robots.map(robot => robot.completionTime || 0));
     console.log(`Calculated makespan from robot tasks: ${makespan}`);
   }
 
   return {
     algorithm,
-    makespan: makespan || 0, // Don't use default 100, use 0 to indicate parsing failure
+    makespan: makespan || 0,
     computationTime: computationTime || 0,
     robots,
     rawOutput: output
@@ -158,8 +213,6 @@ app.post('/api/planner', async (req, res) => {
     
     console.log('Received request:', { algorithmId, graphId, numTasks, numRobots, mode });
     
-    const plannerPath = '/mnt/c/Users/Adam/Desktop/PAE/Mecalux-AMR/optimality/02_layer_planner';
-    
     if (mode === 'comparison' || algorithmId === 0) {
       // Run all three algorithms
       const algorithms = [
@@ -171,7 +224,8 @@ app.post('/api/planner', async (req, res) => {
       const results = [];
       
       for (const alg of algorithms) {
-        const command = `wsl -e bash -c "cd ${plannerPath} && ./build/planner ${alg.id} ${graphId} ${numTasks} ${numRobots}"`;
+        const command = buildPlannerCommand(alg.id, graphId, numTasks, numRobots);
+        console.log(`Running command: ${command}`);
         
         await new Promise((resolve, reject) => {
           exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
@@ -209,7 +263,8 @@ app.post('/api/planner', async (req, res) => {
       
     } else {
       // Run single algorithm
-      const command = `wsl -e bash -c "cd ${plannerPath} && ./build/planner ${algorithmId} ${graphId} ${numTasks} ${numRobots}"`;
+      const command = buildPlannerCommand(algorithmId, graphId, numTasks, numRobots);
+      console.log(`Running command: ${command}`);
       
       exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
         if (error) {
@@ -255,10 +310,37 @@ app.post('/api/planner', async (req, res) => {
 // Get available graphs endpoint
 app.get('/api/graphs', async (req, res) => {
   try {
-    const command = `wsl -d Ubuntu -- bash -c "ls /mnt/c/Users/Adam/Desktop/PAE/Mecalux-AMR/optimality/01_layer_mapping/tests/distributions/ | grep 'graph.*\\.inp' | sort -V"`;
-    
     const { promisify } = require('util');
     const execPromise = promisify(exec);
+    const fs = require('fs').promises;
+    
+    // Try to read graphs directly from filesystem first (works on Linux/macOS/Windows)
+    try {
+      const files = await fs.readdir(GRAPH_DIR);
+      const graphs = files
+        .filter(file => file.match(/^graph\d+\.inp$/))
+        .map(file => {
+          const match = file.match(/graph(\d+)\.inp/);
+          return match ? parseInt(match[1]) : null;
+        })
+        .filter(id => id !== null)
+        .sort((a, b) => a - b);
+      
+      if (graphs.length > 0) {
+        return res.json({ graphs });
+      }
+    } catch (fsError) {
+      console.log('Direct filesystem read failed, trying command-based approach:', fsError.message);
+    }
+    
+    // Fallback: use command-based approach for WSL
+    let command;
+    if (isWindows) {
+      const wslGraphPath = GRAPH_DIR.replace(/\\/g, '/').replace(/^([A-Z]):/, (match, drive) => `/mnt/${drive.toLowerCase()}`);
+      command = `wsl -e bash -c "ls ${wslGraphPath} | grep 'graph.*\\.inp' | sort -V"`;
+    } else {
+      command = `bash -c "ls ${GRAPH_DIR} | grep 'graph.*\\.inp' | sort -V"`;
+    }
     
     const { stdout } = await execPromise(command);
     const graphs = stdout.trim().split('\n')
