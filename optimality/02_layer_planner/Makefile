@@ -12,11 +12,13 @@ GRAPH_SRC = $(GRAPH_DIR)/src
 # Source files
 SOURCES = $(SRCDIR)/Planifier.cc $(SRCDIR)/Robot.cc $(SRCDIR)/Task.cc \
           $(SRCDIR)/algorithms/01_BruteForce.cc \
-          $(SRCDIR)/algorithms/03_Greedy.cc \
+          $(SRCDIR)/algorithms/02_Greedy.cc \
+          $(SRCDIR)/algorithms/03_HillClimbing.cc \
           $(GRAPH_SRC)/Graph.cc main.cc
 OBJECTS = $(BUILDDIR)/Planifier.o $(BUILDDIR)/Robot.o $(BUILDDIR)/Task.o \
           $(BUILDDIR)/01_BruteForce.o \
-          $(BUILDDIR)/03_Greedy.o \
+          $(BUILDDIR)/02_Greedy.o \
+          $(BUILDDIR)/03_HillClimbing.o \
           $(BUILDDIR)/Graph.o $(BUILDDIR)/main.o
 
 # Target executable
@@ -49,8 +51,11 @@ $(BUILDDIR)/Task.o: $(SRCDIR)/Task.cc $(INCDIR)/Task.hh | $(BUILDDIR)
 $(BUILDDIR)/01_BruteForce.o: $(SRCDIR)/algorithms/01_BruteForce.cc $(INCDIR)/algorithms/01_BruteForce.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/algorithms/01_BruteForce.cc -o $(BUILDDIR)/01_BruteForce.o
 
-$(BUILDDIR)/03_Greedy.o: $(SRCDIR)/algorithms/03_Greedy.cc $(INCDIR)/algorithms/03_Greedy.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
-	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/algorithms/03_Greedy.cc -o $(BUILDDIR)/03_Greedy.o
+$(BUILDDIR)/02_Greedy.o: $(SRCDIR)/algorithms/02_Greedy.cc $(INCDIR)/algorithms/02_Greedy.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/algorithms/02_Greedy.cc -o $(BUILDDIR)/02_Greedy.o
+
+$(BUILDDIR)/03_HillClimbing.o: $(SRCDIR)/algorithms/03_HillClimbing.cc $(INCDIR)/algorithms/03_HillClimbing.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/algorithms/03_HillClimbing.cc -o $(BUILDDIR)/03_HillClimbing.o
 
 # Compile Graph.cc from 01_layer_mapping
 $(BUILDDIR)/Graph.o: $(GRAPH_SRC)/Graph.cc $(GRAPH_INC)/Graph.hh | $(BUILDDIR)

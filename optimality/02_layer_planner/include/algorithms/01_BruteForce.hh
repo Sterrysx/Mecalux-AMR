@@ -23,7 +23,8 @@ public:
         std::queue<Robot>& busyRobots,
         std::queue<Robot>& chargingRobots,
         std::queue<Task>& pendingTasks,
-        int totalRobots
+        int totalRobots,
+        bool compactMode = false
     ) override;
 
     std::string getName() const override;

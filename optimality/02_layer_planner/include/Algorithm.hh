@@ -25,6 +25,7 @@ public:
      * @param chargingRobots Queue of robots charging
      * @param pendingTasks Queue of tasks waiting to be assigned
      * @param totalRobots Total number of robots in the system
+     * @param compactMode If true, show only essential metrics (for comparison mode)
      */
     virtual void execute(
         const Graph& graph,
@@ -32,7 +33,8 @@ public:
         std::queue<Robot>& busyRobots,
         std::queue<Robot>& chargingRobots,
         std::queue<Task>& pendingTasks,
-        int totalRobots
+        int totalRobots,
+        bool compactMode = false
     ) = 0;
 
     /**

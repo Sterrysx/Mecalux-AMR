@@ -1,4 +1,4 @@
-#include "../../include/algorithms/03_Greedy.hh"
+#include "../../include/algorithms/02_Greedy.hh"
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -27,21 +27,22 @@ void Greedy::execute(
     queue<Robot>& busyRobots,
     queue<Robot>& chargingRobots,
     queue<Task>& pendingTasks,
-    int totalRobots
+    int totalRobots,
+    bool compactMode
 ) {
     (void)chargingRobots; // Unused
     (void)totalRobots;    // Unused
     
-    cout << "Executing Greedy Algorithm..." << endl;
+    if (!compactMode) cout << "Executing Greedy Algorithm..." << endl;
     
     auto startTime = chrono::high_resolution_clock::now();
 
     if (pendingTasks.empty()) {
-        cout << "No pending tasks to assign." << endl;
+        if (!compactMode) cout << "No pending tasks to assign." << endl;
         return;
     }
     if (availableRobots.empty()) {
-        cout << "No available robots to perform tasks." << endl;
+        if (!compactMode) cout << "No available robots to perform tasks." << endl;
         return;
     }
     
@@ -69,8 +70,10 @@ void Greedy::execute(
         robotStates.push_back(state);
     }
 
-    cout << "Assigning " << tasksVec.size() << " tasks to " 
-         << robotStates.size() << " robots using greedy strategy." << endl;
+    if (!compactMode) {
+        cout << "Assigning " << tasksVec.size() << " tasks to " 
+             << robotStates.size() << " robots using greedy strategy." << endl;
+    }
 
     // Get configuration from first robot
     if (robotStates.empty()) return;
@@ -150,7 +153,7 @@ void Greedy::execute(
         }
     }
 
-    cout << "\n--- Greedy Algorithm Result ---" << endl;
+    if (!compactMode) cout << "\n--- Greedy Algorithm Result ---" << endl;
     cout << "Algorithm computation time: " << algorithmDuration.count() << " ms" << endl;
     cout << "Makespan (max robot completion time): " << fixed << setprecision(2) 
          << makespan << " seconds." << endl;
@@ -165,7 +168,7 @@ void Greedy::execute(
     }
 
     // Print beautified assignment
-    printBeautifiedAssignment(robots, assignment, graph);
+    if (!compactMode) printBeautifiedAssignment(robots, assignment, graph);
 
     // Update robot states
     for (size_t i = 0; i < robotStates.size(); ++i) {
@@ -177,7 +180,7 @@ void Greedy::execute(
         }
     }
     
-    cout << "--------------------------" << endl;
+    if (!compactMode) cout << "--------------------------" << endl;
 }
 
 

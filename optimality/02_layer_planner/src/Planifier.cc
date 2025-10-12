@@ -1,6 +1,7 @@
 #include "Planifier.hh"
 #include "algorithms/01_BruteForce.hh"
-#include "algorithms/03_Greedy.hh"
+#include "algorithms/02_Greedy.hh"
+#include "algorithms/03_HillClimbing.hh"
 #include <memory>
 using namespace std;
 
@@ -72,16 +73,68 @@ void Planifier::executePlan() {
 void Planifier::plan(int algorithmChoice) {
     int selectedAlgorithm = algorithmChoice;
     
-    // Interactive mode: ask user if algorithm is 0
+    // Comparison mode: run all algorithms if choice is 0
     if (algorithmChoice == 0) {
-        cout << "\n=== Algorithm Selection ===" << endl;
-        cout << "Available algorithms:" << endl;
-        cout << "  1. Brute Force - Explores all possible assignments" << endl;
-        cout << "  2. Dynamic Programming - Optimal substructure solution" << endl;
-        cout << "  3. Greedy - Nearest available robot heuristic" << endl;
-        cout << "Choose an algorithm (1-3): ";
-        cin >> selectedAlgorithm;
+        cout << "========================================" << endl;
+        cout << "  ALGORITHM COMPARISON TEST" << endl;
+        cout << "  Graph with " << G.getNumVertices() << " nodes, " 
+             << getPendingTasks().size() << " Tasks, " << totalRobots << " Robots" << endl;
+        cout << "========================================" << endl;
         cout << endl;
+        
+        // Save original tasks
+        vector<Task> taskList;
+        queue<Task> tempTasks = pendingTasks;
+        while (!tempTasks.empty()) {
+            taskList.push_back(tempTasks.front());
+            tempTasks.pop();
+        }
+        
+        // Run each algorithm
+        for (int alg = 1; alg <= 3; alg++) {
+            // Recreate task queue
+            pendingTasks = queue<Task>();
+            for (const Task& t : taskList) {
+                pendingTasks.push(t);
+            }
+            
+            // Recreate robot queues
+            availableRobots = queue<Robot>();
+            busyRobots = queue<Robot>();
+            chargingRobots = queue<Robot>();
+            for (int i = 0; i < totalRobots; i++) {
+                Robot robot(i, {0.0, 0.0}, 100.0, -1, 1.6, 100);
+                availableRobots.push(robot);
+            }
+            
+            // Print algorithm header
+            if (alg == 1) {
+                cout << "--- BRUTE FORCE (Optimal) ---" << endl;
+                setAlgorithm(make_unique<BruteForce>());
+            } else if (alg == 2) {
+                cout << "--- GREEDY (Fast Heuristic) ---" << endl;
+                setAlgorithm(make_unique<Greedy>());
+            } else if (alg == 3) {
+                cout << "--- HILL CLIMBING (Improved Greedy) ---" << endl;
+                setAlgorithm(make_unique<HillClimbing>());
+            }
+            
+            // Execute algorithm
+            currentAlgorithm->execute(
+                G,
+                availableRobots,
+                busyRobots,
+                chargingRobots,
+                pendingTasks,
+                totalRobots,
+                true  // compactMode = true for comparison
+            );
+            
+            cout << endl;
+        }
+        
+        cout << "========================================" << endl;
+        return;
     }
     
     // Use Strategy Pattern instead of switch
@@ -90,9 +143,10 @@ void Planifier::plan(int algorithmChoice) {
             setAlgorithm(make_unique<BruteForce>());
             break;
         case 2:
+            setAlgorithm(make_unique<Greedy>());
             break;
         case 3:
-            setAlgorithm(make_unique<Greedy>());
+            setAlgorithm(make_unique<HillClimbing>());
             break;
         default:
             cout << "Invalid algorithm. Choose 1, 2, or 3." << endl;

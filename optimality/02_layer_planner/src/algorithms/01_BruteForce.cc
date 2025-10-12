@@ -27,22 +27,23 @@ void BruteForce::execute(
     queue<Robot>& busyRobots,
     queue<Robot>& chargingRobots,
     queue<Task>& pendingTasks,
-    int totalRobots
+    int totalRobots,
+    bool compactMode
 ) {
     (void)chargingRobots; // Unused in brute force
     (void)totalRobots;    // Unused in brute force
     
-    cout << "Executing Brute Force Algorithm..." << endl;
+    if (!compactMode) cout << "Executing Brute Force Algorithm..." << endl;
     
     // --- 1. PREPARATION ---
     auto startTime = chrono::high_resolution_clock::now();
 
     if (pendingTasks.empty()) {
-        cout << "No pending tasks to assign." << endl;
+        if (!compactMode) cout << "No pending tasks to assign." << endl;
         return;
     }
     if (availableRobots.empty()) {
-        cout << "No available robots to perform tasks." << endl;
+        if (!compactMode) cout << "No available robots to perform tasks." << endl;
         return;
     }
     
@@ -59,7 +60,7 @@ void BruteForce::execute(
         pendingTasks.pop(); // All tasks are now considered for assignment
     }
 
-    cout << "Assigning " << tasksVec.size() << " tasks to " << robotsVec.size() << " available robots." << endl;
+    if (!compactMode) cout << "Assigning " << tasksVec.size() << " tasks to " << robotsVec.size() << " available robots." << endl;
     
     // Calculate complexity and check feasibility
     // For brute force: complexity = numRobots^numTasks
@@ -120,11 +121,11 @@ void BruteForce::execute(
 
     // --- 3. OUTPUT AND STATE UPDATE ---
     
-    cout << "\n--- Brute Force Result ---" << endl;
+    if (!compactMode) cout << "\n--- Brute Force Result ---" << endl;
     cout << "Algorithm computation time: " << algorithmDuration.count() << " ms" << endl;
     
     if (minMakespan == numeric_limits<double>::max()) {
-        cout << "No valid assignment could be found." << endl;
+        if (!compactMode) cout << "No valid assignment could be found." << endl;
         // Push robots back to available queue if no assignment was made
         for (const auto& robot : robotsVec) {
             availableRobots.push(robot);
@@ -136,7 +137,7 @@ void BruteForce::execute(
          << minMakespan << " seconds." << endl;
 
     // Print beautified assignment
-    printBeautifiedAssignment(robotsVec, bestAssignment, graph);
+    if (!compactMode) printBeautifiedAssignment(robotsVec, bestAssignment, graph);
 
     // Update robot states
     for (size_t i = 0; i < robotsVec.size(); ++i) {
@@ -150,7 +151,7 @@ void BruteForce::execute(
             availableRobots.push(robot);
         }
     }
-    cout << "--------------------------" << endl;
+    if (!compactMode) cout << "--------------------------" << endl;
 }
 
 

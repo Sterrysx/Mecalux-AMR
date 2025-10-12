@@ -20,8 +20,10 @@ void usage(const char* progname) {
     cerr << endl;
     cerr << "Arguments:" << endl;
     cerr << "  algorithmID   : Algorithm selection (default: 1)" << endl;
-    cerr << "                  1 = Brute Force (optimal)" << endl;
-    cerr << "                  3 = Greedy (suboptimal heuristic)" << endl;
+    cerr << "                  0 = Comparison Mode (runs all 3 algorithms)" << endl;
+    cerr << "                  1 = Brute Force (optimal, exhaustive search)" << endl;
+    cerr << "                  2 = Greedy (fast heuristic)" << endl;
+    cerr << "                  3 = Hill Climbing (improved greedy via local search)" << endl;
     cerr << "  graphID       : Graph number from 1-10 (default: 1)" << endl;
     cerr << "                  Loads from ../01_layer_mapping/tests/distributions/graphN.inp" << endl;
     cerr << "  numTasks      : Number of tasks (default: 15)" << endl;
@@ -34,10 +36,13 @@ void usage(const char* progname) {
     cerr << endl;
     cerr << "Examples:" << endl;
     cerr << "  " << progname << "                # Use algorithm 1, graph1, 15 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " 0             # Compare all algorithms, graph1, 15 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " 2             # Use algorithm 2, graph1, 15 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 3             # Use algorithm 3, graph1, 15 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 1 2           # Use algorithm 1, graph2, 15 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " 0 1 12        # Compare all algorithms, graph1, 12 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 3 1 20        # Use algorithm 3, graph1, 20 tasks, 2 robots" << endl;
-    cerr << "  " << progname << " 1 1 10 4      # Use algorithm 1, graph1, 10 tasks, 4 robots" << endl;
+    cerr << "  " << progname << " 2 4 30 3      # Use algorithm 2, graph4, 30 tasks, 3 robots" << endl;
     exit(1);
 }
 
@@ -84,8 +89,10 @@ int main(int argc, char* argv[]) {
     // Parse algorithmID
     if (argc >= 2) {
         algorithm = atoi(argv[1]);
-        if (algorithm < 1 || algorithm > 3) {
-            cerr << "Error: algorithmID must be between 1 and 3" << endl;
+        if (algorithm < 0 || algorithm > 3) {
+            cerr << "Error: algorithmID must be between 0 and 3" << endl;
+            cerr << "  0 = Comparison Mode (runs all 3 algorithms)" << endl;
+            cerr << "  1 = Brute Force, 2 = Greedy, 3 = Hill Climbing" << endl;
             usage(argv[0]);
         }
     }
