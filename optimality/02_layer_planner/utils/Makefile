@@ -1,52 +1,81 @@
-# Makefile for Task Generators
+# Makefile for Task Generator
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 
 SRCDIR = src
 BUILDDIR = build
 
-# Binaries
-GENERATORS = generate_tasks_graph1 generate_tasks_graph2
+# Binary
+TARGET = $(BUILDDIR)/taskGenerator
 
-# Full paths to binaries in build directory
-BINS = $(addprefix $(BUILDDIR)/, $(GENERATORS))
+.PHONY: all clean help test-all
 
-.PHONY: all clean help
-
-all: $(BUILDDIR) $(BINS)
+all: $(TARGET)
 
 # Create build directory
 $(BUILDDIR):
 	mkdir -p $(BUILDDIR)
 
-# Build individual generators
-$(BUILDDIR)/generate_tasks_graph1: $(SRCDIR)/generate_tasks_graph1.cc | $(BUILDDIR)
+# Build universal task generator
+$(TARGET): $(SRCDIR)/taskGenerator.cc | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) $< -o $@
-
-$(BUILDDIR)/generate_tasks_graph2: $(SRCDIR)/generate_tasks_graph2.cc | $(BUILDDIR)
-	$(CXX) $(CXXFLAGS) $< -o $@
-
-## (No wrapper scripts are generated anymore - build only creates binaries)
+	@echo ""
+	@echo "✓ Task generator built successfully!"
+	@echo "  Usage: ./$(TARGET) <graphID> <num_cases> <packets_per_case> [seed]"
+	@echo "  Example: ./$(TARGET) 1 10 15"
 
 # Clean build artifacts
 clean:
 	rm -rf $(BUILDDIR)
-	rm -rf ../tests/graph1/*
-	rm -rf ../tests/graph2/*
+	@echo "Cleaned build directory"
+
+# Clean all generated test files (use with caution!)
+clean-tests:
+	@echo "Removing all generated test files..."
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		if [ -d ../tests/graph$$i ]; then \
+			rm -rf ../tests/graph$$i/*; \
+			echo "  Cleaned tests/graph$$i/"; \
+		fi \
+	done
+
+# Test generator with all 10 graphs (generates 5 tasks for each)
+test-all: $(TARGET)
+	@echo ""
+	@echo "Testing task generator with all 10 graphs..."
+	@echo "============================================="
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		echo ""; \
+		echo "--- Testing Graph $$i ---"; \
+		./$(TARGET) $$i 3 5 12345; \
+	done
+	@echo ""
+	@echo "✓ All graphs tested successfully!"
 
 ## Help target
 help:
-	@echo "Task Generator Build System"
-	@echo "============================"
+	@echo "Universal Task Generator Build System"
+	@echo "======================================"
 	@echo ""
 	@echo "Targets:"
-	@echo "  make              - Build all generator binaries in build/"
-	@echo "  make clean        - Remove build/ and generated test files"
+	@echo "  make              - Build the task generator"
+	@echo "  make clean        - Remove build directory"
+	@echo "  make clean-tests  - Remove all generated test files (graph1-10)"
+	@echo "  make test-all     - Test generator with all 10 graphs"
 	@echo "  make help         - Show this help message"
 	@echo ""
-	@echo "Generated files:"
-	@echo "  build/generate_tasks_graph1       - Direct binary"
-	@echo "  build/generate_tasks_graph2       - Direct binary"
+	@echo "Generated binary:"
+	@echo "  build/taskGenerator   - Universal task generator for all graphs"
+	@echo ""
+	@echo "Usage:"
+	@echo "  ./build/taskGenerator <graphID> <num_cases> <packets_per_case> [seed]"
+	@echo "  ./build/taskGenerator <graphID> -i <num_cases> <start> <increment> [seed]"
+	@echo ""
+	@echo "Examples:"
+	@echo "  ./build/taskGenerator 1 10 15        # Graph1: 10 files with 15 packets each"
+	@echo "  ./build/taskGenerator 3 -i 10 10 10  # Graph3: 10, 20, 30, ..., 100 packets"
+	@echo ""
+	@echo "Supported Graphs: 1-10"
 	@echo ""
 	@echo "Usage examples (direct binaries):"
 	@echo "  From utils/: ./build/generate_tasks_graph1 10 15        # Uses relative paths"

@@ -20,9 +20,8 @@ void usage(const char* progname) {
     cerr << endl;
     cerr << "Arguments:" << endl;
     cerr << "  algorithmID   : Algorithm selection (default: 1)" << endl;
-    cerr << "                  1 = Brute Force" << endl;
-    cerr << "                  2 = Dynamic Programming" << endl;
-    cerr << "                  3 = Greedy" << endl;
+    cerr << "                  1 = Brute Force (optimal)" << endl;
+    cerr << "                  3 = Greedy (suboptimal heuristic)" << endl;
     cerr << "  graphID       : Graph number from 1-10 (default: 1)" << endl;
     cerr << "                  Loads from ../01_layer_mapping/tests/distributions/graphN.inp" << endl;
     cerr << "  numTasks      : Number of tasks (default: 15)" << endl;
@@ -35,7 +34,7 @@ void usage(const char* progname) {
     cerr << endl;
     cerr << "Examples:" << endl;
     cerr << "  " << progname << "                # Use algorithm 1, graph1, 15 tasks, 2 robots" << endl;
-    cerr << "  " << progname << " 2             # Use algorithm 2, graph1, 15 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " 3             # Use algorithm 3, graph1, 15 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 1 2           # Use algorithm 1, graph2, 15 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 3 1 20        # Use algorithm 3, graph1, 20 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 1 1 10 4      # Use algorithm 1, graph1, 10 tasks, 4 robots" << endl;
@@ -136,8 +135,8 @@ int main(int argc, char* argv[]) {
         cout << "Task file not found: " << taskFile << endl;
         cout << "Generating task file with " << numTasks << " tasks (seed=16)..." << endl;
         
-        // Call the task generator
-        string generatorCmd = "./utils/build/generate_tasks_graph" + to_string(graphID) + 
+        // Call the universal task generator from utils directory
+        string generatorCmd = "cd utils && ./build/taskGenerator " + to_string(graphID) + 
                              " 1 " + to_string(numTasks) + " 16";
         
         int result = system(generatorCmd.c_str());

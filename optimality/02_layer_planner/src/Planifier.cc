@@ -1,7 +1,6 @@
-#include "../include/Planifier.hh"
-#include "../include/algorithms/01_BruteForce.hh"
-#include "../include/algorithms/02_DynamicProgramming.hh"
-#include "../include/algorithms/03_Greedy.hh"
+#include "Planifier.hh"
+#include "algorithms/01_BruteForce.hh"
+#include "algorithms/03_Greedy.hh"
 #include <memory>
 using namespace std;
 
@@ -91,7 +90,6 @@ void Planifier::plan(int algorithmChoice) {
             setAlgorithm(make_unique<BruteForce>());
             break;
         case 2:
-            setAlgorithm(make_unique<DynamicProgramming>());
             break;
         case 3:
             setAlgorithm(make_unique<Greedy>());
