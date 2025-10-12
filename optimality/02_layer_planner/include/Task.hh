@@ -22,6 +22,11 @@ public:
     void setOriginNode(int originNode);
     void setDestinationNode(int destinationNode);
 
+    // Comparison operator for sorting and permutation (required for std::next_permutation)
+    bool operator<(const Task& other) const {
+        return taskId < other.taskId;
+    }
+
 private:
     int taskId;
     int originNode;

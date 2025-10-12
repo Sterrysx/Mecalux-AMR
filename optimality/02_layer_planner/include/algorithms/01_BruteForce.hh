@@ -111,6 +111,14 @@ private:
         const Graph& graph,
         const BatteryConfig& config
     );
+
+    // New method for truly optimal solution: finds minimum time for a robot
+    // by checking all permutations of its assigned tasks (solves TSP)
+    double calculateMinTimeForRobot(
+        const Robot& robot,
+        const std::vector<Task>& tasks,
+        const Graph& graph
+    );
 };
 
 #endif // BRUTEFORCE_HH

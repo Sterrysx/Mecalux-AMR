@@ -14,7 +14,7 @@ string HillClimbing::getName() const {
 }
 
 string HillClimbing::getDescription() const {
-    return "Improves greedy solution through local search and task swapping";
+    return "Improves greedy solution through local search: inter-robot swaps/moves + intra-robot task ordering";
 }
 
 /**
@@ -320,6 +320,34 @@ bool HillClimbing::tryImprovement(
                     // Revert
                     assignment[j].pop_back();
                     assignment[i].insert(assignment[i].begin() + ti, task);
+                }
+            }
+        }
+    }
+
+    // Try swapping tasks within the same robot (optimize execution order)
+    for (size_t i = 0; i < assignment.size(); ++i) {
+        if (assignment[i].size() < 2) continue;  // Need at least 2 tasks to swap
+
+        // Try swapping each pair of tasks within this robot's queue
+        for (size_t ti = 0; ti < assignment[i].size(); ++ti) {
+            for (size_t tj = ti + 1; tj < assignment[i].size(); ++tj) {
+                // Swap tasks within the same robot
+                Task temp = assignment[i][ti];
+                assignment[i][ti] = assignment[i][tj];
+                assignment[i][tj] = temp;
+
+                // Calculate new makespan
+                double newMakespan = calculateMakespan(assignment, robots, graph, config, chargingNodeId);
+
+                if (newMakespan < currentMakespan) {
+                    // Accept the swap
+                    currentMakespan = newMakespan;
+                    return true;
+                } else {
+                    // Revert the swap
+                    assignment[i][tj] = assignment[i][ti];
+                    assignment[i][ti] = temp;
                 }
             }
         }

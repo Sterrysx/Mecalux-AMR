@@ -5,6 +5,8 @@
 #include <cmath>
 #include <limits>
 #include <chrono>
+#include <random>
+#include <algorithm>
 using namespace std;
 
 string Greedy::getName() const {
@@ -12,7 +14,7 @@ string Greedy::getName() const {
 }
 
 string Greedy::getDescription() const {
-    return "Assigns each task to the robot that can complete it soonest (greedy heuristic)";
+    return "Multi-start greedy: Tries 5 random task orderings, assigns each task to the robot that can complete it soonest";
 }
 
 /**
@@ -81,32 +83,62 @@ void Greedy::execute(
     
     // Get charging node
     int chargingNodeId = getChargingNodeId(graph);
-    if (chargingNodeId == -1) {
+    if (chargingNodeId == -1 && !compactMode) {
         cerr << "Warning: No charging node found in graph. Battery constraints ignored." << endl;
     }
 
-    // Greedy assignment: for each task, choose the robot that can complete it soonest
-    for (const Task& task : tasksVec) {
-        int bestRobotIdx = -1;
-        double minCompletionTime = numeric_limits<double>::max();
-
-        // Try each robot and find which one can complete this task soonest
+    // Multi-start greedy: Try multiple random orderings to find best solution
+    const int NUM_RANDOM_STARTS = 5;
+    double bestMakespan = numeric_limits<double>::max();
+    vector<vector<Task>> bestAssignment(robotStates.size());
+    vector<pair<double, double>> bestPositions(robotStates.size());
+    vector<double> bestBatteries(robotStates.size());
+    vector<double> bestTimes(robotStates.size());
+    
+    for (int trial = 0; trial < NUM_RANDOM_STARTS; ++trial) {
+        // Reset robot states for this trial
+        vector<RobotState> trialRobotStates;
         for (size_t i = 0; i < robotStates.size(); ++i) {
-            RobotState tempState = robotStates[i]; // Make a copy for simulation
-            
-            double completionTime = calculateCompletionTime(
-                tempState, task, graph, config, chargingNodeId
-            );
-
-            if (completionTime < minCompletionTime) {
-                minCompletionTime = completionTime;
-                bestRobotIdx = static_cast<int>(i);
-            }
+            trialRobotStates.push_back(RobotState{
+                Robot(robotStates[i].robot.getId(), robotStates[i].robot.getPosition(), 
+                      robotStates[i].robot.getBatteryLevel(), robotStates[i].robot.getCurrentTask(),
+                      robotStates[i].robot.getMaxSpeed(), robotStates[i].robot.getLoadCapacity()),
+                robotStates[i].robot.getPosition(),
+                robotStates[i].robot.getBatteryLevel(),
+                0.0,
+                {}
+            });
         }
+        
+        // Shuffle tasks for random starts (except first trial which uses original order)
+        vector<Task> shuffledTasks = tasksVec;
+        if (trial > 0) {
+            unsigned seed = chrono::system_clock::now().time_since_epoch().count() + trial;
+            shuffle(shuffledTasks.begin(), shuffledTasks.end(), default_random_engine(seed));
+        }
+        
+        // Greedy assignment: for each task, choose the robot that can complete it soonest
+        for (const Task& task : shuffledTasks) {
+            int bestRobotIdx = -1;
+            double minCompletionTime = numeric_limits<double>::max();
 
-        // Assign task to the best robot
-        if (bestRobotIdx != -1) {
-            RobotState& robotState = robotStates[bestRobotIdx];
+            // Try each robot and find which one can complete this task soonest
+            for (size_t i = 0; i < trialRobotStates.size(); ++i) {
+                RobotState tempState = trialRobotStates[i]; // Make a copy for simulation
+                
+                double completionTime = calculateCompletionTime(
+                    tempState, task, graph, config, chargingNodeId
+                );
+
+                if (completionTime < minCompletionTime) {
+                    minCompletionTime = completionTime;
+                    bestRobotIdx = static_cast<int>(i);
+                }
+            }
+
+            // Assign task to the best robot
+            if (bestRobotIdx != -1) {
+                RobotState& robotState = trialRobotStates[bestRobotIdx];
             
             const Graph::Node* originNode = graph.getNode(task.getOriginNode());
             const Graph::Node* destNode = graph.getNode(task.getDestinationNode());
@@ -141,17 +173,41 @@ void Greedy::execute(
             robotState.assignedTasks.push_back(task);
         }
     }
+        
+        // Calculate makespan for this trial
+        double trialMakespan = 0.0;
+        for (const auto& state : trialRobotStates) {
+            if (state.totalTime > trialMakespan) {
+                trialMakespan = state.totalTime;
+            }
+        }
+        
+        // Keep best solution
+        if (trialMakespan < bestMakespan) {
+            bestMakespan = trialMakespan;
+            // Save best state data (not the Robot objects which can't be copied)
+            for (size_t i = 0; i < trialRobotStates.size(); ++i) {
+                bestAssignment[i] = trialRobotStates[i].assignedTasks;
+                bestPositions[i] = trialRobotStates[i].currentPosition;
+                bestBatteries[i] = trialRobotStates[i].currentBattery;
+                bestTimes[i] = trialRobotStates[i].totalTime;
+            }
+        }
+    }
+    
+    // Apply best solution found to robot states
+    for (size_t i = 0; i < robotStates.size(); ++i) {
+        robotStates[i].assignedTasks = bestAssignment[i];
+        robotStates[i].currentPosition = bestPositions[i];
+        robotStates[i].currentBattery = bestBatteries[i];
+        robotStates[i].totalTime = bestTimes[i];
+    }
 
     auto endTime = chrono::high_resolution_clock::now();
     chrono::duration<double, milli> algorithmDuration = endTime - startTime;
 
     // Calculate makespan (maximum completion time)
-    double makespan = 0.0;
-    for (const auto& state : robotStates) {
-        if (state.totalTime > makespan) {
-            makespan = state.totalTime;
-        }
-    }
+    double makespan = bestMakespan;
 
     if (!compactMode) cout << "\n--- Greedy Algorithm Result ---" << endl;
     cout << "Algorithm computation time: " << algorithmDuration.count() << " ms" << endl;

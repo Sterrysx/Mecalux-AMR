@@ -5,6 +5,7 @@
 #include <cmath>
 #include <limits>
 #include <chrono>
+#include <algorithm>
 using namespace std;
 
 string BruteForce::getName() const {
@@ -12,7 +13,7 @@ string BruteForce::getName() const {
 }
 
 string BruteForce::getDescription() const {
-    return "Explores all possible task assignments to find the optimal solution";
+    return "Truly optimal brute force: Finds optimal partition AND optimal task ordering (solves TSP per robot)";
 }
 
 
@@ -20,7 +21,16 @@ string BruteForce::getDescription() const {
 
 
 // Let N be the number of Robots and M the number of Tasks
-// The cost is O(N^M)
+// The cost is O(N^M * (M/N)!)
+// 
+// This algorithm finds the optimal PARTITION and optimal SCHEDULE:
+// - For each partition (N^M combinations), it solves the TSP for each robot
+// - Each robot's task ordering is optimized by checking all permutations
+// - This ensures we find the truly optimal makespan
+// 
+// COMPLEXITY WARNING: With M tasks split among N robots, each robot gets ~M/N tasks.
+// For each partition, we must check (M/N)! permutations per robot.
+// Example: 12 tasks, 2 robots = 2^12 partitions * 6! * 6! ≈ 2 billion operations
 void BruteForce::execute(
     const Graph& graph,
     queue<Robot>& availableRobots,
@@ -63,30 +73,53 @@ void BruteForce::execute(
     if (!compactMode) cout << "Assigning " << tasksVec.size() << " tasks to " << robotsVec.size() << " available robots." << endl;
     
     // Calculate complexity and check feasibility
-    // For brute force: complexity = numRobots^numTasks
-    // Safe limit: keep total combinations under ~100 million
-    double logComplexity = tasksVec.size() * log(robotsVec.size());
-    double estimatedComplexity = exp(logComplexity);
-    const double MAX_COMPLEXITY = 1e8; // 100 million combinations
+    // For truly optimal brute force: 
+    // - Partition complexity: numRobots^numTasks
+    // - TSP complexity per robot: factorial of tasks per robot
+    // - Total: R^T * (T/R)! per robot ≈ R^T * ((T/R)!)^R
+    // 
+    // Practical limits:
+    // - 8 tasks, 2 robots: 2^8 * 4! * 4! = 256 * 24 * 24 ≈ 147k operations (fast)
+    // - 10 tasks, 2 robots: 2^10 * 5! * 5! = 1024 * 120 * 120 ≈ 15M operations (slow but feasible)
+    // - 12 tasks, 2 robots: 2^12 * 6! * 6! = 4096 * 720 * 720 ≈ 2.1B operations (VERY SLOW)
+    
+    double logPartitionComplexity = tasksVec.size() * log(robotsVec.size());
+    double estimatedPartitions = exp(logPartitionComplexity);
+    
+    // Estimate average tasks per robot and factorial complexity
+    int tasksPerRobot = (tasksVec.size() + robotsVec.size() - 1) / robotsVec.size(); // Ceiling division
+    double factorialComplexity = 1.0;
+    for (int i = 2; i <= tasksPerRobot; ++i) {
+        factorialComplexity *= i;
+    }
+    // Approximate total for all robots (simplified)
+    double tspComplexity = pow(factorialComplexity, robotsVec.size());
+    double estimatedComplexity = estimatedPartitions * tspComplexity;
+    
+    const double MAX_COMPLEXITY = 5e7; // 50 million operations (allows up to 10 tasks with 2 robots)
     
     if (estimatedComplexity > MAX_COMPLEXITY) {
-        cout << "\n❌ ERROR: Brute force complexity too high for this problem!" << endl;
+        cout << "\n❌ ERROR: Truly optimal brute force complexity too high for this problem!" << endl;
         cout << "   Problem size: " << robotsVec.size() << " robots, " << tasksVec.size() << " tasks" << endl;
-        cout << "   Complexity: " << robotsVec.size() << "^" << tasksVec.size();
+        cout << "   Partition complexity: " << robotsVec.size() << "^" << tasksVec.size() 
+             << " ≈ " << (long long)(estimatedPartitions) << " partitions" << endl;
+        cout << "   TSP complexity per partition: ~" << tasksPerRobot << "! per robot" << endl;
+        cout << "   Total estimated operations: ";
+        cout << "   Total estimated operations: ";
         if (estimatedComplexity > 1e15) {
-            cout << " (astronomical)" << endl;
+            cout << " (astronomical - would take days/weeks)" << endl;
         } else if (estimatedComplexity > 1e12) {
-            cout << " ≈ " << (long long)(estimatedComplexity / 1e12) << " trillion combinations" << endl;
+            cout << (long long)(estimatedComplexity / 1e12) << " trillion" << endl;
         } else if (estimatedComplexity > 1e9) {
-            cout << " ≈ " << (long long)(estimatedComplexity / 1e9) << " billion combinations" << endl;
+            cout << (long long)(estimatedComplexity / 1e9) << " billion" << endl;
         } else {
-            cout << " ≈ " << (long long)(estimatedComplexity / 1e6) << " million combinations" << endl;
+            cout << (long long)(estimatedComplexity / 1e6) << " million" << endl;
         }
-        cout << "   Maximum feasible: ~" << (long long)(MAX_COMPLEXITY / 1e6) << " million combinations" << endl;
-        cout << "\n   Please use a different algorithm:" << endl;
-        cout << "     - Algorithm 2: Dynamic Programming" << endl;
-        cout << "     - Algorithm 3: Greedy" << endl;
-        cout << "\n   Aborting brute force execution." << endl;
+        cout << "   Maximum feasible: ~" << (long long)(MAX_COMPLEXITY / 1e6) << " million operations" << endl;
+        cout << "\n   Please use a faster algorithm:" << endl;
+        cout << "     - Algorithm 2: Greedy (fast heuristic)" << endl;
+        cout << "     - Algorithm 3: Hill Climbing (improved greedy)" << endl;
+        cout << "\n   Aborting truly optimal brute force execution." << endl;
         
         // Return all robots to available queue
         for (const auto& robot : robotsVec) {
@@ -100,10 +133,13 @@ void BruteForce::execute(
     }
     
     // Warning for moderately large problem instances
-    if (estimatedComplexity > 1e6) {
-        cout << "\n⚠️  WARNING: This may take some time..." << endl;
-        cout << "    Complexity: " << robotsVec.size() << "^" << tasksVec.size() 
-             << " ≈ " << (long long)(estimatedComplexity / 1e6) << " million combinations" << endl;
+    if (estimatedComplexity > 1e6 && estimatedComplexity <= MAX_COMPLEXITY) {
+        cout << "\n⚠️  WARNING: This will take significant time..." << endl;
+        cout << "    Partition complexity: " << robotsVec.size() << "^" << tasksVec.size() 
+             << " ≈ " << (long long)(estimatedPartitions) << " partitions" << endl;
+        cout << "    TSP per partition: ~" << tasksPerRobot << "! ≈ " 
+             << (long long)factorialComplexity << " permutations per robot" << endl;
+        cout << "    Total operations: ~" << (long long)(estimatedComplexity / 1e6) << " million" << endl;
         cout << "    Continuing... (press Ctrl+C to abort)\n" << endl;
     }
     
@@ -252,72 +288,107 @@ void BruteForce::performCharging(
 
 /**
  * @brief Calculates the makespan (maximum completion time) for a complete assignment.
- * Includes battery management: robots must charge if battery drops below 20%.
+ * This version finds the OPTIMAL task ordering for each robot by checking all permutations.
  */
 double BruteForce::calculateMakespan(
     const vector<vector<Task>>& assignment,
     vector<Robot>& robots,
     const Graph& graph
 ) {
-    if (robots.empty()) return 0.0;
-    
-    // Get configuration from first robot (all robots should have same config)
-    BatteryConfig config(robots[0]);
-    
-    // Get the charging node
-    int chargingNodeId = getChargingNodeId(graph);
-    if (chargingNodeId == -1) {
-        cerr << "Warning: No charging node found in graph. Battery constraints ignored." << endl;
-    }
-
     double maxTime = 0.0;
 
     for (size_t i = 0; i < robots.size(); ++i) {
-        double robotTotalTime = 0.0;
-        pair<double, double> currentPos = robots[i].getPosition();
-        double currentBattery = robots[i].getBatteryLevel();
+        // For each robot, find the minimum possible time by checking all task orderings
+        double robotMinTime = calculateMinTimeForRobot(robots[i], assignment[i], graph);
+        
+        if (robotMinTime > maxTime) {
+            maxTime = robotMinTime;
+        }
+    }
+    
+    return maxTime;
+}
 
-        for (const auto& task : assignment[i]) {
+/**
+ * @brief Finds the minimum time for a single robot by checking all permutations of its tasks.
+ * This solves the Traveling Salesman Problem (TSP) for the robot's assigned tasks.
+ * 
+ * @param robot The robot to calculate time for
+ * @param tasks The tasks assigned to this robot
+ * @param graph The warehouse graph
+ * @return The minimum possible completion time for this robot
+ */
+double BruteForce::calculateMinTimeForRobot(
+    const Robot& robot,
+    const std::vector<Task>& tasks,
+    const Graph& graph
+) {
+    if (tasks.empty()) {
+        return 0.0;
+    }
+
+    // Create a mutable copy of tasks to generate permutations
+    vector<Task> permutableTasks = tasks;
+
+    // Sort the tasks to ensure std::next_permutation works correctly
+    sort(permutableTasks.begin(), permutableTasks.end());
+
+    double minTimeForThisRobot = numeric_limits<double>::max();
+    BatteryConfig config(robot);
+    int chargingNodeId = getChargingNodeId(graph);
+
+    // Loop through every possible permutation of the tasks
+    do {
+        double timeForThisPermutation = 0.0;
+        double currentBattery = robot.getBatteryLevel();
+        pair<double, double> currentPos = robot.getPosition();
+        bool validPermutation = true;
+
+        // Execute tasks in this permutation order
+        for (const auto& task : permutableTasks) {
             const Graph::Node* originNode = graph.getNode(task.getOriginNode());
             const Graph::Node* destNode = graph.getNode(task.getDestinationNode());
-
-            if (!originNode || !destNode) {
-                cerr << "Error: Invalid node ID in task " << task.getTaskId() << endl;
-                continue; 
-            }
             
-            // Calculate battery consumption for this task
+            if (!originNode || !destNode) {
+                validPermutation = false;
+                break;
+            }
+
             TaskBatteryInfo taskInfo = calculateTaskBatteryConsumption(
                 currentPos, originNode, destNode, currentBattery, config
             );
-            
-            // Check if doing this task will bring battery below threshold
+
+            // Check if charging is needed before this task
             if (chargingNodeId != -1 && shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
-                // Perform charging before attempting the task
-                performCharging(currentPos, currentBattery, robotTotalTime, chargingNodeId, graph, config);
+                performCharging(currentPos, currentBattery, timeForThisPermutation, 
+                              chargingNodeId, graph, config);
                 
-                // Recalculate task battery consumption from charging station
+                // Recalculate task info from charging station
                 taskInfo = calculateTaskBatteryConsumption(
                     currentPos, originNode, destNode, currentBattery, config
                 );
             }
             
-            // Execute task: travel to origin and perform task
-            currentBattery -= taskInfo.totalBatteryNeeded;
-            robotTotalTime += taskInfo.timeToOrigin + taskInfo.timeForTask;
-            currentPos = destNode->coordinates;
-            
-            // Safety check: if battery goes negative, this is an invalid assignment
-            if (currentBattery < 0) {
-                return numeric_limits<double>::max();
+            // Check for battery failure (invalid permutation)
+            if (taskInfo.batteryAfterTask < 0) {
+                validPermutation = false;
+                break;
             }
+
+            // Execute the task
+            timeForThisPermutation += taskInfo.timeToOrigin + taskInfo.timeForTask;
+            currentBattery -= taskInfo.totalBatteryNeeded;
+            currentPos = destNode->coordinates;
         }
 
-        if (robotTotalTime > maxTime) {
-            maxTime = robotTotalTime;
+        // After checking a full permutation, see if it's the best one yet
+        if (validPermutation && timeForThisPermutation < minTimeForThisRobot) {
+            minTimeForThisRobot = timeForThisPermutation;
         }
-    }
-    return maxTime;
+
+    } while (next_permutation(permutableTasks.begin(), permutableTasks.end()));
+
+    return minTimeForThisRobot;
 }
 
 
