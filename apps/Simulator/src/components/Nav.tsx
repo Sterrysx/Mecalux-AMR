@@ -13,6 +13,7 @@ export default function Nav() {
         <nav className="ml-auto flex gap-2">
           <NavLink to="/editor" className={({isActive})=>`${linkBase} ${isActive?active:idle}`}>Editor</NavLink>
           <NavLink to="/isometric" className={({isActive})=>`${linkBase} ${isActive?active:idle}`}>Isometric</NavLink>
+          <NavLink to="/planner" className={({isActive})=>`${linkBase} ${isActive?active:idle}`}>Task Planner</NavLink>
         </nav>
       </div>
     </header>
