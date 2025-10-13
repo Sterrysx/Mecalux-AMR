@@ -9,6 +9,7 @@
 #include <string>
 #include <queue>
 #include <memory>
+#include <optional>
 #include "Graph.hh"
 #include "Robot.hh"
 #include "Task.hh"
@@ -19,6 +20,13 @@ class Planifier {
 
 public:
     // Constructors and Destructor
+
+    struct ComparisonReport {
+        std::optional<AlgorithmResult> bruteForceResult;
+        std::optional<AlgorithmResult> greedyResult;
+        std::optional<AlgorithmResult> hillClimbingResult;
+    };
+
     Planifier(const Graph& graph, int numRobots, std::queue<Task> tasks);
     ~Planifier();
 

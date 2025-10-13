@@ -19,7 +19,7 @@ public:
     Greedy() = default;
     ~Greedy() override = default;
 
-    void execute(
+    AlgorithmResult execute(
         const Graph& graph,
         std::queue<Robot>& availableRobots,
         std::queue<Robot>& busyRobots,
@@ -31,25 +31,6 @@ public:
 
     std::string getName() const override;
     std::string getDescription() const override;
-
-private:
-    // Robot state for greedy assignment
-    struct RobotState {
-        Robot robot;
-        std::pair<double, double> currentPosition;
-        double currentBattery;
-        double totalTime;
-        std::vector<Task> assignedTasks;
-    };
-
-    // Calculate completion time for a robot to complete a task
-    double calculateCompletionTime(
-        RobotState& robotState,
-        const Task& task,
-        const Graph& graph,
-        const SchedulerUtils::BatteryConfig& config,
-        int chargingNodeId
-    );
 };
 
 #endif // GREEDY_HH

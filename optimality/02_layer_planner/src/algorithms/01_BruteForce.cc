@@ -20,7 +20,7 @@ string BruteForce::getDescription() const {
 }
 
 
-void complexity_warnings() {
+bool complexity_warnings(const vector<Task>& tasksVec, const vector<Robot>& robotsVec, bool compactMode) {
     // Calculate complexity and check feasibility
     // For truly optimal brute force: 
     // - Partition complexity: numRobots^numTasks
@@ -70,15 +70,7 @@ void complexity_warnings() {
         cout << "     - Algorithm 3: Hill Climbing (improved greedy)" << endl;
         cout << "\n   Aborting truly optimal brute force execution." << endl;
         
-        // Return all robots to available queue
-        for (const auto& robot : robotsVec) {
-            availableRobots.push(robot);
-        }
-        // Return all tasks to pending queue
-        for (const auto& task : tasksVec) {
-            pendingTasks.push(task);
-        }
-        return;
+        return true; // Abort execution
     }
     
     // Warning for moderately large problem instances
@@ -91,6 +83,8 @@ void complexity_warnings() {
         cout << "    Total operations: ~" << (long long)(estimatedComplexity / 1e6) << " million" << endl;
         cout << "    Continuing... (press Ctrl+C to abort)\n" << endl;
     }
+    
+    return false; // Continue execution
 }
 
 // --- Main Method Implementation ---
@@ -107,7 +101,7 @@ void complexity_warnings() {
 // COMPLEXITY WARNING: With M tasks split among N robots, each robot gets ~M/N tasks.
 // For each partition, we must check (M/N)! permutations per robot.
 // Example: 12 tasks, 2 robots = 2^12 partitions * 6! * 6! ≈ 2 billion operations
-void BruteForce::execute(
+AlgorithmResult BruteForce::execute(
     const Graph& graph,
     queue<Robot>& availableRobots,
     queue<Robot>& busyRobots,
@@ -119,6 +113,10 @@ void BruteForce::execute(
     (void)chargingRobots; // Unused in brute force
     (void)totalRobots;    // Unused in brute force
     
+    AlgorithmResult result;
+    result.algorithmName = getName();
+    result.isOptimal = true; // Brute force is always optimal
+    
     if (!compactMode) cout << "Executing Brute Force Algorithm..." << endl;
     
     // --- 1. PREPARATION ---
@@ -126,11 +124,15 @@ void BruteForce::execute(
 
     if (pendingTasks.empty()) {
         if (!compactMode) cout << "No pending tasks to assign." << endl;
-        return;
+        result.makespan = 0.0;
+        result.computationTimeMs = 0.0;
+        return result;
     }
     if (availableRobots.empty()) {
         if (!compactMode) cout << "No available robots to perform tasks." << endl;
-        return;
+        result.makespan = 0.0;
+        result.computationTimeMs = 0.0;
+        return result;
     }
     
     // Convert queues to vectors for easier processing (indexed access)
@@ -148,7 +150,21 @@ void BruteForce::execute(
 
     if (!compactMode) cout << "Assigning " << tasksVec.size() << " tasks to " << robotsVec.size() << " available robots." << endl;
     
-    complexity_warnings();
+    if (complexity_warnings(tasksVec, robotsVec, compactMode)) {
+        // Complexity too high - abort and return all robots and tasks to queues
+        for (const auto& robot : robotsVec) {
+            availableRobots.push(robot);
+        }
+        for (const auto& task : tasksVec) {
+            pendingTasks.push(task);
+        }
+        
+        auto endTime = chrono::high_resolution_clock::now();
+        chrono::duration<double, milli> algorithmDuration = endTime - startTime;
+        result.makespan = numeric_limits<double>::max();
+        result.computationTimeMs = algorithmDuration.count();
+        return result;
+    }
     
     // --- 2. BRUTE-FORCE ALGORITHM ---
     
@@ -173,7 +189,9 @@ void BruteForce::execute(
         for (const auto& robot : robotsVec) {
             availableRobots.push(robot);
         }
-        return;
+        result.makespan = numeric_limits<double>::max();
+        result.computationTimeMs = algorithmDuration.count();
+        return result;
     }
 
     cout << "Optimal assignment found with a makespan (max robot completion time) of: " 
@@ -195,6 +213,13 @@ void BruteForce::execute(
         }
     }
     if (!compactMode) cout << "--------------------------" << endl;
+    
+    // Populate result struct
+    result.makespan = minMakespan;
+    result.assignment = bestAssignment;
+    result.computationTimeMs = algorithmDuration.count();
+    
+    return result;
 }
 
 

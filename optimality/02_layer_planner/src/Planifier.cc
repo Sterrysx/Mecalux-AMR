@@ -3,6 +3,7 @@
 #include "algorithms/02_Greedy.hh"
 #include "algorithms/03_HillClimbing.hh"
 #include <memory>
+#include <iomanip>
 using namespace std;
 
 
@@ -57,7 +58,7 @@ void Planifier::executePlan() {
     cout << "Description: " << currentAlgorithm->getDescription() << endl;
     cout << endl;
     
-    currentAlgorithm->execute(
+    AlgorithmResult result = currentAlgorithm->execute(
         G,
         availableRobots,
         busyRobots,
@@ -66,6 +67,9 @@ void Planifier::executePlan() {
         totalRobots
     );
     
+    // The algorithm already prints its results, so we just acknowledge completion
+    (void)result; // Suppress unused variable warning
+    
     cout << "=== End Algorithm ===" << endl;
 }
 
@@ -73,10 +77,18 @@ void Planifier::executePlan() {
 void Planifier::plan(int algorithmChoice) {
     int selectedAlgorithm = algorithmChoice;
     
-    // Comparison mode: run all algorithms if choice is 0
-    if (algorithmChoice == 0) {
+    // Comparison mode: run all algorithms if choice is 0 or -1
+    // 0: run all three algorithms (BruteForce, Greedy, HillClimbing)
+    // -1: run only heuristic algorithms (Greedy, HillClimbing) - excludes BruteForce
+    if (algorithmChoice == 0 || algorithmChoice == -1) {
+        bool includeOptimal = (algorithmChoice == 0);
+        
         cout << "========================================" << endl;
-        cout << "  ALGORITHM COMPARISON TEST" << endl;
+        if (includeOptimal) {
+            cout << "  ALGORITHM COMPARISON TEST (ALL)" << endl;
+        } else {
+            cout << "  HEURISTIC ALGORITHMS COMPARISON TEST" << endl;
+        }
         cout << "  Graph with " << G.getNumVertices() << " nodes, " 
              << getPendingTasks().size() << " Tasks, " << totalRobots << " Robots" << endl;
         cout << "========================================" << endl;
@@ -90,8 +102,14 @@ void Planifier::plan(int algorithmChoice) {
             tempTasks.pop();
         }
         
+        ComparisonReport report;
+        
+        // Determine which algorithms to run
+        int startAlg = includeOptimal ? 1 : 2;  // Start from 1 (BruteForce) or 2 (Greedy)
+        int endAlg = 3;  // Always end with 3 (HillClimbing)
+        
         // Run each algorithm
-        for (int alg = 1; alg <= 3; alg++) {
+        for (int alg = startAlg; alg <= endAlg; alg++) {
             // Recreate task queue
             pendingTasks = queue<Task>();
             for (const Task& t : taskList) {
@@ -119,8 +137,8 @@ void Planifier::plan(int algorithmChoice) {
                 setAlgorithm(make_unique<HillClimbing>());
             }
             
-            // Execute algorithm
-            currentAlgorithm->execute(
+            // Execute algorithm and collect result
+            AlgorithmResult result = currentAlgorithm->execute(
                 G,
                 availableRobots,
                 busyRobots,
@@ -130,7 +148,37 @@ void Planifier::plan(int algorithmChoice) {
                 true  // compactMode = true for comparison
             );
             
+            // Store result in comparison report
+            if (alg == 1) {
+                report.bruteForceResult = result;
+            } else if (alg == 2) {
+                report.greedyResult = result;
+            } else if (alg == 3) {
+                report.hillClimbingResult = result;
+            }
+            
             cout << endl;
+        }
+        
+        // Print comparison summary
+        cout << "========================================" << endl;
+        cout << "  COMPARISON SUMMARY" << endl;
+        cout << "========================================" << endl;
+        
+        if (report.bruteForceResult.has_value()) {
+            cout << "Brute Force:   Makespan = " << fixed << setprecision(2) 
+                 << report.bruteForceResult->makespan << "s, Time = " 
+                 << report.bruteForceResult->computationTimeMs << "ms (Optimal)" << endl;
+        }
+        if (report.greedyResult.has_value()) {
+            cout << "Greedy:        Makespan = " << fixed << setprecision(2) 
+                 << report.greedyResult->makespan << "s, Time = " 
+                 << report.greedyResult->computationTimeMs << "ms" << endl;
+        }
+        if (report.hillClimbingResult.has_value()) {
+            cout << "Hill Climbing: Makespan = " << fixed << setprecision(2) 
+                 << report.hillClimbingResult->makespan << "s, Time = " 
+                 << report.hillClimbingResult->computationTimeMs << "ms" << endl;
         }
         
         cout << "========================================" << endl;

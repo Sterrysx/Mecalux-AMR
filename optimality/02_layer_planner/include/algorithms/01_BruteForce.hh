@@ -17,7 +17,7 @@ public:
     BruteForce() = default;
     ~BruteForce() override = default;
 
-    void execute(
+    AlgorithmResult execute(
         const Graph& graph,
         std::queue<Robot>& availableRobots,
         std::queue<Robot>& busyRobots,

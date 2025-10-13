@@ -20,6 +20,7 @@ void usage(const char* progname) {
     cerr << endl;
     cerr << "Arguments:" << endl;
     cerr << "  algorithmID   : Algorithm selection (default: 1)" << endl;
+    cerr << "                 -1 = Heuristics Only (runs Greedy and Hill Climbing)" << endl;
     cerr << "                  0 = Comparison Mode (runs all 3 algorithms)" << endl;
     cerr << "                  1 = Brute Force (optimal, exhaustive search)" << endl;
     cerr << "                  2 = Greedy (fast heuristic)" << endl;
@@ -36,6 +37,7 @@ void usage(const char* progname) {
     cerr << endl;
     cerr << "Examples:" << endl;
     cerr << "  " << progname << "                # Use algorithm 1, graph1, 15 tasks, 2 robots" << endl;
+    cerr << "  " << progname << " -1            # Compare heuristics only, graph1, 15 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 0             # Compare all algorithms, graph1, 15 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 2             # Use algorithm 2, graph1, 15 tasks, 2 robots" << endl;
     cerr << "  " << progname << " 3             # Use algorithm 3, graph1, 15 tasks, 2 robots" << endl;
@@ -89,8 +91,9 @@ int main(int argc, char* argv[]) {
     // Parse algorithmID
     if (argc >= 2) {
         algorithm = atoi(argv[1]);
-        if (algorithm < 0 || algorithm > 3) {
-            cerr << "Error: algorithmID must be between 0 and 3" << endl;
+        if (algorithm < -1 || algorithm > 3) {
+            cerr << "Error: algorithmID must be between -1 and 3" << endl;
+            cerr << " -1 = Heuristics Only (Greedy + Hill Climbing)" << endl;
             cerr << "  0 = Comparison Mode (runs all 3 algorithms)" << endl;
             cerr << "  1 = Brute Force, 2 = Greedy, 3 = Hill Climbing" << endl;
             usage(argv[0]);

@@ -27,7 +27,7 @@ public:
     HillClimbing() = default;
     ~HillClimbing() override = default;
 
-    void execute(
+    AlgorithmResult execute(
         const Graph& graph,
         std::queue<Robot>& availableRobots,
         std::queue<Robot>& busyRobots,
@@ -40,25 +40,16 @@ public:
     std::string getName() const override;
     std::string getDescription() const override;
 
-private:
-    // Robot state for simulation
-    struct RobotState {
-        Robot robot;
-        std::pair<double, double> currentPosition;
-        double currentBattery;
-        double totalTime;
-        std::vector<Task> assignedTasks;
-    };
-
     // Generate initial greedy solution
     std::vector<std::vector<Task>> generateGreedySolution(
-        std::vector<RobotState>& robotStates,
+        std::vector<Robot>& simulatedRobots,
         const std::vector<Task>& tasks,
         const Graph& graph,
         const SchedulerUtils::BatteryConfig& config,
         int chargingNodeId
     );
 
+private:
     // Calculate makespan for a given assignment
     double calculateMakespan(
         const std::vector<std::vector<Task>>& assignment,
