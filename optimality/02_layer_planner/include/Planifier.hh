@@ -50,7 +50,7 @@ public:
 
     // Planning methods
     void plan(int algorithmChoice = 0);  // 0 = interactive, 1-4 = direct selection
-    void executePlan();                  // Execute the currently set algorithm
+    AlgorithmResult executePlan();       // Execute the currently set algorithm and return result
 
 
 private:

@@ -48,10 +48,12 @@ void Planifier::setAlgorithm(unique_ptr<Algorithm> algorithm) {
 }
 
 // Execute the currently set algorithm
-void Planifier::executePlan() {
+AlgorithmResult Planifier::executePlan() {
+    AlgorithmResult emptyResult;
+    
     if (currentAlgorithm == nullptr) {
         cout << "Error: No algorithm set. Use setAlgorithm() or plan() first." << endl;
-        return;
+        return emptyResult;
     }
     
     cout << "=== Algorithm: " << currentAlgorithm->getName() << " ===" << endl;
@@ -67,10 +69,9 @@ void Planifier::executePlan() {
         totalRobots
     );
     
-    // The algorithm already prints its results, so we just acknowledge completion
-    (void)result; // Suppress unused variable warning
-    
     cout << "=== End Algorithm ===" << endl;
+    
+    return result;
 }
 
 // Planning method with algorithm selection (refactored to use Strategy Pattern)
