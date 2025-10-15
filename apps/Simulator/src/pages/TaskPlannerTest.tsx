@@ -21,11 +21,31 @@ interface Task {
   batteryLevel: number;
   startTime: number;
   duration: number;
+  type?: 'task';
 }
+
+interface ChargingEvent {
+  type: 'charging';
+  batteryBefore: number;
+  batteryAfter: number;
+  travelTime: number;
+  chargingTime: number;
+  startTime: number;
+  duration: number;
+  decision?: {
+    currentBattery: number;
+    nextTaskId: number;
+    nextTaskConsumption: number;
+    batteryAfterTask: number;
+    threshold: number;
+  };
+}
+
+type RobotEvent = Task | ChargingEvent;
 
 interface Robot {
   id: number;
-  tasks: Task[];
+  tasks: RobotEvent[];
   initialBattery: number;
   finalBattery: number;
   completionTime: number;
@@ -321,12 +341,29 @@ export default function TaskPlanner() {
                       Robot {robot.id}
                     </div>
                     <div className="flex-1 relative h-8 bg-slate-100 rounded">
-                      {robot.tasks.map((task, idx) => {
-                        const widthPercent = Math.max(2, (task.duration / maxTime) * 100);
-                        const leftPercent = Math.min(98 - widthPercent, (task.startTime / maxTime) * 100);
+                      {robot.tasks.map((event, idx) => {
+                        const widthPercent = Math.max(2, (event.duration / maxTime) * 100);
+                        const leftPercent = Math.min(98 - widthPercent, (event.startTime / maxTime) * 100);
+                        
+                        if (event.type === 'charging') {
+                          return (
+                            <div
+                              key={`charging-${idx}`}
+                              className="absolute h-6 top-1 rounded text-xs text-white flex items-center justify-center font-medium bg-yellow-500 border-2 border-yellow-600"
+                              style={{
+                                left: `${leftPercent}%`,
+                                width: `${widthPercent}%`,
+                              }}
+                              title={`⚡ CHARGING\nStart: ${event.startTime.toFixed(1)}s\nTravel: ${event.travelTime.toFixed(1)}s\nCharging: ${event.chargingTime.toFixed(1)}s\nBattery: ${event.batteryBefore.toFixed(1)}% → ${event.batteryAfter.toFixed(1)}%`}
+                            >
+                              ⚡
+                            </div>
+                          );
+                        }
+                        
                         return (
                           <div
-                            key={task.id}
+                            key={event.id}
                             className={`absolute h-6 top-1 rounded text-xs text-white flex items-center justify-center font-medium ${
                               idx % 4 === 0 ? 'bg-blue-500' : 
                               idx % 4 === 1 ? 'bg-green-500' : 
@@ -336,9 +373,9 @@ export default function TaskPlanner() {
                               left: `${leftPercent}%`,
                               width: `${widthPercent}%`,
                             }}
-                            title={`${task.id}: ${task.startTime.toFixed(1)}s - ${(task.startTime + task.duration).toFixed(1)}s (Duration: ${task.duration.toFixed(1)}s)\nFrom Node ${task.fromNode} to Node ${task.toNode}\nBattery: ${task.batteryLevel.toFixed(1)}%`}
+                            title={`${event.id}: ${event.startTime.toFixed(1)}s - ${(event.startTime + event.duration).toFixed(1)}s (Duration: ${event.duration.toFixed(1)}s)\nFrom Node ${event.fromNode} to Node ${event.toNode}\nBattery: ${event.batteryLevel.toFixed(1)}%`}
                           >
-                            {task.id.replace('T', '')}
+                            {event.id.replace('T', '')}
                           </div>
                         );
                       })}
@@ -373,7 +410,10 @@ export default function TaskPlanner() {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-xl font-bold text-blue-900">Robot {robot.id}</h4>
                         <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                          {robot.tasks.length} {robot.tasks.length === 1 ? 'Task' : 'Tasks'}
+                          {robot.tasks.filter(e => e.type !== 'charging').length} Tasks
+                          {robot.tasks.filter(e => e.type === 'charging').length > 0 && 
+                            ` + ${robot.tasks.filter(e => e.type === 'charging').length} ⚡`
+                          }
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">
@@ -394,71 +434,144 @@ export default function TaskPlanner() {
                     
                     {/* Tasks List */}
                     <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
-                      {robot.tasks.map((task, idx) => (
-                        <div key={task.id} className="border border-slate-200 rounded-lg p-3 hover:shadow-md transition-shadow">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded">
-                              {task.id}
-                            </span>
-                            <span className="text-xs text-slate-500">
-                              Task {idx + 1} of {robot.tasks.length}
-                            </span>
-                          </div>
-                          
-                          {/* Route Information */}
-                          <div className="bg-slate-50 rounded p-2 mb-2 text-xs space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-600">From:</span>
-                              <span className="font-medium text-slate-900">
-                                Node {task.fromNode} ({task.fromCoords?.x.toFixed(1)}, {task.fromCoords?.y.toFixed(1)})
+                      {robot.tasks.map((event, idx) => {
+                        // Render charging event
+                        if (event.type === 'charging') {
+                          return (
+                            <div key={`charging-${idx}`} className="border-2 border-yellow-500 bg-yellow-50 rounded-lg p-3 hover:shadow-md transition-shadow">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-bold text-yellow-900 bg-yellow-200 px-2 py-1 rounded flex items-center gap-1">
+                                  ⚡ CHARGING EVENT
+                                </span>
+                                <span className="text-xs text-yellow-700">
+                                  Event {idx + 1} of {robot.tasks.length}
+                                </span>
+                              </div>
+                              
+                              {/* Charging Decision */}
+                              {event.decision && (
+                                <div className="bg-orange-50 border border-orange-200 rounded p-2 mb-2 text-xs space-y-1">
+                                  <div className="font-bold text-orange-900 mb-1">⚠️ Preventive Charging Decision</div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-orange-700">Current Battery:</span>
+                                    <span className="font-medium text-orange-900">{event.decision.currentBattery.toFixed(1)}%</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-orange-700">Next Task (ID {event.decision.nextTaskId}):</span>
+                                    <span className="font-medium text-orange-900">-{event.decision.nextTaskConsumption.toFixed(1)}%</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-orange-700">Would Result In:</span>
+                                    <span className="font-bold text-red-900">{event.decision.batteryAfterTask.toFixed(1)}% (Below {event.decision.threshold.toFixed(0)}%)</span>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Charging Details */}
+                              <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                                <div className="bg-yellow-100 rounded p-2">
+                                  <div className="text-yellow-700 font-medium">Travel to Charger</div>
+                                  <div className="text-yellow-900 font-bold">{event.travelTime.toFixed(2)}s</div>
+                                </div>
+                                <div className="bg-yellow-100 rounded p-2">
+                                  <div className="text-yellow-700 font-medium">Charging Time</div>
+                                  <div className="text-yellow-900 font-bold">{event.chargingTime.toFixed(2)}s</div>
+                                </div>
+                              </div>
+                              
+                              {/* Battery Change */}
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="bg-red-50 rounded p-2">
+                                  <div className="text-red-600 font-medium">Battery on Arrival</div>
+                                  <div className="text-red-900 font-bold">{event.batteryBefore.toFixed(1)}%</div>
+                                </div>
+                                <div className="bg-green-50 rounded p-2">
+                                  <div className="text-green-600 font-medium">After Charging</div>
+                                  <div className="text-green-900 font-bold">{event.batteryAfter.toFixed(1)}%</div>
+                                </div>
+                              </div>
+                              
+                              {/* Total Time */}
+                              <div className="mt-2 bg-yellow-100 rounded p-2 text-xs">
+                                <div className="text-yellow-700 font-medium">Total Duration</div>
+                                <div className="text-yellow-900 font-bold">{event.duration.toFixed(2)}s (Start: {event.startTime.toFixed(1)}s)</div>
+                              </div>
+                              
+                              {idx < robot.tasks.length - 1 && (
+                                <div className="mt-2 text-center text-yellow-500 text-xs">↓</div>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        // Render normal task
+                        const task = event as Task;
+                        return (
+                          <div key={task.id} className="border border-slate-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                                {task.id}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                Event {idx + 1} of {robot.tasks.length}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-600">To:</span>
-                              <span className="font-medium text-slate-900">
-                                Node {task.toNode} ({task.toCoords?.x.toFixed(1)}, {task.toCoords?.y.toFixed(1)})
-                              </span>
+                            
+                            {/* Route Information */}
+                            <div className="bg-slate-50 rounded p-2 mb-2 text-xs space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-600">From:</span>
+                                <span className="font-medium text-slate-900">
+                                  Node {task.fromNode} ({task.fromCoords?.x.toFixed(1)}, {task.fromCoords?.y.toFixed(1)})
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-600">To:</span>
+                                <span className="font-medium text-slate-900">
+                                  Node {task.toNode} ({task.toCoords?.x.toFixed(1)}, {task.toCoords?.y.toFixed(1)})
+                                </span>
+                              </div>
                             </div>
+                            
+                            {/* Timing Information */}
+                            <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                              <div className="bg-purple-50 rounded p-2">
+                                <div className="text-purple-600 font-medium">Travel Time</div>
+                                <div className="text-purple-900 font-bold">{task.travelTime.toFixed(2)}s</div>
+                              </div>
+                              <div className="bg-green-50 rounded p-2">
+                                <div className="text-green-600 font-medium">Execution Time</div>
+                                <div className="text-green-900 font-bold">{task.executionTime.toFixed(2)}s</div>
+                              </div>
+                            </div>
+                            
+                            {/* Timeline & Battery */}
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="bg-blue-50 rounded p-2">
+                                <div className="text-blue-600 font-medium">Cumulative Time</div>
+                                <div className="text-blue-900 font-bold">{task.cumulativeTime.toFixed(2)}s</div>
+                              </div>
+                              <div className={`rounded p-2 ${
+                                task.batteryLevel > 80 ? 'bg-green-50' : 
+                                task.batteryLevel > 50 ? 'bg-yellow-50' : 'bg-red-50'
+                              }`}>
+                                <div className={`font-medium ${
+                                  task.batteryLevel > 80 ? 'text-green-600' : 
+                                  task.batteryLevel > 50 ? 'text-yellow-600' : 'text-red-600'
+                                }`}>Battery After</div>
+                                <div className={`font-bold ${
+                                  task.batteryLevel > 80 ? 'text-green-900' : 
+                                  task.batteryLevel > 50 ? 'text-yellow-900' : 'text-red-900'
+                                }`}>{task.batteryLevel.toFixed(1)}%</div>
+                              </div>
+                            </div>
+                            
+                            {idx < robot.tasks.length - 1 && (
+                              <div className="mt-2 text-center text-slate-400 text-xs">↓</div>
+                            )}
                           </div>
-                          
-                          {/* Timing Information */}
-                          <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                            <div className="bg-purple-50 rounded p-2">
-                              <div className="text-purple-600 font-medium">Travel Time</div>
-                              <div className="text-purple-900 font-bold">{task.travelTime.toFixed(2)}s</div>
-                            </div>
-                            <div className="bg-green-50 rounded p-2">
-                              <div className="text-green-600 font-medium">Execution Time</div>
-                              <div className="text-green-900 font-bold">{task.executionTime.toFixed(2)}s</div>
-                            </div>
-                          </div>
-                          
-                          {/* Timeline & Battery */}
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="bg-blue-50 rounded p-2">
-                              <div className="text-blue-600 font-medium">Cumulative Time</div>
-                              <div className="text-blue-900 font-bold">{task.cumulativeTime.toFixed(2)}s</div>
-                            </div>
-                            <div className={`rounded p-2 ${
-                              task.batteryLevel > 80 ? 'bg-green-50' : 
-                              task.batteryLevel > 50 ? 'bg-yellow-50' : 'bg-red-50'
-                            }`}>
-                              <div className={`font-medium ${
-                                task.batteryLevel > 80 ? 'text-green-600' : 
-                                task.batteryLevel > 50 ? 'text-yellow-600' : 'text-red-600'
-                              }`}>Battery After</div>
-                              <div className={`font-bold ${
-                                task.batteryLevel > 80 ? 'text-green-900' : 
-                                task.batteryLevel > 50 ? 'text-yellow-900' : 'text-red-900'
-                              }`}>{task.batteryLevel.toFixed(1)}%</div>
-                            </div>
-                          </div>
-                          
-                          {idx < robot.tasks.length - 1 && (
-                            <div className="mt-2 text-center text-slate-400 text-xs">↓</div>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

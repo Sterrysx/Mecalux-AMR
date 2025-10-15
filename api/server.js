@@ -66,6 +66,8 @@ function parseOutput(output, algorithm) {
   let currentRobotFinalBattery = 100;
   let currentRobotCompletionTime = 0;
   let currentTaskData = null;
+  let currentChargingData = null;
+  let chargingDecisionData = null;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -91,6 +93,8 @@ function parseOutput(output, algorithm) {
       currentRobotFinalBattery = 100;
       currentRobotCompletionTime = 0;
       currentTaskData = null;
+      currentChargingData = null;
+      chargingDecisionData = null;
     }
     
     // Parse initial battery
@@ -174,6 +178,100 @@ function parseOutput(output, algorithm) {
     const batteryMatch = line.match(/Battery level:\s*(\d+\.?\d*)%/);
     if (batteryMatch && currentTaskData) {
       currentTaskData.batteryLevel = parseFloat(batteryMatch[1]);
+    }
+    
+    // Parse CHARGING DECISION (Preventive)
+    if (line.includes('CHARGING DECISION') && line.includes('Preventive')) {
+      // Save current task if exists
+      if (currentTaskData && currentRobotId !== null) {
+        currentRobotTasks.push(currentTaskData);
+        currentTaskData = null;
+      }
+      
+      // Initialize charging decision data
+      chargingDecisionData = {
+        currentBattery: 0,
+        nextTaskId: 0,
+        nextTaskConsumption: 0,
+        batteryAfterTask: 0,
+        threshold: 20.0
+      };
+    }
+    
+    // Parse charging decision details
+    if (chargingDecisionData) {
+      const currentBatteryMatch = line.match(/Current battery:\s*(\d+\.?\d*)%/);
+      if (currentBatteryMatch) {
+        chargingDecisionData.currentBattery = parseFloat(currentBatteryMatch[1]);
+      }
+      
+      const nextTaskMatch = line.match(/Next task \(ID\s+(\d+)\)\s+would consume:\s*(\d+\.?\d*)%/);
+      if (nextTaskMatch) {
+        chargingDecisionData.nextTaskId = parseInt(nextTaskMatch[1]);
+        chargingDecisionData.nextTaskConsumption = parseFloat(nextTaskMatch[2]);
+      }
+      
+      const batteryAfterMatch = line.match(/Battery after task would be:\s*(\d+\.?\d*)%/);
+      if (batteryAfterMatch) {
+        chargingDecisionData.batteryAfterTask = parseFloat(batteryAfterMatch[1]);
+      }
+      
+      const thresholdMatch = line.match(/BELOW\s+(\d+\.?\d*)%\s+threshold/);
+      if (thresholdMatch) {
+        chargingDecisionData.threshold = parseFloat(thresholdMatch[1]);
+      }
+    }
+    
+    // Parse CHARGING EVENT
+    if (line.includes('CHARGING EVENT')) {
+      // Initialize charging event
+      currentChargingData = {
+        type: 'charging',
+        batteryBefore: 0,
+        batteryAfter: 100,
+        travelTime: 0,
+        chargingTime: 0,
+        startTime: 0,
+        duration: 0,
+        decision: chargingDecisionData
+      };
+      chargingDecisionData = null; // Reset decision data
+    }
+    
+    // Parse charging event details
+    if (currentChargingData) {
+      const travelToChargerMatch = line.match(/Travel to charging station.*:\s*(\d+\.?\d*)s/);
+      if (travelToChargerMatch) {
+        currentChargingData.travelTime = parseFloat(travelToChargerMatch[1]);
+      }
+      
+      const batteryOnArrivalMatch = line.match(/Battery on arrival:\s*(\d+\.?\d*)%/);
+      if (batteryOnArrivalMatch) {
+        currentChargingData.batteryBefore = parseFloat(batteryOnArrivalMatch[1]);
+      }
+      
+      const chargingTimeMatch = line.match(/Charging time:\s*(\d+\.?\d*)s/);
+      if (chargingTimeMatch) {
+        currentChargingData.chargingTime = parseFloat(chargingTimeMatch[1]);
+        currentChargingData.duration = currentChargingData.travelTime + currentChargingData.chargingTime;
+      }
+      
+      const batteryAfterChargingMatch = line.match(/Battery after charging:\s*(\d+\.?\d*)%/);
+      if (batteryAfterChargingMatch) {
+        currentChargingData.batteryAfter = parseFloat(batteryAfterChargingMatch[1]);
+        
+        // Calculate start time based on last task or event
+        if (currentRobotTasks.length > 0) {
+          const lastItem = currentRobotTasks[currentRobotTasks.length - 1];
+          currentChargingData.startTime = lastItem.type === 'charging' 
+            ? lastItem.startTime + lastItem.duration 
+            : lastItem.cumulativeTime;
+        }
+        
+        // Save charging event and reset
+        currentRobotTasks.push(currentChargingData);
+        currentChargingData = null;
+      }
     }
   }
   
