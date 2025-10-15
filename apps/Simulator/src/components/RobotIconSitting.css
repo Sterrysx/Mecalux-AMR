@@ -1,0 +1,122 @@
+﻿.robot-sitting-container {
+  position: relative;
+  display: inline-block;
+  animation: none;
+}
+
+.robot-sitting-svg {
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Body - Sitting */
+.mini-pekka-body-sitting .body-main-sitting {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 1.5;
+}
+
+.mini-pekka-body-sitting .shoulder-pad-left-sitting,
+.mini-pekka-body-sitting .shoulder-pad-right-sitting {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 1;
+}
+
+.mini-pekka-body-sitting .body-belt-sitting {
+  fill: #212529;
+  stroke: #000;
+  stroke-width: 0.8;
+}
+
+/* Legs - Sitting */
+.mini-pekka-legs-sitting .leg-left-sitting,
+.mini-pekka-legs-sitting .leg-right-sitting {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 1;
+}
+
+.mini-pekka-legs-sitting .foot-left-sitting,
+.mini-pekka-legs-sitting .foot-right-sitting {
+  fill: #212529;
+  stroke: #000;
+  stroke-width: 0.8;
+}
+
+/* Head - Sitting */
+.mini-pekka-head-sitting .head-helmet-sitting {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 1.5;
+}
+
+.mini-pekka-head-sitting .eye-left-sitting,
+.mini-pekka-head-sitting .eye-right-sitting {
+  fill: #00bcd4;
+  filter: drop-shadow(0 0 2px #00bcd4);
+}
+
+.mini-pekka-head-sitting .horn-left-sitting,
+.mini-pekka-head-sitting .horn-right-sitting {
+  fill: #00bcd4;
+  stroke: #008ba3;
+  stroke-width: 0.8;
+  filter: drop-shadow(0 0 2px #00bcd4);
+}
+
+/* Arms - Sitting */
+.mini-pekka-arms-sitting .arm-left-sitting,
+.mini-pekka-arms-sitting .arm-right-sitting {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 1;
+}
+
+.mini-pekka-arms-sitting .hand-left-sitting,
+.mini-pekka-arms-sitting .hand-right-sitting {
+  fill: #212529;
+  stroke: #000;
+  stroke-width: 0.8;
+}
+
+/* Weapon resting beside */
+.weapon-resting .sword-handle-sitting {
+  fill: #495057;
+  stroke: #343a40;
+  stroke-width: 0.5;
+}
+
+.weapon-resting .sword-blade-sitting {
+  fill: #adb5bd;
+  stroke: #6c757d;
+  stroke-width: 0.5;
+}
+
+/* Shadow - Sitting */
+.robot-sitting-shadow {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 3px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: none;
+}
+
+/* Gentle breathing animation */
+.mini-pekka-body-sitting {
+  animation: breathe 3s ease-in-out infinite;
+  transform-origin: 18px 13px;
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-0.5px) scale(1.01);
+  }
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import TimelineVisualizer from '../components/TimelineVisualizer';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface PlannerParams {
   algorithmId: number;
@@ -68,6 +69,7 @@ interface PlannerResult {
 }
 
 export default function TaskPlanner() {
+  const { darkMode } = useTheme();
   const [params, setParams] = useState<PlannerParams>({
     algorithmId: 2,
     graphId: 1,
@@ -81,6 +83,7 @@ export default function TaskPlanner() {
   const [availableGraphs, setAvailableGraphs] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const [loadingGraphs, setLoadingGraphs] = useState(true);
   const [showVisualizer, setShowVisualizer] = useState(false);
+  const [compactView, setCompactView] = useState(false);
 
   // Fetch available graphs on component mount
   useEffect(() => {
@@ -287,7 +290,7 @@ export default function TaskPlanner() {
         }
       });
     };
-  }, [result, showVisualizer]);
+  }, [result, showVisualizer, compactView]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -341,24 +344,26 @@ export default function TaskPlanner() {
     : 100;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Multi-Robot Task Planner</h1>
-          <p className="text-slate-600">Optimize task allocation across multiple robots using advanced algorithms</p>
-        </div>
+    <div className="container mx-auto p-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className={`text-3xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Multi-Robot Task Planner</h1>
+        <p className={darkMode ? 'text-slate-400' : 'text-slate-600'}>Optimize task allocation across multiple robots using advanced algorithms</p>
+      </div>
 
-        {/* Parameter Configuration */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold text-slate-900 mb-4">Configuration</h2>
+      {/* Parameter Configuration */}
+      <div className={`rounded-lg shadow-md p-6 mb-6 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+          <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Configuration</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Algorithm</label>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Algorithm</label>
               <select 
                 value={params.algorithmId}
                 onChange={(e) => setParams({...params, algorithmId: parseInt(e.target.value)})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-slate-900'
+                }`}
               >
                 <option value={0}>0 - Comparison Mode</option>
                 <option value={1}>1 - Brute Force</option>
@@ -368,11 +373,13 @@ export default function TaskPlanner() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Graph ID</label>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Graph ID</label>
               <select
                 value={params.graphId}
                 onChange={(e) => setParams({...params, graphId: parseInt(e.target.value)})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-slate-900'
+                }`}
                 disabled={loadingGraphs}
               >
                 {loadingGraphs ? (
@@ -388,28 +395,32 @@ export default function TaskPlanner() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Number of Tasks</label>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Number of Tasks</label>
               <input 
                 type="number"
                 min="1"
                 max="200"
                 value={params.numTasks}
                 onChange={(e) => setParams({...params, numTasks: Math.max(1, parseInt(e.target.value))})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-slate-900'
+                }`}
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Number of Robots</label>
+              <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Number of Robots</label>
               <input 
                 type="number"
                 min="1"
                 max="10"
                 value={params.numRobots}
                 onChange={(e) => setParams({...params, numRobots: Math.min(10, Math.max(1, parseInt(e.target.value)))})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-slate-900'
+                }`}
               />
-              <p className="text-xs text-slate-500 mt-1">Range: 1-10</p>
+              <p className={`text-xs mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Range: 1-10</p>
             </div>
           </div>
           
@@ -437,7 +448,11 @@ export default function TaskPlanner() {
             </div>
             
             {params.algorithmId === 1 && params.numTasks > 8 && (
-              <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-2 rounded text-sm">
+              <div className={`border px-3 py-2 rounded text-sm ${
+                darkMode 
+                  ? 'bg-yellow-900 border-yellow-700 text-yellow-300' 
+                  : 'bg-yellow-100 border-yellow-400 text-yellow-700'
+              }`}>
                 ⚠️ Brute force with {params.numTasks} tasks may take very long. Consider using Greedy or Hill Climbing.
               </div>
             )}
@@ -446,7 +461,11 @@ export default function TaskPlanner() {
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          <div className={`border px-4 py-3 rounded mb-6 ${
+            darkMode 
+              ? 'bg-red-900 border-red-700 text-red-300' 
+              : 'bg-red-100 border-red-400 text-red-700'
+          }`}>
             <div className="flex items-center">
               <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
@@ -461,17 +480,29 @@ export default function TaskPlanner() {
           <div className="space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4">
-                <div className="text-blue-600 text-sm font-medium">Algorithm</div>
-                <div className="text-blue-900 text-xl font-bold">{result.algorithm}</div>
+              <div className={`rounded-lg p-4 ${
+                darkMode 
+                  ? 'bg-gradient-to-r from-blue-900 to-blue-800' 
+                  : 'bg-gradient-to-r from-blue-50 to-blue-100'
+              }`}>
+                <div className={`text-sm font-medium ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>Algorithm</div>
+                <div className={`text-xl font-bold ${darkMode ? 'text-blue-100' : 'text-blue-900'}`}>{result.algorithm}</div>
               </div>
-              <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-4">
-                <div className="text-green-600 text-sm font-medium">Best Makespan</div>
-                <div className="text-green-900 text-xl font-bold">{result.makespan.toFixed(2)}s</div>
+              <div className={`rounded-lg p-4 ${
+                darkMode 
+                  ? 'bg-gradient-to-r from-green-900 to-green-800' 
+                  : 'bg-gradient-to-r from-green-50 to-green-100'
+              }`}>
+                <div className={`text-sm font-medium ${darkMode ? 'text-green-300' : 'text-green-600'}`}>Best Makespan</div>
+                <div className={`text-xl font-bold ${darkMode ? 'text-green-100' : 'text-green-900'}`}>{result.makespan.toFixed(2)}s</div>
               </div>
-              <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-4">
-                <div className="text-purple-600 text-sm font-medium">Total Computation</div>
-                <div className="text-purple-900 text-xl font-bold">{result.computationTime.toFixed(2)}ms</div>
+              <div className={`rounded-lg p-4 ${
+                darkMode 
+                  ? 'bg-gradient-to-r from-purple-900 to-purple-800' 
+                  : 'bg-gradient-to-r from-purple-50 to-purple-100'
+              }`}>
+                <div className={`text-sm font-medium ${darkMode ? 'text-purple-300' : 'text-purple-600'}`}>Total Computation</div>
+                <div className={`text-xl font-bold ${darkMode ? 'text-purple-100' : 'text-purple-900'}`}>{result.computationTime.toFixed(2)}ms</div>
               </div>
             </div>
 
@@ -492,26 +523,28 @@ export default function TaskPlanner() {
             {/* Comparison Results */}
             {result.comparison && (
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-slate-900">Algorithm Comparison</h3>
-                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                <h3 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-slate-900'}`}>Algorithm Comparison</h3>
+                <div className={`border rounded-lg overflow-hidden ${
+                  darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                }`}>
                   <table className="w-full">
-                    <thead className="bg-slate-50">
+                    <thead className={darkMode ? 'bg-slate-700' : 'bg-slate-50'}>
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Algorithm</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Makespan</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Computation Time</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-slate-900">Improvement</th>
+                        <th className={`px-4 py-3 text-left text-sm font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>Algorithm</th>
+                        <th className={`px-4 py-3 text-left text-sm font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>Makespan</th>
+                        <th className={`px-4 py-3 text-left text-sm font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>Computation Time</th>
+                        <th className={`px-4 py-3 text-left text-sm font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>Improvement</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200">
+                    <tbody className={`divide-y ${darkMode ? 'divide-slate-700' : 'divide-slate-200'}`}>
                       {result.comparison.map((comp, idx) => (
-                        <tr key={idx} className={idx === 0 ? 'bg-yellow-50' : ''}>
-                          <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                        <tr key={idx} className={idx === 0 ? (darkMode ? 'bg-yellow-900/30' : 'bg-yellow-50') : ''}>
+                          <td className={`px-4 py-3 text-sm font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>
                             {comp.algorithm}
-                            {idx === 0 && <span className="ml-2 text-yellow-600 text-xs">(Baseline)</span>}
+                            {idx === 0 && <span className={`ml-2 text-xs ${darkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>(Baseline)</span>}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-900">{comp.makespan.toFixed(2)}s</td>
-                          <td className="px-4 py-3 text-sm text-slate-900">{comp.computationTime.toFixed(2)}ms</td>
+                          <td className={`px-4 py-3 text-sm ${darkMode ? 'text-slate-300' : 'text-slate-900'}`}>{comp.makespan.toFixed(2)}s</td>
+                          <td className={`px-4 py-3 text-sm ${darkMode ? 'text-slate-300' : 'text-slate-900'}`}>{comp.computationTime.toFixed(2)}ms</td>
                           <td className="px-4 py-3 text-sm">
                             {comp.improvement ? (
                               <span className={`font-medium ${comp.improvement > 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -530,8 +563,28 @@ export default function TaskPlanner() {
             )}
 
             {/* Timeline Visualization */}
-            <div className="bg-white rounded-lg shadow-md p-6 overflow-hidden">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Execution Timeline</h3>
+            <div className={`rounded-lg shadow-md p-6 overflow-hidden ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Execution Timeline</h3>
+                <button
+                  onClick={() => setCompactView(!compactView)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all ${
+                    compactView 
+                      ? (darkMode ? 'bg-indigo-900 text-indigo-300 hover:bg-indigo-800' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200')
+                      : (darkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-700 hover:bg-slate-200')
+                  }`}
+                  title={compactView ? "Switch to scrollable view" : "Switch to compact view"}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {compactView ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                    )}
+                  </svg>
+                  {compactView ? 'Expanded' : 'Compact'}
+                </button>
+              </div>
               <div className="space-y-4">
                 {result.robots.map((robot) => (
                   <div key={robot.id} className="flex items-center space-x-4 min-w-0">
@@ -539,26 +592,29 @@ export default function TaskPlanner() {
                       Robot {robot.id}
                     </div>
                     
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      {/* Left Arrow */}
-                      <button
-                        id={`static-left-arrow-${robot.id}`}
-                        className="flex-shrink-0 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 rounded p-1 transition-colors select-none"
-                        style={{ touchAction: 'none' }}
-                        title="Scroll left (hold to scroll continuously)"
-                      >
-                        <svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-
-                      {/* Timeline */}
-                      <div className="flex-1 min-w-0 relative h-8 bg-slate-100 rounded overflow-hidden">
-                        <div 
-                          className="relative h-full overflow-x-scroll scrollbar-hide"
-                          id={`static-timeline-scroll-${robot.id}`}
+                    {!compactView ? (
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        {/* Left Arrow */}
+                        <button
+                          id={`static-left-arrow-${robot.id}`}
+                          className="flex-shrink-0 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 rounded p-1 transition-colors select-none"
+                          style={{ touchAction: 'none' }}
+                          title="Scroll left (hold to scroll continuously)"
                         >
-                          <div className="relative h-full" style={{ width: `${Math.max(100, maxTime * 10)}px` }}>
+                          <svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+
+                        {/* Timeline */}
+                        <div className={`flex-1 min-w-0 relative h-8 rounded overflow-hidden ${
+                          darkMode ? 'bg-slate-700' : 'bg-slate-100'
+                        }`}>
+                          <div 
+                            className="relative h-full overflow-x-scroll scrollbar-hide"
+                            id={`static-timeline-scroll-${robot.id}`}
+                          >
+                            <div className="relative h-full" style={{ width: `${Math.max(100, maxTime * 10)}px` }}>
                             {robot.tasks.map((event, idx) => {
                               const widthPx = Math.max(20, event.duration * 10);
                               const leftPx = event.startTime * 10;
@@ -617,6 +673,62 @@ export default function TaskPlanner() {
                         </svg>
                       </button>
                     </div>
+                    ) : (
+                      /* Compact View */
+                      <div className={`flex-1 min-w-0 relative h-8 rounded overflow-hidden ${
+                        darkMode ? 'bg-slate-700' : 'bg-slate-100'
+                      }`}>
+                        <div className="relative h-full w-full">
+                          {robot.tasks.map((event, idx) => {
+                            const totalDuration = maxTime;
+                            const widthPercent = (event.duration / totalDuration) * 100;
+                            const leftPercent = (event.startTime / totalDuration) * 100;
+                            
+                            if (event.type === 'charging') {
+                              const chargingWidthPercent = (event.chargingTime / totalDuration) * 100;
+                              const chargingLeftPercent = ((event.startTime + event.travelTime) / totalDuration) * 100;
+                              
+                              return (
+                                <div
+                                  key={`charging-${idx}`}
+                                  className="absolute h-full rounded overflow-hidden border-2 border-yellow-600"
+                                  style={{
+                                    left: `${chargingLeftPercent}%`,
+                                    width: `${chargingWidthPercent}%`,
+                                  }}
+                                >
+                                  <div className="h-full bg-yellow-500 flex items-center justify-center text-xs text-white font-bold">
+                                    ⚡
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
+                            return (
+                              <div
+                                key={event.id}
+                                className="absolute h-full rounded overflow-hidden"
+                                style={{
+                                  left: `${leftPercent}%`,
+                                  width: `${widthPercent}%`,
+                                }}
+                              >
+                                <div
+                                  className={`h-full flex items-center justify-center text-xs text-white font-bold ${
+                                    idx % 4 === 0 ? 'bg-blue-500' : 
+                                    idx % 4 === 1 ? 'bg-green-500' : 
+                                    idx % 4 === 2 ? 'bg-purple-500' : 'bg-orange-500'
+                                  }`}
+                                  title={`${event.id}: ${event.startTime.toFixed(1)}s - ${(event.startTime + event.duration).toFixed(1)}s (Duration: ${event.duration.toFixed(1)}s)\nFrom Node ${event.fromNode} to Node ${event.toNode}\nBattery: ${event.batteryLevel.toFixed(1)}%`}
+                                >
+                                  {event.id.replace('T', '')}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="w-16 flex-shrink-0 text-xs text-slate-500">
                       {robot.tasks.length > 0 && 
@@ -626,12 +738,12 @@ export default function TaskPlanner() {
                   </div>
                 ))}
               </div>
-              <div className="mt-4 flex justify-between text-xs text-slate-500">
+              <div className={`mt-4 flex justify-between text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                 <span>0s</span>
                 <span>{maxTime.toFixed(1)}s</span>
               </div>
               {result.robots.length > 0 && (
-                <div className="mt-2 text-xs text-slate-500">
+                <div className={`mt-2 text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   Total tasks: {result.robots.reduce((sum, robot) => sum + robot.tasks.length, 0)}
                 </div>
               )}
@@ -639,14 +751,20 @@ export default function TaskPlanner() {
 
             {/* Robot Assignment Cards - Complete Details */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-slate-900">Detailed Robot Assignments</h3>
+              <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Detailed Robot Assignments</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {result.robots.map((robot) => (
-                  <div key={robot.id} className="bg-white rounded-lg shadow-lg border-t-4 border-blue-500 overflow-hidden">
+                  <div key={robot.id} className={`rounded-lg shadow-lg border-t-4 border-blue-500 overflow-hidden ${
+                    darkMode ? 'bg-slate-800' : 'bg-white'
+                  }`}>
                     {/* Robot Header */}
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 border-b border-blue-200">
+                    <div className={`p-4 border-b ${
+                      darkMode 
+                        ? 'bg-blue-900/30 border-blue-800' 
+                        : 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200'
+                    }`}>
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-xl font-bold text-blue-900">Robot {robot.id}</h4>
+                        <h4 className={`text-xl font-bold ${darkMode ? 'text-blue-300' : 'text-blue-900'}`}>Robot {robot.id}</h4>
                         <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                           {robot.tasks.filter(e => e.type !== 'charging').length} Tasks
                           {robot.tasks.filter(e => e.type === 'charging').length > 0 && 
@@ -656,87 +774,99 @@ export default function TaskPlanner() {
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <span className="text-blue-600 font-medium">Initial Battery:</span>
-                          <div className="text-blue-900 font-bold">{robot.initialBattery.toFixed(1)}%</div>
+                          <span className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>Initial Battery:</span>
+                          <div className={`font-bold ${darkMode ? 'text-blue-200' : 'text-blue-900'}`}>{robot.initialBattery.toFixed(1)}%</div>
                         </div>
                         <div>
-                          <span className="text-blue-600 font-medium">Final Battery:</span>
-                          <div className="text-blue-900 font-bold">{robot.finalBattery.toFixed(1)}%</div>
+                          <span className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>Final Battery:</span>
+                          <div className={`font-bold ${darkMode ? 'text-blue-200' : 'text-blue-900'}`}>{robot.finalBattery.toFixed(1)}%</div>
                         </div>
                         <div className="col-span-2">
-                          <span className="text-blue-600 font-medium">Total Completion Time:</span>
-                          <div className="text-blue-900 font-bold text-lg">{robot.completionTime.toFixed(2)}s</div>
+                          <span className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>Total Completion Time:</span>
+                          <div className={`font-bold text-lg ${darkMode ? 'text-blue-200' : 'text-blue-900'}`}>{robot.completionTime.toFixed(2)}s</div>
                         </div>
                       </div>
                     </div>
                     
                     {/* Tasks List */}
-                    <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+                    <div className={`p-4 space-y-3 max-h-96 overflow-y-auto ${darkMode ? 'bg-slate-800' : ''}`}>
                       {robot.tasks.map((event, idx) => {
                         // Render charging event
                         if (event.type === 'charging') {
                           return (
-                            <div key={`charging-${idx}`} className="border-2 border-yellow-500 bg-yellow-50 rounded-lg p-3 hover:shadow-md transition-shadow">
+                            <div key={`charging-${idx}`} className={`border-2 rounded-lg p-3 hover:shadow-md transition-shadow ${
+                              darkMode 
+                                ? 'border-yellow-600 bg-yellow-900/20' 
+                                : 'border-yellow-500 bg-yellow-50'
+                            }`}>
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-bold text-yellow-900 bg-yellow-200 px-2 py-1 rounded flex items-center gap-1">
+                                <span className={`text-sm font-bold px-2 py-1 rounded flex items-center gap-1 ${
+                                  darkMode 
+                                    ? 'text-yellow-300 bg-yellow-900/50' 
+                                    : 'text-yellow-900 bg-yellow-200'
+                                }`}>
                                   ⚡ CHARGING EVENT
                                 </span>
-                                <span className="text-xs text-yellow-700">
+                                <span className={`text-xs ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>
                                   Event {idx + 1} of {robot.tasks.length}
                                 </span>
                               </div>
                               
                               {/* Charging Decision */}
                               {event.decision && (
-                                <div className="bg-orange-50 border border-orange-200 rounded p-2 mb-2 text-xs space-y-1">
-                                  <div className="font-bold text-orange-900 mb-1">⚠️ Preventive Charging Decision</div>
+                                <div className={`border rounded p-2 mb-2 text-xs space-y-1 ${
+                                  darkMode 
+                                    ? 'bg-orange-900/30 border-orange-700' 
+                                    : 'bg-orange-50 border-orange-200'
+                                }`}>
+                                  <div className={`font-bold mb-1 ${darkMode ? 'text-orange-300' : 'text-orange-900'}`}>⚠️ Preventive Charging Decision</div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-orange-700">Current Battery:</span>
-                                    <span className="font-medium text-orange-900">{event.decision.currentBattery.toFixed(1)}%</span>
+                                    <span className={darkMode ? 'text-orange-400' : 'text-orange-700'}>Current Battery:</span>
+                                    <span className={`font-medium ${darkMode ? 'text-orange-200' : 'text-orange-900'}`}>{event.decision.currentBattery.toFixed(1)}%</span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-orange-700">Next Task (ID {event.decision.nextTaskId}):</span>
-                                    <span className="font-medium text-orange-900">-{event.decision.nextTaskConsumption.toFixed(1)}%</span>
+                                    <span className={darkMode ? 'text-orange-400' : 'text-orange-700'}>Next Task (ID {event.decision.nextTaskId}):</span>
+                                    <span className={`font-medium ${darkMode ? 'text-orange-200' : 'text-orange-900'}`}>-{event.decision.nextTaskConsumption.toFixed(1)}%</span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-orange-700">Would Result In:</span>
-                                    <span className="font-bold text-red-900">{event.decision.batteryAfterTask.toFixed(1)}% (Below {event.decision.threshold.toFixed(0)}%)</span>
+                                    <span className={darkMode ? 'text-orange-400' : 'text-orange-700'}>Would Result In:</span>
+                                    <span className={`font-bold ${darkMode ? 'text-red-300' : 'text-red-900'}`}>{event.decision.batteryAfterTask.toFixed(1)}% (Below {event.decision.threshold.toFixed(0)}%)</span>
                                   </div>
                                 </div>
                               )}
                               
                               {/* Charging Details */}
                               <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                                <div className="bg-yellow-100 rounded p-2">
-                                  <div className="text-yellow-700 font-medium">Travel to Charger</div>
-                                  <div className="text-yellow-900 font-bold">{event.travelTime.toFixed(2)}s</div>
+                                <div className={`rounded p-2 ${darkMode ? 'bg-yellow-900/40' : 'bg-yellow-100'}`}>
+                                  <div className={`font-medium ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>Travel to Charger</div>
+                                  <div className={`font-bold ${darkMode ? 'text-yellow-200' : 'text-yellow-900'}`}>{event.travelTime.toFixed(2)}s</div>
                                 </div>
-                                <div className="bg-yellow-100 rounded p-2">
-                                  <div className="text-yellow-700 font-medium">Charging Time</div>
-                                  <div className="text-yellow-900 font-bold">{event.chargingTime.toFixed(2)}s</div>
+                                <div className={`rounded p-2 ${darkMode ? 'bg-yellow-900/40' : 'bg-yellow-100'}`}>
+                                  <div className={`font-medium ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>Charging Time</div>
+                                  <div className={`font-bold ${darkMode ? 'text-yellow-200' : 'text-yellow-900'}`}>{event.chargingTime.toFixed(2)}s</div>
                                 </div>
                               </div>
                               
                               {/* Battery Change */}
                               <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div className="bg-red-50 rounded p-2">
-                                  <div className="text-red-600 font-medium">Battery on Arrival</div>
-                                  <div className="text-red-900 font-bold">{event.batteryBefore.toFixed(1)}%</div>
+                                <div className={`rounded p-2 ${darkMode ? 'bg-red-900/30' : 'bg-red-50'}`}>
+                                  <div className={`font-medium ${darkMode ? 'text-red-400' : 'text-red-600'}`}>Battery on Arrival</div>
+                                  <div className={`font-bold ${darkMode ? 'text-red-200' : 'text-red-900'}`}>{event.batteryBefore.toFixed(1)}%</div>
                                 </div>
-                                <div className="bg-green-50 rounded p-2">
-                                  <div className="text-green-600 font-medium">After Charging</div>
-                                  <div className="text-green-900 font-bold">{event.batteryAfter.toFixed(1)}%</div>
+                                <div className={`rounded p-2 ${darkMode ? 'bg-green-900/30' : 'bg-green-50'}`}>
+                                  <div className={`font-medium ${darkMode ? 'text-green-400' : 'text-green-600'}`}>After Charging</div>
+                                  <div className={`font-bold ${darkMode ? 'text-green-200' : 'text-green-900'}`}>{event.batteryAfter.toFixed(1)}%</div>
                                 </div>
                               </div>
                               
                               {/* Total Time */}
-                              <div className="mt-2 bg-yellow-100 rounded p-2 text-xs">
-                                <div className="text-yellow-700 font-medium">Total Duration</div>
-                                <div className="text-yellow-900 font-bold">{event.duration.toFixed(2)}s (Start: {event.startTime.toFixed(1)}s)</div>
+                              <div className={`mt-2 rounded p-2 text-xs ${darkMode ? 'bg-yellow-900/40' : 'bg-yellow-100'}`}>
+                                <div className={`font-medium ${darkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>Total Duration</div>
+                                <div className={`font-bold ${darkMode ? 'text-yellow-200' : 'text-yellow-900'}`}>{event.duration.toFixed(2)}s (Start: {event.startTime.toFixed(1)}s)</div>
                               </div>
                               
                               {idx < robot.tasks.length - 1 && (
-                                <div className="mt-2 text-center text-yellow-500 text-xs">↓</div>
+                                <div className={`mt-2 text-center text-xs ${darkMode ? 'text-yellow-500' : 'text-yellow-500'}`}>↓</div>
                               )}
                             </div>
                           );
@@ -745,27 +875,31 @@ export default function TaskPlanner() {
                         // Render normal task
                         const task = event as Task;
                         return (
-                          <div key={task.id} className="border border-slate-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                          <div key={task.id} className={`border rounded-lg p-3 hover:shadow-md transition-shadow ${
+                            darkMode ? 'border-slate-600 bg-slate-700' : 'border-slate-200 bg-white'
+                          }`}>
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded">
+                              <span className={`text-sm font-bold px-2 py-1 rounded ${
+                                darkMode ? 'text-slate-200 bg-slate-600' : 'text-slate-900 bg-slate-100'
+                              }`}>
                                 {task.id}
                               </span>
-                              <span className="text-xs text-slate-500">
+                              <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                                 Event {idx + 1} of {robot.tasks.length}
                               </span>
                             </div>
                             
                             {/* Route Information */}
-                            <div className="bg-slate-50 rounded p-2 mb-2 text-xs space-y-1">
+                            <div className={`rounded p-2 mb-2 text-xs space-y-1 ${darkMode ? 'bg-slate-600' : 'bg-slate-50'}`}>
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-600">From:</span>
-                                <span className="font-medium text-slate-900">
+                                <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>From:</span>
+                                <span className={`font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>
                                   Node {task.fromNode} ({task.fromCoords?.x.toFixed(1)}, {task.fromCoords?.y.toFixed(1)})
                                 </span>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-600">To:</span>
-                                <span className="font-medium text-slate-900">
+                                <span className={darkMode ? 'text-slate-400' : 'text-slate-600'}>To:</span>
+                                <span className={`font-medium ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>
                                   Node {task.toNode} ({task.toCoords?.x.toFixed(1)}, {task.toCoords?.y.toFixed(1)})
                                 </span>
                               </div>
@@ -773,33 +907,36 @@ export default function TaskPlanner() {
                             
                             {/* Timing Information */}
                             <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                              <div className="bg-purple-50 rounded p-2">
-                                <div className="text-purple-600 font-medium">Travel Time</div>
-                                <div className="text-purple-900 font-bold">{task.travelTime.toFixed(2)}s</div>
+                              <div className={`rounded p-2 ${darkMode ? 'bg-purple-900/30' : 'bg-purple-50'}`}>
+                                <div className={`font-medium ${darkMode ? 'text-purple-400' : 'text-purple-600'}`}>Travel Time</div>
+                                <div className={`font-bold ${darkMode ? 'text-purple-200' : 'text-purple-900'}`}>{task.travelTime.toFixed(2)}s</div>
                               </div>
-                              <div className="bg-green-50 rounded p-2">
-                                <div className="text-green-600 font-medium">Execution Time</div>
-                                <div className="text-green-900 font-bold">{task.executionTime.toFixed(2)}s</div>
+                              <div className={`rounded p-2 ${darkMode ? 'bg-green-900/30' : 'bg-green-50'}`}>
+                                <div className={`font-medium ${darkMode ? 'text-green-400' : 'text-green-600'}`}>Execution Time</div>
+                                <div className={`font-bold ${darkMode ? 'text-green-200' : 'text-green-900'}`}>{task.executionTime.toFixed(2)}s</div>
                               </div>
                             </div>
                             
                             {/* Timeline & Battery */}
                             <div className="grid grid-cols-2 gap-2 text-xs">
-                              <div className="bg-blue-50 rounded p-2">
-                                <div className="text-blue-600 font-medium">Cumulative Time</div>
-                                <div className="text-blue-900 font-bold">{task.cumulativeTime.toFixed(2)}s</div>
+                              <div className={`rounded p-2 ${darkMode ? 'bg-blue-900/30' : 'bg-blue-50'}`}>
+                                <div className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>Cumulative Time</div>
+                                <div className={`font-bold ${darkMode ? 'text-blue-200' : 'text-blue-900'}`}>{task.cumulativeTime.toFixed(2)}s</div>
                               </div>
                               <div className={`rounded p-2 ${
-                                task.batteryLevel > 80 ? 'bg-green-50' : 
-                                task.batteryLevel > 50 ? 'bg-yellow-50' : 'bg-red-50'
+                                darkMode 
+                                  ? (task.batteryLevel > 80 ? 'bg-green-900/30' : task.batteryLevel > 50 ? 'bg-yellow-900/30' : 'bg-red-900/30')
+                                  : (task.batteryLevel > 80 ? 'bg-green-50' : task.batteryLevel > 50 ? 'bg-yellow-50' : 'bg-red-50')
                               }`}>
                                 <div className={`font-medium ${
-                                  task.batteryLevel > 80 ? 'text-green-600' : 
-                                  task.batteryLevel > 50 ? 'text-yellow-600' : 'text-red-600'
+                                  darkMode
+                                    ? (task.batteryLevel > 80 ? 'text-green-400' : task.batteryLevel > 50 ? 'text-yellow-400' : 'text-red-400')
+                                    : (task.batteryLevel > 80 ? 'text-green-600' : task.batteryLevel > 50 ? 'text-yellow-600' : 'text-red-600')
                                 }`}>Battery After</div>
                                 <div className={`font-bold ${
-                                  task.batteryLevel > 80 ? 'text-green-900' : 
-                                  task.batteryLevel > 50 ? 'text-yellow-900' : 'text-red-900'
+                                  darkMode
+                                    ? (task.batteryLevel > 80 ? 'text-green-200' : task.batteryLevel > 50 ? 'text-yellow-200' : 'text-red-200')
+                                    : (task.batteryLevel > 80 ? 'text-green-900' : task.batteryLevel > 50 ? 'text-yellow-900' : 'text-red-900')
                                 }`}>{task.batteryLevel.toFixed(1)}%</div>
                               </div>
                             </div>
@@ -824,9 +961,9 @@ export default function TaskPlanner() {
             robots={result.robots}
             makespan={result.makespan}
             onClose={() => setShowVisualizer(false)}
+            darkMode={darkMode}
           />
         )}
-      </div>
     </div>
   );
 }

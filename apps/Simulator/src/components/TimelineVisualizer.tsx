@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import RobotIcon from './RobotIcon';
+import RobotIconSitting from './RobotIconSitting';
 
 interface Task {
   id: string;
@@ -47,9 +49,10 @@ interface TimelineVisualizerProps {
   robots: Robot[];
   makespan: number;
   onClose: () => void;
+  darkMode?: boolean;
 }
 
-export default function TimelineVisualizer({ robots, makespan, onClose }: TimelineVisualizerProps) {
+export default function TimelineVisualizer({ robots, makespan, onClose, darkMode = false }: TimelineVisualizerProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -93,6 +96,72 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
     if (currentTime < event.startTime) return 0;
     if (currentTime >= endTime) return 100;
     return ((currentTime - event.startTime) / event.duration) * 100;
+  };
+
+  // Get robot's traveling status and position relative to viewport
+  const getRobotTravelStatus = (robotId: number) => {
+    const robot = robots.find(r => r.id === robotId);
+    if (!robot) return { isTraveling: false, position: 0 };
+
+    // Find if robot is traveling between events or to charging station
+    for (let i = 0; i < robot.tasks.length - 1; i++) {
+      const currentEvent = robot.tasks[i];
+      const nextEvent = robot.tasks[i + 1];
+      
+      // Calculate when current event ends
+      const currentEndTime = currentEvent.type === 'charging' 
+        ? currentEvent.startTime + currentEvent.travelTime + currentEvent.chargingTime
+        : currentEvent.startTime + currentEvent.duration;
+      
+      // If next event is charging, robot should show during travel TO charging station
+      if (nextEvent.type === 'charging') {
+        const chargingTravelEnd = nextEvent.startTime + nextEvent.travelTime;
+        
+        // Check if traveling between current event end and charging station arrival
+        if (currentTime >= currentEndTime && currentTime < chargingTravelEnd) {
+          const travelProgress = (currentTime - currentEndTime) / (chargingTravelEnd - currentEndTime);
+          const currentEndPx = currentEndTime * 10;
+          const chargingTravelEndPx = chargingTravelEnd * 10;
+          const absolutePosition = currentEndPx + ((chargingTravelEndPx - currentEndPx) * travelProgress);
+          
+          return { isTraveling: true, position: absolutePosition };
+        }
+      } else {
+        // Normal task-to-task travel
+        const nextStartTime = nextEvent.startTime;
+        
+        if (currentTime >= currentEndTime && currentTime < nextStartTime) {
+          const travelProgress = (currentTime - currentEndTime) / (nextStartTime - currentEndTime);
+          const currentEndPx = currentEndTime * 10;
+          const nextStartPx = nextStartTime * 10;
+          const absolutePosition = currentEndPx + ((nextStartPx - currentEndPx) * travelProgress);
+          
+          return { isTraveling: true, position: absolutePosition };
+        }
+      }
+    }
+    
+    // Robot is not traveling
+    return { isTraveling: false, position: 0 };
+  };
+
+  // Check if robot has finished all tasks and should be sitting
+  const getRobotSittingStatus = (robotId: number) => {
+    const robot = robots.find(r => r.id === robotId);
+    if (!robot || robot.tasks.length === 0) return { isSitting: false, position: 0 };
+
+    const lastEvent = robot.tasks[robot.tasks.length - 1];
+    const lastEventEndTime = lastEvent.type === 'charging'
+      ? lastEvent.startTime + lastEvent.travelTime + lastEvent.chargingTime
+      : lastEvent.startTime + lastEvent.duration;
+
+    // Robot is sitting if current time is after all tasks completed
+    if (currentTime >= lastEventEndTime) {
+      const sittingPosition = lastEventEndTime * 10;
+      return { isSitting: true, position: sittingPosition };
+    }
+
+    return { isSitting: false, position: 0 };
   };
 
   // Animation loop
@@ -328,7 +397,9 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
 
   return (
     <div className="fixed inset-0 bg-slate-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+      <div className={`rounded-lg shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col ${
+        darkMode ? 'bg-slate-800' : 'bg-white'
+      }`}>
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 flex items-center justify-between">
           <div>
@@ -348,7 +419,9 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
         </div>
 
         {/* Video Controls */}
-        <div className="bg-slate-50 border-b border-slate-200 p-4 space-y-3">
+        <div className={`border-b p-4 space-y-3 ${
+          darkMode ? 'bg-slate-700 border-slate-600' : 'bg-slate-50 border-slate-200'
+        }`}>
           {/* Playback Controls */}
           <div className="flex items-center gap-4">
             <button
@@ -401,10 +474,14 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
             </div>
 
             {/* Time Display */}
-            <div className="ml-auto text-sm font-mono bg-white px-4 py-2 rounded-lg border border-slate-300">
-              <span className="text-indigo-600 font-bold">{currentTime.toFixed(2)}s</span>
-              <span className="text-slate-400"> / </span>
-              <span className="text-slate-700">{makespan.toFixed(2)}s</span>
+            <div className={`ml-auto text-sm font-mono px-4 py-2 rounded-lg border ${
+              darkMode 
+                ? 'bg-slate-600 border-slate-500 text-slate-200' 
+                : 'bg-white border-slate-300 text-slate-700'
+            }`}>
+              <span className="text-indigo-400 font-bold">{currentTime.toFixed(2)}s</span>
+              <span className={darkMode ? 'text-slate-500' : 'text-slate-400'}> / </span>
+              <span>{makespan.toFixed(2)}s</span>
             </div>
           </div>
 
@@ -417,9 +494,11 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
               step="0.01"
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-indigo-600 ${
+                darkMode ? 'bg-slate-600' : 'bg-slate-200'
+              }`}
             />
-            <div className="flex justify-between mt-1 text-xs text-slate-500">
+            <div className={`flex justify-between mt-1 text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
               <span>0s</span>
               <span>{(makespan / 2).toFixed(1)}s</span>
               <span>{makespan.toFixed(1)}s</span>
@@ -433,7 +512,7 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
             {/* Animated Timeline */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <h3 className={`text-lg font-bold flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                   <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                   </svg>
@@ -456,12 +535,16 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
               
               <div className="space-y-3">
                 {robots.map(robot => (
-                  <div key={robot.id} className="bg-white rounded-lg border border-slate-200 p-3">
+                  <div key={robot.id} className={`rounded-lg border p-3 ${
+                    darkMode ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-200'
+                  }`}>
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="text-sm font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                      <div className={`text-sm font-bold px-2 py-1 rounded ${
+                        darkMode ? 'text-slate-200 bg-slate-600' : 'text-slate-700 bg-slate-100'
+                      }`}>
                         Robot {robot.id}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                         {getCompletedEvents(robot.id).length} / {robot.tasks.length} completed
                       </div>
                     </div>
@@ -470,7 +553,11 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
                       {/* Left Arrow */}
                       <button
                         id={`left-arrow-${robot.id}`}
-                        className="flex-shrink-0 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 rounded p-1 transition-colors select-none"
+                        className={`flex-shrink-0 rounded p-1 transition-colors select-none ${
+                          darkMode 
+                            ? 'bg-slate-600 hover:bg-slate-500 active:bg-slate-400 text-slate-200' 
+                            : 'bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700'
+                        }`}
                         style={{ touchAction: 'none' }}
                         title="Scroll left (hold to scroll continuously)"
                       >
@@ -480,7 +567,9 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
                       </button>
 
                       {/* Timeline */}
-                      <div className="flex-1 relative h-10 bg-slate-100 rounded overflow-hidden" style={{ maxWidth: '100%' }}>
+                      <div className={`flex-1 relative h-10 rounded overflow-hidden ${
+                        darkMode ? 'bg-slate-800' : 'bg-slate-100'
+                      }`} style={{ maxWidth: '100%' }}>
                         <div 
                           className="relative h-full overflow-x-scroll scrollbar-hide"
                           id={`timeline-scroll-${robot.id}`}
@@ -542,6 +631,45 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
                                 </div>
                               );
                             })}
+                            
+                            {/* Animated Robot Icon - only shows when traveling between tasks */}
+                            {(() => {
+                              const { isTraveling, position } = getRobotTravelStatus(robot.id);
+                              if (!isTraveling) return null;
+                              
+                              return (
+                                <div
+                                  className="absolute top-0 pointer-events-none z-10"
+                                  style={{
+                                    left: `${position}px`,
+                                    transform: 'translateX(-50%) translateY(4px)',
+                                    transition: 'left 0.1s linear',
+                                  }}
+                                >
+                                  <RobotIcon darkMode={darkMode} />
+                                </div>
+                              );
+                            })()}
+
+                            {/* Sitting Robot Icon - shows when all tasks completed */}
+                            {/* DISABLED - Uncomment to re-enable sitting robot feature
+                            {(() => {
+                              const { isSitting, position } = getRobotSittingStatus(robot.id);
+                              if (!isSitting) return null;
+                              
+                              return (
+                                <div
+                                  className="absolute top-0 pointer-events-none z-10"
+                                  style={{
+                                    left: `${position}px`,
+                                    transform: 'translateX(-30%) translateY(6px)',
+                                  }}
+                                >
+                                  <RobotIconSitting darkMode={darkMode} />
+                                </div>
+                              );
+                            })()}
+                            */}
                           </div>
                         </div>
                       </div>
@@ -549,7 +677,11 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
                       {/* Right Arrow */}
                       <button
                         id={`right-arrow-${robot.id}`}
-                        className="flex-shrink-0 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 rounded p-1 transition-colors select-none"
+                        className={`flex-shrink-0 rounded p-1 transition-colors select-none ${
+                          darkMode 
+                            ? 'bg-slate-600 hover:bg-slate-500 active:bg-slate-400 text-slate-200' 
+                            : 'bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700'
+                        }`}
                         style={{ touchAction: 'none' }}
                         title="Scroll right (hold to scroll continuously, disables auto-scroll)"
                       >
@@ -565,7 +697,7 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
 
             {/* Completed Events List */}
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <h3 className={`text-lg font-bold flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                 <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
@@ -578,10 +710,16 @@ export default function TimelineVisualizer({ robots, makespan, onClose }: Timeli
                   if (completedEvents.length === 0) return null;
 
                   return (
-                    <div key={robot.id} className="bg-white rounded-lg border-t-4 border-blue-500 shadow-md">
-                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-3 border-b border-blue-200">
-                        <h4 className="text-lg font-bold text-blue-900">Robot {robot.id}</h4>
-                        <div className="text-sm text-blue-700">
+                    <div key={robot.id} className={`rounded-lg border-t-4 border-blue-500 shadow-md ${
+                      darkMode ? 'bg-slate-700' : 'bg-white'
+                    }`}>
+                      <div className={`p-3 border-b ${
+                        darkMode 
+                          ? 'bg-blue-900/30 border-blue-800' 
+                          : 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200'
+                      }`}>
+                        <h4 className={`text-lg font-bold ${darkMode ? 'text-blue-300' : 'text-blue-900'}`}>Robot {robot.id}</h4>
+                        <div className={`text-sm ${darkMode ? 'text-blue-400' : 'text-blue-700'}`}>
                           {completedEvents.length} event{completedEvents.length !== 1 ? 's' : ''} completed
                         </div>
                       </div>

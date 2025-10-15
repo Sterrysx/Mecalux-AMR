@@ -1,0 +1,167 @@
+.robot-container {
+  position: relative;
+  display: inline-block;
+  animation: none; /* Remove previous animations for custom ones */
+}
+
+.robot-svg {
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Mini P.E.K.K.A. Body */
+.mini-pekka-body .body-main {
+  fill: #343a40; /* Darker gray for armor */
+  stroke: #212529;
+  stroke-width: 2;
+}
+
+.mini-pekka-body .shoulder-pad-left,
+.mini-pekka-body .shoulder-pad-right {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 1.5;
+}
+
+.mini-pekka-body .body-belt {
+  fill: #212529; /* Darkest gray for details */
+  stroke: #000;
+  stroke-width: 1;
+}
+
+/* Mini P.E.K.K.A. Legs */
+.mini-pekka-legs .leg-left,
+.mini-pekka-legs .leg-right {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 1.5;
+}
+
+.mini-pekka-legs .foot-left,
+.mini-pekka-legs .foot-right {
+  fill: #212529;
+  stroke: #000;
+  stroke-width: 1;
+}
+
+/* Mini P.E.K.K.A. Head */
+.mini-pekka-head .head-helmet {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 2;
+}
+
+.mini-pekka-head .head-visor {
+  fill: #00bcd4; /* Cyan color for the eye */
+  filter: drop-shadow(0 0 5px #00bcd4);
+}
+
+.mini-pekka-head .head-horn-left,
+.mini-pekka-head .head-horn-right {
+  fill: #00bcd4; /* Cyan horns */
+  stroke: #008ba3;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 3px #00bcd4);
+}
+
+/* Mini P.E.K.K.A. Arms */
+.mini-pekka-arms .arm-left,
+.mini-pekka-arms .arm-right {
+  fill: #343a40;
+  stroke: #212529;
+  stroke-width: 1.5;
+}
+
+/* Carried Box */
+.carried-box .box-main {
+  fill: #f97316; /* Orange warehouse box */
+  stroke: #ea580c;
+  stroke-width: 2;
+}
+
+/* Shadow effect */
+.robot-shadow {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 5px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: shadowPulse 0.6s ease-in-out infinite;
+}
+
+@keyframes shadowPulse {
+  0%, 100% {
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(-50%) scaleX(1.1);
+    opacity: 0.5;
+  }
+}
+
+/* Walking Animation - Legs */
+.leg-left-group {
+  animation: walkLeft 0.6s ease-in-out infinite;
+  transform-origin: 36px 88px;
+}
+
+.leg-right-group {
+  animation: walkRight 0.6s ease-in-out infinite;
+  transform-origin: 64px 88px;
+}
+
+@keyframes walkLeft {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  75% {
+    transform: rotate(10deg);
+  }
+}
+
+@keyframes walkRight {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+}
+
+/* Body bobbing while walking */
+.mini-pekka-body {
+  animation: bodyBob 0.6s ease-in-out infinite;
+}
+
+@keyframes bodyBob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+/* Head bobbing (slightly delayed from body) */
+.mini-pekka-head {
+  animation: headBob 0.6s ease-in-out infinite;
+}
+
+@keyframes headBob {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-0.5px);
+  }
+}

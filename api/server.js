@@ -77,6 +77,12 @@ function parseOutput(output, algorithm) {
     if (robotHeaderMatch && line.includes('─')) {
       // Save previous robot if exists
       if (currentRobotId !== null) {
+        // Save any pending task before saving the robot
+        if (currentTaskData) {
+          currentRobotTasks.push(currentTaskData);
+          currentTaskData = null;
+        }
+        
         robots.push({
           id: currentRobotId + 1,
           tasks: currentRobotTasks,
@@ -277,9 +283,11 @@ function parseOutput(output, algorithm) {
   
   // Save the last task and robot
   if (currentTaskData && currentRobotId !== null) {
+    console.log(`Saving final task for robot ${currentRobotId}: Task ${currentTaskData.taskId}`);
     currentRobotTasks.push(currentTaskData);
   }
   if (currentRobotId !== null) {
+    console.log(`Saving final robot ${currentRobotId} with ${currentRobotTasks.length} tasks`);
     robots.push({
       id: currentRobotId + 1,
       tasks: currentRobotTasks,
@@ -288,6 +296,12 @@ function parseOutput(output, algorithm) {
       completionTime: currentRobotCompletionTime
     });
   }
+  
+  console.log(`Total robots parsed: ${robots.length}`);
+  console.log(`Total tasks across all robots: ${robots.reduce((sum, r) => sum + r.tasks.length, 0)}`);
+  robots.forEach((robot, idx) => {
+    console.log(`  Robot ${robot.id}: ${robot.tasks.length} tasks - ${robot.tasks.map(t => t.type === 'charging' ? 'CHARGE' : `T${t.taskId}`).join(', ')}`);
+  });
   
   // Calculate actual makespan from robot completion times if parsing failed
   if (makespan === 0 && robots.length > 0) {
@@ -326,7 +340,7 @@ app.post('/api/planner', async (req, res) => {
         console.log(`Running command: ${command}`);
         
         await new Promise((resolve, reject) => {
-          exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
+          exec(command, { timeout: 300000 }, (error, stdout, stderr) => {
             if (error) {
               console.error(`Error running ${alg.name}:`, error);
               // Use fallback result on error
@@ -364,7 +378,7 @@ app.post('/api/planner', async (req, res) => {
       const command = buildPlannerCommand(algorithmId, graphId, numTasks, numRobots);
       console.log(`Running command: ${command}`);
       
-      exec(command, { timeout: 30000 }, (error, stdout, stderr) => {
+      exec(command, { timeout: 300000 }, (error, stdout, stderr) => {
         if (error) {
           console.error('Error running planner:', error);
           return res.status(500).json({ 
