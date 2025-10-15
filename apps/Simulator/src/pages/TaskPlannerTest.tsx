@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import TimelineVisualizer from '../components/TimelineVisualizer';
 
 interface PlannerParams {
   algorithmId: number;
@@ -79,6 +80,7 @@ export default function TaskPlanner() {
   const [error, setError] = useState<string | null>(null);
   const [availableGraphs, setAvailableGraphs] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const [loadingGraphs, setLoadingGraphs] = useState(true);
+  const [showVisualizer, setShowVisualizer] = useState(false);
 
   // Fetch available graphs on component mount
   useEffect(() => {
@@ -104,6 +106,188 @@ export default function TaskPlanner() {
     
     fetchGraphs();
   }, [params.graphId]);
+
+  // Set up arrow button event listeners for static timeline
+  useEffect(() => {
+    if (!result) return;
+
+    const scrollStates: { [key: string]: { isScrolling: boolean; direction: number; animationId?: number; timeoutId?: number } } = {};
+    const handlers: { [key: string]: { down: any; up: any } } = {};
+    
+    // Small delay to ensure DOM is ready
+    const setupTimeout = setTimeout(() => {
+      result.robots.forEach(robot => {
+        const leftButton = document.getElementById(`static-left-arrow-${robot.id}`);
+        const rightButton = document.getElementById(`static-right-arrow-${robot.id}`);
+        const scrollContainer = document.getElementById(`static-timeline-scroll-${robot.id}`);
+
+        if (leftButton && scrollContainer) {
+          const handleLeftDown = (e: Event) => {
+            e.preventDefault();
+            
+            const key = `left-${robot.id}`;
+            
+            // Wait 200ms - if still pressed, start continuous scroll
+            scrollStates[key] = { isScrolling: false, direction: -1 };
+            scrollStates[key].timeoutId = window.setTimeout(() => {
+              scrollStates[key].isScrolling = true;
+              
+              const scroll = () => {
+                if (scrollStates[key]?.isScrolling) {
+                  scrollContainer.scrollLeft += scrollStates[key].direction * 5;
+                  scrollStates[key].animationId = requestAnimationFrame(scroll);
+                }
+              };
+              
+              scroll();
+            }, 200);
+          };
+
+          const handleLeftUp = () => {
+            const key = `left-${robot.id}`;
+            if (scrollStates[key]) {
+              const wasHolding = scrollStates[key].isScrolling;
+              
+              // Clear timeout and animation
+              if (scrollStates[key].timeoutId) {
+                clearTimeout(scrollStates[key].timeoutId);
+              }
+              if (scrollStates[key].animationId) {
+                cancelAnimationFrame(scrollStates[key].animationId!);
+              }
+              
+              // If it was just a click (not holding), do smooth scroll
+              if (!wasHolding) {
+                scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+              } else {
+                // If holding, add a smooth deceleration
+                let velocity = scrollStates[key].direction * 5;
+                const decelerate = () => {
+                  velocity *= 0.9; // Deceleration factor
+                  if (Math.abs(velocity) > 0.1) {
+                    scrollContainer.scrollLeft += velocity;
+                    requestAnimationFrame(decelerate);
+                  }
+                };
+                decelerate();
+              }
+              
+              delete scrollStates[key];
+            }
+          };
+
+          handlers[`left-${robot.id}`] = { down: handleLeftDown, up: handleLeftUp };
+
+          leftButton.addEventListener('pointerdown', handleLeftDown);
+          leftButton.addEventListener('pointerup', handleLeftUp);
+          leftButton.addEventListener('pointerleave', handleLeftUp);
+          leftButton.addEventListener('pointercancel', handleLeftUp);
+        }
+
+        if (rightButton && scrollContainer) {
+          const handleRightDown = (e: Event) => {
+            e.preventDefault();
+            
+            const key = `right-${robot.id}`;
+            
+            // Wait 200ms - if still pressed, start continuous scroll
+            scrollStates[key] = { isScrolling: false, direction: 1 };
+            scrollStates[key].timeoutId = window.setTimeout(() => {
+              scrollStates[key].isScrolling = true;
+              
+              const scroll = () => {
+                if (scrollStates[key]?.isScrolling) {
+                  scrollContainer.scrollLeft += scrollStates[key].direction * 5;
+                  scrollStates[key].animationId = requestAnimationFrame(scroll);
+                }
+              };
+              
+              scroll();
+            }, 200);
+          };
+
+          const handleRightUp = () => {
+            const key = `right-${robot.id}`;
+            if (scrollStates[key]) {
+              const wasHolding = scrollStates[key].isScrolling;
+              
+              // Clear timeout and animation
+              if (scrollStates[key].timeoutId) {
+                clearTimeout(scrollStates[key].timeoutId);
+              }
+              if (scrollStates[key].animationId) {
+                cancelAnimationFrame(scrollStates[key].animationId!);
+              }
+              
+              // If it was just a click (not holding), do smooth scroll
+              if (!wasHolding) {
+                scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+              } else {
+                // If holding, add a smooth deceleration
+                let velocity = scrollStates[key].direction * 5;
+                const decelerate = () => {
+                  velocity *= 0.9; // Deceleration factor
+                  if (Math.abs(velocity) > 0.1) {
+                    scrollContainer.scrollLeft += velocity;
+                    requestAnimationFrame(decelerate);
+                  }
+                };
+                decelerate();
+              }
+              
+              delete scrollStates[key];
+            }
+          };
+
+          handlers[`right-${robot.id}`] = { down: handleRightDown, up: handleRightUp };
+
+          rightButton.addEventListener('pointerdown', handleRightDown);
+          rightButton.addEventListener('pointerup', handleRightUp);
+          rightButton.addEventListener('pointerleave', handleRightUp);
+          rightButton.addEventListener('pointercancel', handleRightUp);
+        }
+      });
+    }, 50);
+
+    // Cleanup
+    return () => {
+      clearTimeout(setupTimeout);
+      
+      // Clean up scroll states
+      Object.values(scrollStates).forEach(state => {
+        state.isScrolling = false;
+        if (state.timeoutId) {
+          clearTimeout(state.timeoutId);
+        }
+        if (state.animationId) {
+          cancelAnimationFrame(state.animationId);
+        }
+      });
+
+      // Remove all event listeners
+      result.robots.forEach(robot => {
+        const leftButton = document.getElementById(`static-left-arrow-${robot.id}`);
+        const rightButton = document.getElementById(`static-right-arrow-${robot.id}`);
+        
+        const leftKey = `left-${robot.id}`;
+        const rightKey = `right-${robot.id}`;
+        
+        if (leftButton && handlers[leftKey]) {
+          leftButton.removeEventListener('pointerdown', handlers[leftKey].down);
+          leftButton.removeEventListener('pointerup', handlers[leftKey].up);
+          leftButton.removeEventListener('pointerleave', handlers[leftKey].up);
+          leftButton.removeEventListener('pointercancel', handlers[leftKey].up);
+        }
+        
+        if (rightButton && handlers[rightKey]) {
+          rightButton.removeEventListener('pointerdown', handlers[rightKey].down);
+          rightButton.removeEventListener('pointerup', handlers[rightKey].up);
+          rightButton.removeEventListener('pointerleave', handlers[rightKey].up);
+          rightButton.removeEventListener('pointercancel', handlers[rightKey].up);
+        }
+      });
+    };
+  }, [result, showVisualizer]);
 
   const handleRun = async () => {
     setIsRunning(true);
@@ -273,7 +457,7 @@ export default function TaskPlanner() {
         )}
 
         {/* Results Display */}
-        {result && (
+        {result && !showVisualizer && (
           <div className="space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -289,6 +473,20 @@ export default function TaskPlanner() {
                 <div className="text-purple-600 text-sm font-medium">Total Computation</div>
                 <div className="text-purple-900 text-xl font-bold">{result.computationTime.toFixed(2)}ms</div>
               </div>
+            </div>
+
+            {/* Timeline Visualizer Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowVisualizer(true)}
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-3"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                🎬 Launch Timeline Visualizer
+              </button>
             </div>
 
             {/* Comparison Results */}
@@ -332,55 +530,95 @@ export default function TaskPlanner() {
             )}
 
             {/* Timeline Visualization */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-white rounded-lg shadow-md p-6 overflow-hidden">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Execution Timeline</h3>
               <div className="space-y-4">
                 {result.robots.map((robot) => (
-                  <div key={robot.id} className="flex items-center space-x-4">
-                    <div className="w-20 text-sm font-medium text-slate-700">
+                  <div key={robot.id} className="flex items-center space-x-4 min-w-0">
+                    <div className="w-20 flex-shrink-0 text-sm font-medium text-slate-700">
                       Robot {robot.id}
                     </div>
-                    <div className="flex-1 relative h-8 bg-slate-100 rounded">
-                      {robot.tasks.map((event, idx) => {
-                        const widthPercent = Math.max(2, (event.duration / maxTime) * 100);
-                        const leftPercent = Math.min(98 - widthPercent, (event.startTime / maxTime) * 100);
-                        
-                        if (event.type === 'charging') {
-                          return (
-                            <div
-                              key={`charging-${idx}`}
-                              className="absolute h-6 top-1 rounded text-xs text-white flex items-center justify-center font-medium bg-yellow-500 border-2 border-yellow-600"
-                              style={{
-                                left: `${leftPercent}%`,
-                                width: `${widthPercent}%`,
-                              }}
-                              title={`⚡ CHARGING\nStart: ${event.startTime.toFixed(1)}s\nTravel: ${event.travelTime.toFixed(1)}s\nCharging: ${event.chargingTime.toFixed(1)}s\nBattery: ${event.batteryBefore.toFixed(1)}% → ${event.batteryAfter.toFixed(1)}%`}
-                            >
-                              ⚡
-                            </div>
-                          );
-                        }
-                        
-                        return (
-                          <div
-                            key={event.id}
-                            className={`absolute h-6 top-1 rounded text-xs text-white flex items-center justify-center font-medium ${
-                              idx % 4 === 0 ? 'bg-blue-500' : 
-                              idx % 4 === 1 ? 'bg-green-500' : 
-                              idx % 4 === 2 ? 'bg-purple-500' : 'bg-orange-500'
-                            }`}
-                            style={{
-                              left: `${leftPercent}%`,
-                              width: `${widthPercent}%`,
-                            }}
-                            title={`${event.id}: ${event.startTime.toFixed(1)}s - ${(event.startTime + event.duration).toFixed(1)}s (Duration: ${event.duration.toFixed(1)}s)\nFrom Node ${event.fromNode} to Node ${event.toNode}\nBattery: ${event.batteryLevel.toFixed(1)}%`}
-                          >
-                            {event.id.replace('T', '')}
+                    
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      {/* Left Arrow */}
+                      <button
+                        id={`static-left-arrow-${robot.id}`}
+                        className="flex-shrink-0 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 rounded p-1 transition-colors select-none"
+                        style={{ touchAction: 'none' }}
+                        title="Scroll left (hold to scroll continuously)"
+                      >
+                        <svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+
+                      {/* Timeline */}
+                      <div className="flex-1 min-w-0 relative h-8 bg-slate-100 rounded overflow-hidden">
+                        <div 
+                          className="relative h-full overflow-x-scroll scrollbar-hide"
+                          id={`static-timeline-scroll-${robot.id}`}
+                        >
+                          <div className="relative h-full" style={{ width: `${Math.max(100, maxTime * 10)}px` }}>
+                            {robot.tasks.map((event, idx) => {
+                              const widthPx = Math.max(20, event.duration * 10);
+                              const leftPx = event.startTime * 10;
+                              
+                              if (event.type === 'charging') {
+                                // Calculate charging-only block (excluding travel time)
+                                const chargingOnlyWidth = Math.max(20, event.chargingTime * 10);
+                                const chargingStartPx = (event.startTime + event.travelTime) * 10;
+                                
+                                return (
+                                  <div
+                                    key={`charging-${idx}`}
+                                    className="absolute h-6 top-1 rounded text-xs text-white flex items-center justify-center font-medium bg-yellow-500 border-2 border-yellow-600"
+                                    style={{
+                                      left: `${chargingStartPx}px`,
+                                      width: `${chargingOnlyWidth}px`,
+                                    }}
+                                    title={`⚡ CHARGING\nStart: ${event.startTime.toFixed(1)}s\nTravel: ${event.travelTime.toFixed(1)}s\nCharging: ${event.chargingTime.toFixed(1)}s\nBattery: ${event.batteryBefore.toFixed(1)}% → ${event.batteryAfter.toFixed(1)}%`}
+                                  >
+                                    ⚡
+                                  </div>
+                                );
+                              }
+                              
+                              return (
+                                <div
+                                  key={event.id}
+                                  className={`absolute h-6 top-1 rounded text-xs text-white flex items-center justify-center font-medium ${
+                                    idx % 4 === 0 ? 'bg-blue-500' : 
+                                    idx % 4 === 1 ? 'bg-green-500' : 
+                                    idx % 4 === 2 ? 'bg-purple-500' : 'bg-orange-500'
+                                  }`}
+                                  style={{
+                                    left: `${leftPx}px`,
+                                    width: `${widthPx}px`,
+                                  }}
+                                  title={`${event.id}: ${event.startTime.toFixed(1)}s - ${(event.startTime + event.duration).toFixed(1)}s (Duration: ${event.duration.toFixed(1)}s)\nFrom Node ${event.fromNode} to Node ${event.toNode}\nBattery: ${event.batteryLevel.toFixed(1)}%`}
+                                >
+                                  {event.id.replace('T', '')}
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
+                        </div>
+                      </div>
+
+                      {/* Right Arrow */}
+                      <button
+                        id={`static-right-arrow-${robot.id}`}
+                        className="flex-shrink-0 bg-slate-200 hover:bg-slate-300 active:bg-slate-400 text-slate-700 rounded p-1 transition-colors select-none"
+                        style={{ touchAction: 'none' }}
+                        title="Scroll right (hold to scroll continuously)"
+                      >
+                        <svg className="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
                     </div>
-                    <div className="w-16 text-xs text-slate-500">
+                    
+                    <div className="w-16 flex-shrink-0 text-xs text-slate-500">
                       {robot.tasks.length > 0 && 
                         `${Math.max(...robot.tasks.map(t => t.startTime + t.duration)).toFixed(1)}s`
                       }
@@ -578,6 +816,15 @@ export default function TaskPlanner() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Timeline Visualizer Modal */}
+        {result && showVisualizer && (
+          <TimelineVisualizer
+            robots={result.robots}
+            makespan={result.makespan}
+            onClose={() => setShowVisualizer(false)}
+          />
         )}
       </div>
     </div>
