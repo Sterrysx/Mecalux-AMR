@@ -1,4 +1,6 @@
 #include "../../include/algorithms/03_HillClimbing.hh"
+#include "../../include/algorithms/utils/SchedulerUtils.hh"
+#include "../../include/algorithms/utils/AssignmentPrinter.hh"
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -7,6 +9,7 @@
 #include <chrono>
 #include <random>
 #include <algorithm>
+#include <unordered_map>
 using namespace std;
 
 string HillClimbing::getName() const {
@@ -20,7 +23,7 @@ string HillClimbing::getDescription() const {
 /**
  * @brief Main execution method for Hill Climbing algorithm
  */
-void HillClimbing::execute(
+AlgorithmResult HillClimbing::execute(
     const Graph& graph,
     queue<Robot>& availableRobots,
     queue<Robot>& busyRobots,
@@ -32,17 +35,25 @@ void HillClimbing::execute(
     (void)chargingRobots;
     (void)totalRobots;
     
+    AlgorithmResult result;
+    result.algorithmName = getName();
+    result.isOptimal = false; // Hill climbing is a heuristic
+    
     if (!compactMode) cout << "Executing Hill Climbing Algorithm..." << endl;
     
     auto startTime = chrono::high_resolution_clock::now();
 
     if (pendingTasks.empty()) {
         if (!compactMode) cout << "No pending tasks to assign." << endl;
-        return;
+        result.makespan = 0.0;
+        result.computationTimeMs = 0.0;
+        return result;
     }
     if (availableRobots.empty()) {
         if (!compactMode) cout << "No available robots to perform tasks." << endl;
-        return;
+        result.makespan = 0.0;
+        result.computationTimeMs = 0.0;
+        return result;
     }
     
     // Convert queues to vectors
@@ -52,47 +63,44 @@ void HillClimbing::execute(
         pendingTasks.pop();
     }
 
-    // Initialize robot states
-    vector<RobotState> robotStates;
-    vector<Robot> robots;
+    // Initialize original robots from the queue
+    vector<Robot> originalRobots;
     while (!availableRobots.empty()) {
-        Robot robot = availableRobots.front();
+        originalRobots.push_back(availableRobots.front());
         availableRobots.pop();
-        robots.push_back(robot);
-        
-        RobotState state{
-            Robot(robot.getId(), robot.getPosition(), robot.getBatteryLevel(), 
-                  robot.getCurrentTask(), robot.getMaxSpeed(), robot.getLoadCapacity()),
-            robot.getPosition(),
-            robot.getBatteryLevel(),
-            0.0,
-            {}
-        };
-        robotStates.push_back(state);
     }
+    vector<Robot>& robots = originalRobots; // Use a reference for clarity
 
     if (!compactMode) {
         cout << "Assigning " << tasksVec.size() << " tasks to " 
-             << robotStates.size() << " robots using hill climbing strategy." << endl;
+             << robots.size() << " robots using hill climbing strategy." << endl;
     }
 
     // Get configuration
-    if (robotStates.empty()) return;
-    BatteryConfig config(robotStates[0].robot);
+    if (robots.empty()) {
+        result.makespan = 0.0;
+        result.computationTimeMs = 0.0;
+        return result;
+    }
+    SchedulerUtils::BatteryConfig config(robots[0]);
     
     // Get charging node
-    int chargingNodeId = getChargingNodeId(graph);
+    int chargingNodeId = SchedulerUtils::getChargingNodeId(graph);
     if (chargingNodeId == -1 && !compactMode) {
         cerr << "Warning: No charging node found in graph. Battery constraints ignored." << endl;
     }
 
     // Phase 1: Generate initial greedy solution
     if (!compactMode) cout << "Phase 1: Generating initial greedy solution..." << endl;
+    
+    // Create a mutable copy of robots for the greedy simulation
+    vector<Robot> simulatedRobotsForGreedy = originalRobots;
     vector<vector<Task>> assignment = generateGreedySolution(
-        robotStates, tasksVec, graph, config, chargingNodeId
+        simulatedRobotsForGreedy, tasksVec, graph, config, chargingNodeId
     );
     
-    double currentMakespan = calculateMakespan(assignment, robots, graph, config, chargingNodeId);
+    // Use the CORRECT makespan calculator, passing the ORIGINAL robots
+    double currentMakespan = calculateMakespan(assignment, originalRobots, graph, config, chargingNodeId);
     if (!compactMode) cout << "Initial greedy makespan: " << fixed << setprecision(2) << currentMakespan << "s" << endl;
 
     // Phase 2: Hill climbing improvement
@@ -131,7 +139,7 @@ void HillClimbing::execute(
          << currentMakespan << " seconds." << endl;
 
     // Print beautified assignment
-    if (!compactMode) printBeautifiedAssignment(robots, assignment, graph);
+    if (!compactMode) AssignmentPrinter::printBeautifiedAssignment(getName(), robots, assignment, graph);
 
     // Update robot states
     for (size_t i = 0; i < robots.size(); ++i) {
@@ -144,69 +152,89 @@ void HillClimbing::execute(
     }
     
     if (!compactMode) cout << "--------------------------" << endl;
+    
+    // Populate result struct
+    result.makespan = currentMakespan;
+    result.assignment = assignment;
+    result.computationTimeMs = duration.count();
+    
+    return result;
 }
 
 /**
  * @brief Generate initial greedy solution
  */
 vector<vector<Task>> HillClimbing::generateGreedySolution(
-    vector<RobotState>& robotStates,
+    vector<Robot>& simulatedRobots,
     const vector<Task>& tasks,
     const Graph& graph,
-    const BatteryConfig& config,
+    const SchedulerUtils::BatteryConfig& config,
     int chargingNodeId
 ) {
-    vector<vector<Task>> assignment(robotStates.size());
-    
-    // Greedy: assign each task to robot that can complete it soonest
-    for (const Task& task : tasks) {
-        int bestRobotIdx = -1;
-        double minCompletionTime = numeric_limits<double>::max();
+    vector<vector<Task>> assignment(simulatedRobots.size());
+    unordered_map<int, double> robotCompletionTimes;
 
-        for (size_t i = 0; i < robotStates.size(); ++i) {
+    for (const auto& task : tasks) {
+        int bestRobotIdx = -1;
+        double minEndTime = numeric_limits<double>::max();
+
+        for (size_t i = 0; i < simulatedRobots.size(); ++i) {
+            Robot tempRobot = simulatedRobots[i];
+            double tempTime = robotCompletionTimes[tempRobot.getId()];
+            
             const Graph::Node* originNode = graph.getNode(task.getOriginNode());
             const Graph::Node* destNode = graph.getNode(task.getDestinationNode());
-            
             if (!originNode || !destNode) continue;
-
-            // Calculate completion time for this robot
-            TaskBatteryInfo taskInfo = calculateTaskBatteryConsumption(
-                robotStates[i].currentPosition, originNode, destNode,
-                robotStates[i].currentBattery, config
-            );
-
-            double completionTime = robotStates[i].totalTime;
             
-            // Check if charging needed
-            if (chargingNodeId != -1 && shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
-                performCharging(robotStates[i].currentPosition, robotStates[i].currentBattery,
-                               completionTime, chargingNodeId, graph, config);
-                taskInfo = calculateTaskBatteryConsumption(
-                    robotStates[i].currentPosition, originNode, destNode,
-                    robotStates[i].currentBattery, config
+            auto taskInfo = SchedulerUtils::calculateTaskBatteryConsumption(
+                tempRobot.getPosition(), originNode, destNode, tempRobot.getBatteryLevel(), config);
+            
+            auto tempPos = tempRobot.getPosition();
+            auto tempBat = tempRobot.getBatteryLevel();
+
+            if (chargingNodeId != -1 && SchedulerUtils::shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
+                SchedulerUtils::performCharging(tempPos, tempBat, tempTime, chargingNodeId, graph, config);
+                taskInfo = SchedulerUtils::calculateTaskBatteryConsumption(
+                    tempPos, originNode, destNode, tempBat, config
                 );
             }
+            
+            double endTime = tempTime + taskInfo.timeToOrigin + taskInfo.timeForTask;
 
-            completionTime += taskInfo.timeToOrigin + taskInfo.timeForTask;
-
-            if (completionTime < minCompletionTime) {
-                minCompletionTime = completionTime;
-                bestRobotIdx = static_cast<int>(i);
+            if (endTime < minEndTime) {
+                minEndTime = endTime;
+                bestRobotIdx = i;
             }
         }
 
         if (bestRobotIdx != -1) {
-            assignment[bestRobotIdx].push_back(task);
-            
-            // Update robot state
+            Robot& chosenRobot = simulatedRobots[bestRobotIdx];
+            double& robotTime = robotCompletionTimes[chosenRobot.getId()];
+
+            const Graph::Node* originNode = graph.getNode(task.getOriginNode());
             const Graph::Node* destNode = graph.getNode(task.getDestinationNode());
-            if (destNode) {
-                robotStates[bestRobotIdx].currentPosition = destNode->coordinates;
-                robotStates[bestRobotIdx].assignedTasks.push_back(task);
+            
+            auto taskInfo = SchedulerUtils::calculateTaskBatteryConsumption(
+                chosenRobot.getPosition(), originNode, destNode, chosenRobot.getBatteryLevel(), config);
+
+            if (chargingNodeId != -1 && SchedulerUtils::shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
+                auto robotPos = chosenRobot.getPosition();
+                auto robotBat = chosenRobot.getBatteryLevel();
+                SchedulerUtils::performCharging(robotPos, robotBat, robotTime, chargingNodeId, graph, config);
+                chosenRobot.setPosition(robotPos);
+                chosenRobot.setBatteryLevel(robotBat);
+                
+                taskInfo = SchedulerUtils::calculateTaskBatteryConsumption(
+                    chosenRobot.getPosition(), originNode, destNode, chosenRobot.getBatteryLevel(), config
+                );
             }
+            
+            robotTime += taskInfo.timeToOrigin + taskInfo.timeForTask;
+            chosenRobot.setBatteryLevel(chosenRobot.getBatteryLevel() - taskInfo.totalBatteryNeeded);
+            chosenRobot.setPosition(destNode->coordinates);
+            assignment[bestRobotIdx].push_back(task);
         }
     }
-
     return assignment;
 }
 
@@ -217,7 +245,7 @@ double HillClimbing::calculateMakespan(
     const vector<vector<Task>>& assignment,
     const vector<Robot>& robots,
     const Graph& graph,
-    const BatteryConfig& config,
+    const SchedulerUtils::BatteryConfig& config,
     int chargingNodeId
 ) {
     double maxTime = 0.0;
@@ -235,15 +263,15 @@ double HillClimbing::calculateMakespan(
             
             if (!originNode || !destNode) continue;
 
-            TaskBatteryInfo taskInfo = calculateTaskBatteryConsumption(
+            SchedulerUtils::TaskBatteryInfo taskInfo = SchedulerUtils::calculateTaskBatteryConsumption(
                 currentPos, originNode, destNode, currentBattery, config
             );
 
             // Check if charging needed
-            if (chargingNodeId != -1 && shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
-                performCharging(currentPos, currentBattery, totalTime,
+            if (chargingNodeId != -1 && SchedulerUtils::shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
+                SchedulerUtils::performCharging(currentPos, currentBattery, totalTime,
                                chargingNodeId, graph, config);
-                taskInfo = calculateTaskBatteryConsumption(
+                taskInfo = SchedulerUtils::calculateTaskBatteryConsumption(
                     currentPos, originNode, destNode, currentBattery, config
                 );
             }
@@ -266,7 +294,7 @@ bool HillClimbing::tryImprovement(
     vector<vector<Task>>& assignment,
     const vector<Robot>& robots,
     const Graph& graph,
-    const BatteryConfig& config,
+    const SchedulerUtils::BatteryConfig& config,
     int chargingNodeId,
     double& currentMakespan
 ) {
@@ -354,182 +382,4 @@ bool HillClimbing::tryImprovement(
     }
 
     return false;
-}
-
-// --- Helper Function Definitions (same as Greedy/BruteForce) ---
-
-double HillClimbing::calculateDistance(pair<double, double> pos1, pair<double, double> pos2) const {
-    return sqrt(pow(pos2.first - pos1.first, 2) + pow(pos2.second - pos1.second, 2));
-}
-
-int HillClimbing::getChargingNodeId(const Graph& graph) {
-    for (int i = 0; i < graph.getNumVertices(); ++i) {
-        const Graph::Node* node = graph.getNode(i);
-        if (node && node->type == Graph::NodeType::Charging) {
-            return node->nodeId;
-        }
-    }
-    return -1;
-}
-
-HillClimbing::TaskBatteryInfo HillClimbing::calculateTaskBatteryConsumption(
-    const pair<double, double>& currentPos,
-    const Graph::Node* originNode,
-    const Graph::Node* destNode,
-    double currentBattery,
-    const BatteryConfig& config
-) const {
-    TaskBatteryInfo info;
-    
-    double percentageConsumePerSecond = 100.0 / config.batteryLifeSpan;
-    
-    info.distanceToOrigin = calculateDistance(currentPos, originNode->coordinates);
-    info.timeToOrigin = info.distanceToOrigin / config.robotSpeed;
-    info.batteryToOrigin = info.timeToOrigin * percentageConsumePerSecond * config.alpha;
-    
-    info.distanceForTask = calculateDistance(originNode->coordinates, destNode->coordinates);
-    info.timeForTask = info.distanceForTask / config.robotSpeed;
-    info.batteryForTask = info.timeForTask * percentageConsumePerSecond;
-    
-    info.totalBatteryNeeded = info.batteryToOrigin + info.batteryForTask;
-    info.batteryAfterTask = currentBattery - info.totalBatteryNeeded;
-    
-    return info;
-}
-
-bool HillClimbing::shouldCharge(double batteryAfterTask, double threshold) const {
-    return batteryAfterTask < threshold;
-}
-
-void HillClimbing::performCharging(
-    pair<double, double>& currentPos,
-    double& currentBattery,
-    double& totalTime,
-    int chargingNodeId,
-    const Graph& graph,
-    const BatteryConfig& config
-) {
-    const Graph::Node* chargingNode = graph.getNode(chargingNodeId);
-    if (!chargingNode) return;
-    
-    double percentageConsumePerSecond = 100.0 / config.batteryLifeSpan;
-    
-    double distToCharging = calculateDistance(currentPos, chargingNode->coordinates);
-    double timeToCharging = distToCharging / config.robotSpeed;
-    
-    currentBattery -= timeToCharging * percentageConsumePerSecond * config.alpha;
-    totalTime += timeToCharging;
-    
-    double batteryNeeded = config.fullBattery - currentBattery;
-    double chargingTime = batteryNeeded / config.batteryRechargeRate;
-    currentBattery = config.fullBattery;
-    totalTime += chargingTime;
-    
-    currentPos = chargingNode->coordinates;
-}
-
-void HillClimbing::printBeautifiedAssignment(
-    vector<Robot>& robots,
-    const vector<vector<Task>>& assignment,
-    const Graph& graph
-) {
-    if (robots.empty()) return;
-    
-    BatteryConfig config(robots[0]);
-    int chargingNodeId = getChargingNodeId(graph);
-
-    cout << "\n╔════════════════════════════════════════════════════════════════╗" << endl;
-    cout << "║           HILL CLIMBING ASSIGNMENT REPORT                      ║" << endl;
-    cout << "╚════════════════════════════════════════════════════════════════╝\n" << endl;
-
-    for (size_t i = 0; i < robots.size(); ++i) {
-        const Robot& robot = robots[i];
-        cout << "┌─ Robot " << robot.getId() << " ─────────────────────────────────────────" << endl;
-        cout << "│  Initial battery: " << fixed << setprecision(2) << robot.getBatteryLevel() << "%" << endl;
-        
-        if (assignment[i].empty()) {
-            cout << "│  No tasks assigned" << endl;
-            cout << "└────────────────────────────────────────────────────────\n" << endl;
-            continue;
-        }
-
-        pair<double, double> currentPos = robot.getPosition();
-        double cumulativeTime = 0.0;
-        double currentBattery = robot.getBatteryLevel();
-
-        for (size_t taskIdx = 0; taskIdx < assignment[i].size(); ++taskIdx) {
-            const Task& task = assignment[i][taskIdx];
-            const Graph::Node* originNode = graph.getNode(task.getOriginNode());
-            const Graph::Node* destNode = graph.getNode(task.getDestinationNode());
-
-            if (!originNode || !destNode) {
-                cout << "│  Task ID " << task.getTaskId() << ": ERROR - Invalid node" << endl;
-                continue;
-            }
-
-            TaskBatteryInfo taskInfo = calculateTaskBatteryConsumption(
-                currentPos, originNode, destNode, currentBattery, config
-            );
-
-            if (chargingNodeId != -1 && shouldCharge(taskInfo.batteryAfterTask, config.lowBatteryThreshold)) {
-                const Graph::Node* chargingNode = graph.getNode(chargingNodeId);
-                if (chargingNode) {
-                    cout << "│" << endl;
-                    cout << "│  ⚡ CHARGING DECISION (Preventive)" << endl;
-                    cout << "│    Current battery: " << fixed << setprecision(2) << currentBattery << "%" << endl;
-                    cout << "│    Next task (ID " << task.getTaskId() << ") would consume: " 
-                         << fixed << setprecision(2) << taskInfo.totalBatteryNeeded << "%" << endl;
-                    cout << "│    Battery after task would be: " << fixed << setprecision(2) 
-                         << taskInfo.batteryAfterTask << "% (BELOW " << config.lowBatteryThreshold << "% threshold)" << endl;
-                    cout << "│    Decision: Go to charging station before attempting task" << endl;
-                    cout << "│" << endl;
-                    
-                    double distToCharging = calculateDistance(currentPos, chargingNode->coordinates);
-                    double timeToCharging = distToCharging / config.robotSpeed;
-                    double percentageConsumePerSecond = 100.0 / config.batteryLifeSpan;
-                    double batteryOnArrival = currentBattery - (timeToCharging * percentageConsumePerSecond * config.alpha);
-                    double batteryNeeded = config.fullBattery - batteryOnArrival;
-                    double chargingTime = batteryNeeded / config.batteryRechargeRate;
-                    
-                    cout << "│  ⚡ CHARGING EVENT" << endl;
-                    cout << "│    Travel to charging station (Node " << chargingNodeId << "): " 
-                         << fixed << setprecision(2) << timeToCharging << "s" << endl;
-                    cout << "│    Battery on arrival: " << fixed << setprecision(2) << batteryOnArrival << "%" << endl;
-                    cout << "│    Charging time: " << fixed << setprecision(2) << chargingTime << "s" << endl;
-                    cout << "│    Battery after charging: " << fixed << setprecision(2) << config.fullBattery << "%" << endl;
-                    cout << "│" << endl;
-                    
-                    performCharging(currentPos, currentBattery, cumulativeTime, chargingNodeId, graph, config);
-                    
-                    taskInfo = calculateTaskBatteryConsumption(
-                        currentPos, originNode, destNode, currentBattery, config
-                    );
-                }
-            }
-
-            currentBattery -= taskInfo.totalBatteryNeeded;
-            cumulativeTime += taskInfo.timeToOrigin + taskInfo.timeForTask;
-
-            cout << "│  Task ID " << task.getTaskId() << ":" << endl;
-            cout << "│    From: Node " << task.getOriginNode() 
-                 << " (" << originNode->coordinates.first << ", " << originNode->coordinates.second << ")" << endl;
-            cout << "│    To:   Node " << task.getDestinationNode() 
-                 << " (" << destNode->coordinates.first << ", " << destNode->coordinates.second << ")" << endl;
-            cout << "│    Travel to origin: " << fixed << setprecision(2) << taskInfo.timeToOrigin << "s" << endl;
-            cout << "│    Task execution:   " << fixed << setprecision(2) << taskInfo.timeForTask << "s" << endl;
-            cout << "│    Cumulative time:  " << fixed << setprecision(2) << cumulativeTime << "s" << endl;
-            cout << "│    Battery level:    " << fixed << setprecision(2) << currentBattery << "%" << endl;
-            
-            if (taskIdx < assignment[i].size() - 1) {
-                cout << "│    ↓" << endl;
-            }
-
-            currentPos = destNode->coordinates;
-        }
-
-        cout << "│" << endl;
-        cout << "│  ★ Total completion time: " << fixed << setprecision(2) << cumulativeTime << "s" << endl;
-        cout << "│  ★ Final battery level:   " << fixed << setprecision(2) << currentBattery << "%" << endl;
-        cout << "└────────────────────────────────────────────────────────\n" << endl;
-    }
 }

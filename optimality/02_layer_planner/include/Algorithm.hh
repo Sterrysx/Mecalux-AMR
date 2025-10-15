@@ -6,6 +6,14 @@
 #include "Robot.hh"
 #include "Task.hh"
 
+struct AlgorithmResult {
+    double makespan = 0.0;
+    std::vector<std::vector<Task>> assignment;
+    double computationTimeMs = 0.0;
+    bool isOptimal = false; // True only if the result is guaranteed to be the global optimum.
+    std::string algorithmName;
+};
+
 /**
  * @brief Abstract base class for planning algorithms (Strategy Pattern)
  * 
@@ -26,8 +34,9 @@ public:
      * @param pendingTasks Queue of tasks waiting to be assigned
      * @param totalRobots Total number of robots in the system
      * @param compactMode If true, show only essential metrics (for comparison mode)
+     * @return AlgorithmResult containing makespan, assignment, computation time, and optimality info
      */
-    virtual void execute(
+    virtual AlgorithmResult execute(
         const Graph& graph,
         std::queue<Robot>& availableRobots,
         std::queue<Robot>& busyRobots,

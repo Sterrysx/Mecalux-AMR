@@ -14,11 +14,17 @@ SOURCES = $(SRCDIR)/Planifier.cc $(SRCDIR)/Robot.cc $(SRCDIR)/Task.cc \
           $(SRCDIR)/algorithms/01_BruteForce.cc \
           $(SRCDIR)/algorithms/02_Greedy.cc \
           $(SRCDIR)/algorithms/03_HillClimbing.cc \
+          $(SRCDIR)/algorithms/utils/SchedulerUtils.cc \
+          $(SRCDIR)/algorithms/utils/TSPSolver.cc \
+          $(SRCDIR)/algorithms/utils/AssignmentPrinter.cc \
           $(GRAPH_SRC)/Graph.cc main.cc
 OBJECTS = $(BUILDDIR)/Planifier.o $(BUILDDIR)/Robot.o $(BUILDDIR)/Task.o \
           $(BUILDDIR)/01_BruteForce.o \
           $(BUILDDIR)/02_Greedy.o \
           $(BUILDDIR)/03_HillClimbing.o \
+          $(BUILDDIR)/SchedulerUtils.o \
+          $(BUILDDIR)/TSPSolver.o \
+          $(BUILDDIR)/AssignmentPrinter.o \
           $(BUILDDIR)/Graph.o $(BUILDDIR)/main.o
 
 # Target executable
@@ -56,6 +62,16 @@ $(BUILDDIR)/02_Greedy.o: $(SRCDIR)/algorithms/02_Greedy.cc $(INCDIR)/algorithms/
 
 $(BUILDDIR)/03_HillClimbing.o: $(SRCDIR)/algorithms/03_HillClimbing.cc $(INCDIR)/algorithms/03_HillClimbing.hh $(INCDIR)/Algorithm.hh | $(BUILDDIR)
 	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/algorithms/03_HillClimbing.cc -o $(BUILDDIR)/03_HillClimbing.o
+
+# Compile utility implementations
+$(BUILDDIR)/SchedulerUtils.o: $(SRCDIR)/algorithms/utils/SchedulerUtils.cc $(INCDIR)/algorithms/utils/SchedulerUtils.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/algorithms/utils/SchedulerUtils.cc -o $(BUILDDIR)/SchedulerUtils.o
+
+$(BUILDDIR)/TSPSolver.o: $(SRCDIR)/algorithms/utils/TSPSolver.cc $(INCDIR)/algorithms/utils/TSPSolver.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/algorithms/utils/TSPSolver.cc -o $(BUILDDIR)/TSPSolver.o
+
+$(BUILDDIR)/AssignmentPrinter.o: $(SRCDIR)/algorithms/utils/AssignmentPrinter.cc $(INCDIR)/algorithms/utils/AssignmentPrinter.hh | $(BUILDDIR)
+	$(CXX) $(CXXFLAGS) -I$(INCDIR) -I$(GRAPH_INC) -c $(SRCDIR)/algorithms/utils/AssignmentPrinter.cc -o $(BUILDDIR)/AssignmentPrinter.o
 
 # Compile Graph.cc from 01_layer_mapping
 $(BUILDDIR)/Graph.o: $(GRAPH_SRC)/Graph.cc $(GRAPH_INC)/Graph.hh | $(BUILDDIR)

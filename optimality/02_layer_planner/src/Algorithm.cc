@@ -1,4 +1,4 @@
-#include "../../include/Algorithm.hh"
+#include "Algorithm.hh"
 #include <iostream>
 using namespace std;
 
