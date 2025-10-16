@@ -7,48 +7,48 @@
 <text x="126.596" y="305.319" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">13.5</text>
 <line x1="50.0" y1="220.2" x2="781.9" y2="390.4" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="416.0" y="305.3" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">44.1</text>
-<line x1="50.0" y1="220.2" x2="50.0" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="50.0" y="475.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">30.0</text>
-<line x1="50.0" y1="220.2" x2="1054.3" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="552.1" y="475.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">66.2</text>
 <line x1="50.0" y1="220.2" x2="850.0" y2="220.2" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="450.0" y="220.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">47.0</text>
 <line x1="50.0" y1="220.2" x2="543.6" y2="50.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="296.8" y="135.1" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">30.7</text>
+<line x1="50.0" y1="220.2" x2="50.0" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="50.0" y="475.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">30.0</text>
+<line x1="50.0" y1="220.2" x2="1054.3" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="552.1" y="475.5" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">66.2</text>
 <line x1="1054.3" y1="730.9" x2="781.9" y2="781.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="918.1" y="756.4" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">16.3</text>
 <line x1="50.0" y1="730.9" x2="203.2" y2="781.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="126.6" y="756.4" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">9.5</text>
-<line x1="543.6" y1="50.0" x2="543.6" y2="84.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="543.6" y="67.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">2.0</text>
 <line x1="543.6" y1="50.0" x2="339.4" y2="135.1" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="441.5" y="92.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">13.0</text>
+<line x1="543.6" y1="50.0" x2="543.6" y2="84.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="543.6" y="67.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">2.0</text>
 <line x1="543.6" y1="50.0" x2="305.3" y2="220.2" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="424.5" y="135.1" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">17.2</text>
 <line x1="543.6" y1="50.0" x2="679.8" y2="220.2" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="611.7" y="135.1" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">12.8</text>
+<line x1="850.0" y1="220.2" x2="935.1" y2="254.3" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="892.6" y="237.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.4</text>
 <line x1="850.0" y1="220.2" x2="781.9" y2="390.4" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="816.0" y="305.3" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">10.8</text>
 <line x1="850.0" y1="220.2" x2="679.8" y2="220.2" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="764.9" y="220.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">10.0</text>
-<line x1="850.0" y1="220.2" x2="935.1" y2="254.3" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="892.6" y="237.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.4</text>
+<line x1="679.8" y1="220.2" x2="679.8" y2="254.3" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="679.8" y="237.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">2.0</text>
 <line x1="679.8" y1="220.2" x2="764.9" y2="135.1" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="722.3" y="177.7" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.1</text>
 <line x1="679.8" y1="220.2" x2="781.9" y2="390.4" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="730.9" y="305.3" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">11.7</text>
 <line x1="679.8" y1="220.2" x2="305.3" y2="220.2" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="492.6" y="220.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">22.0</text>
-<line x1="679.8" y1="220.2" x2="679.8" y2="254.3" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="679.8" y="237.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">2.0</text>
-<line x1="305.3" y1="220.2" x2="339.4" y2="135.1" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="322.3" y="177.7" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.4</text>
-<line x1="305.3" y1="220.2" x2="203.2" y2="390.4" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="254.3" y="305.3" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">11.7</text>
 <line x1="305.3" y1="220.2" x2="169.1" y2="254.3" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="237.2" y="237.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.2</text>
 <line x1="305.3" y1="220.2" x2="424.5" y2="254.3" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="364.9" y="237.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.3</text>
+<line x1="305.3" y1="220.2" x2="339.4" y2="135.1" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="322.3" y="177.7" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.4</text>
+<line x1="305.3" y1="220.2" x2="203.2" y2="390.4" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="254.3" y="305.3" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">11.7</text>
 <line x1="781.9" y1="390.4" x2="679.8" y2="254.3" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="730.9" y="322.3" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">10.0</text>
 <line x1="781.9" y1="390.4" x2="935.1" y2="254.3" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
@@ -107,14 +107,14 @@
 <text x="228.7" y="756.4" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">4.2</text>
 <line x1="543.6" y1="628.7" x2="543.6" y2="850.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="543.6" y="739.4" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">13.0</text>
+<line x1="543.6" y1="628.7" x2="339.4" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="441.5" y="679.8" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">13.4</text>
 <line x1="543.6" y1="628.7" x2="424.5" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="484.0" y="679.8" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">9.2</text>
 <line x1="543.6" y1="628.7" x2="509.6" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="526.6" y="679.8" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">6.3</text>
 <line x1="543.6" y1="628.7" x2="594.7" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="569.1" y="679.8" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">6.7</text>
-<line x1="543.6" y1="628.7" x2="339.4" y2="730.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="441.5" y="679.8" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">13.4</text>
 <line x1="543.6" y1="628.7" x2="339.4" y2="526.6" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="441.5" y="577.7" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">13.4</text>
 <line x1="543.6" y1="628.7" x2="424.5" y2="526.6" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>

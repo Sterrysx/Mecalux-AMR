@@ -5,8 +5,6 @@
 <g id="edges">
 <line x1="1110.71" y1="103.571" x2="875" y2="300" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="992.857" y="201.786" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.8</text>
-<line x1="1110.7" y1="103.6" x2="1110.7" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="1110.7" y="398.2" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">15.0</text>
 <line x1="89.3" y1="103.6" x2="325.0" y2="300.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="207.1" y="201.8" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.8</text>
 <line x1="89.3" y1="103.6" x2="89.3" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
@@ -45,22 +43,22 @@
 <text x="187.5" y="771.4" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.1</text>
 <line x1="1150.0" y1="850.0" x2="875.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="1012.5" y="771.4" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">8.1</text>
-<line x1="207.1" y1="496.4" x2="325.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="266.1" y="594.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.8</text>
 <line x1="207.1" y1="496.4" x2="207.1" y2="103.6" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="207.1" y="300.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">10.0</text>
-<line x1="403.6" y1="496.4" x2="325.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="364.3" y="594.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.4</text>
+<line x1="207.1" y1="496.4" x2="325.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="266.1" y="594.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.8</text>
 <line x1="403.6" y1="496.4" x2="403.6" y2="103.6" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="403.6" y="300.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">10.0</text>
-<line x1="796.4" y1="496.4" x2="875.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="835.7" y="594.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.4</text>
+<line x1="403.6" y1="496.4" x2="325.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="364.3" y="594.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.4</text>
 <line x1="796.4" y1="496.4" x2="796.4" y2="103.6" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="796.4" y="300.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">10.0</text>
-<line x1="992.9" y1="496.4" x2="875.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="933.9" y="594.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.8</text>
+<line x1="796.4" y1="496.4" x2="875.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="835.7" y="594.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.4</text>
 <line x1="992.9" y1="496.4" x2="992.9" y2="103.6" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="992.9" y="300.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">10.0</text>
+<line x1="992.9" y1="496.4" x2="875.0" y2="692.9" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="933.9" y="594.6" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">5.8</text>
 </g>
 <g id="nodes">
 <circle cx="1110.7" cy="103.6" r="20" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>

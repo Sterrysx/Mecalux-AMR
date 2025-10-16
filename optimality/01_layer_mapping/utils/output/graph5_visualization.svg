@@ -7,14 +7,14 @@
 <text x="594" y="786" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">4.0</text>
 <line x1="594.0" y1="722.0" x2="594.0" y2="626.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="594.0" y="674.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">3.0</text>
+<line x1="594.0" y1="722.0" x2="594.0" y2="370.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="594.0" y="546.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">11.0</text>
+<line x1="594.0" y1="722.0" x2="594.0" y2="498.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
+<text x="594.0" y="610.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.0</text>
 <line x1="594.0" y1="722.0" x2="370.0" y2="754.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="482.0" y="738.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.1</text>
 <line x1="594.0" y1="722.0" x2="818.0" y2="754.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="706.0" y="738.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.1</text>
-<line x1="594.0" y1="722.0" x2="594.0" y2="498.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="594.0" y="610.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">7.0</text>
-<line x1="594.0" y1="722.0" x2="594.0" y2="370.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
-<text x="594.0" y="546.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">11.0</text>
 <line x1="594.0" y1="306.0" x2="594.0" y2="498.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
 <text x="594.0" y="402.0" font-family="Arial" font-size="10" fill="#64748b" text-anchor="middle">6.0</text>
 <line x1="594.0" y1="306.0" x2="370.0" y2="242.0" stroke="#94a3b8" stroke-width="2" opacity="0.6"/>
