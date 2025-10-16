@@ -445,3 +445,184 @@ TEST_F(HeuristicComparisonTest, Clustered_12Tasks_3Robots_HCFindsLocal) {
     ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
     ASSERT_GE(result.improvement_percent, 0.0);
 }
+
+// =============================================================================
+// MASSIVE STRESS TESTS: Push heuristics to their limits (50-300 tasks)
+// =============================================================================
+
+TEST_F(HeuristicComparisonTest, MassiveStress_50Tasks_5Robots_HCScales) {
+    // ARRANGE: 50 tasks - testing scalability
+    const int numRobots = 5;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 50; i++) {
+        tasks.push_back(Task(i, (i % 7) + 5, (i % 7) + 12));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: Both should complete, HC should not be worse
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, MassiveStress_100Tasks_10Robots_FastExecution) {
+    // ARRANGE: 100 tasks - real-world warehouse scale
+    const int numRobots = 10;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 100; i++) {
+        tasks.push_back(Task(i, (i % 7) + 5, (i % 10) + 12));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: Should complete quickly and HC should optimize well
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, MassiveStress_150Tasks_15Robots_LoadBalancing) {
+    // ARRANGE: 150 tasks - heavy load scenario
+    const int numRobots = 15;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 150; i++) {
+        tasks.push_back(Task(i, (i % 7) + 5, (i % 11) + 12));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: HC should find better load balancing
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, MassiveStress_200Tasks_20Robots_Industrial) {
+    // ARRANGE: 200 tasks - industrial warehouse scale
+    const int numRobots = 20;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 200; i++) {
+        tasks.push_back(Task(i, (i % 7) + 5, (i % 11) + 12));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: Both algorithms should handle large scale
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, MassiveStress_250Tasks_25Robots_PeakLoad) {
+    // ARRANGE: 250 tasks - peak load testing
+    const int numRobots = 25;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 250; i++) {
+        tasks.push_back(Task(i, (i % 7) + 5, (i % 11) + 12));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: Validate extreme scale performance
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, MassiveStress_300Tasks_30Robots_MaxCapacity) {
+    // ARRANGE: 300 tasks - maximum capacity test
+    const int numRobots = 30;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 300; i++) {
+        tasks.push_back(Task(i, (i % 7) + 5, (i % 11) + 12));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: Ultimate stress test - both should complete
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, AsymmetricStress_100Tasks_5Robots_HighCompetition) {
+    // ARRANGE: Many tasks, few robots - competition for resources
+    const int numRobots = 5;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 100; i++) {
+        tasks.push_back(Task(i, (i % 7) + 5, (i % 10) + 12));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: HC should optimize better under high competition
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, ClusteredMassive_80Tasks_8Robots_MultiCluster) {
+    // ARRANGE: 80 tasks in 4 clusters - spatial optimization challenge
+    const int numRobots = 8;
+    std::vector<Task> tasks;
+    // Cluster pattern: alternate between pickup zones
+    for (int i = 1; i <= 80; i++) {
+        int cluster = (i - 1) / 20;  // 4 clusters of 20 tasks
+        int pickup = 5 + (cluster % 3) * 2;  // Nodes 5, 7, 9, or 5
+        int dropoff = 12 + (cluster % 4) * 2;  // Nodes 12, 14, 16, 18
+        tasks.push_back(Task(i, pickup, dropoff));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: HC should excel at cluster optimization
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, UniformMassive_120Tasks_12Robots_SameDestination) {
+    // ARRANGE: 120 tasks to same dropoff - worst case for load balancing
+    const int numRobots = 12;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 120; i++) {
+        tasks.push_back(Task(i, (i % 7) + 5, 14));  // All to node 14
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: HC should handle uniform distribution
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
+
+TEST_F(HeuristicComparisonTest, DistributedMassive_90Tasks_9Robots_MaxSpread) {
+    // ARRANGE: 90 tasks maximally spread across graph
+    const int numRobots = 9;
+    std::vector<Task> tasks;
+    for (int i = 1; i <= 90; i++) {
+        // Maximize pickup-dropoff distance variation
+        int pickup = 5 + (i % 7);
+        int dropoff = 12 + ((i * 3) % 11);
+        tasks.push_back(Task(i, pickup, dropoff));
+    }
+
+    // ACT
+    HeuristicResult result = runHeuristicComparison(numRobots, tasks);
+
+    // ASSERT: HC should optimize distributed patterns
+    ASSERT_GT(result.greedy_makespan, 0.0);
+    ASSERT_GT(result.hillClimbing_makespan, 0.0);
+    ASSERT_LE(result.hillClimbing_makespan, result.greedy_makespan);
+}
