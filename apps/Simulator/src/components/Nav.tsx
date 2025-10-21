@@ -21,6 +21,7 @@ export default function Nav() {
           <NavLink to="/editor" className={({isActive})=>`${linkBase} ${isActive?active:idle}`}>Editor</NavLink>
           <NavLink to="/isometric" className={({isActive})=>`${linkBase} ${isActive?active:idle}`}>Isometric</NavLink>
           <NavLink to="/planner" className={({isActive})=>`${linkBase} ${isActive?active:idle}`}>Task Planner</NavLink>
+          <NavLink to="/realtime" className={({isActive})=>`${linkBase} ${isActive?active:idle}`}>Real-Time</NavLink>
           
           {/* Cool Animated Theme Toggle Switch */}
           <button

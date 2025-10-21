@@ -7,6 +7,7 @@ import GridEditor from './pages/GridEditor.tsx'
 import IsometricView from './pages/IsometricView.tsx'
 import TaskPlanner from './pages/TaskPlannerTest.tsx'
 import SimpleTest from './pages/SimpleTest.tsx'
+import RealTimeSimulator from './pages/RealTimeSimulator.tsx'
 import Nav from './components/Nav.tsx'
 import AppContainer from './components/AppContainer.tsx'
 import { DistributionProvider } from './contexts/DistributionContext.tsx'
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/editor" element={<GridEditor />} />
               <Route path="/isometric" element={<IsometricView />} />
               <Route path="/planner" element={<TaskPlanner />} />
+              <Route path="/realtime" element={<RealTimeSimulator />} />
               <Route path="/simple" element={<SimpleTest />} />
               <Route path="/app" element={<App />} />
             </Routes>

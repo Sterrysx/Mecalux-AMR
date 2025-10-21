@@ -1,11 +1,15 @@
 const express = require('express');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const cors = require('cors');
 const path = require('path');
 const os = require('os');
+const http = require('http');
+const WebSocket = require('ws');
 
 const app = express();
 const PORT = 3001;
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 // OS Detection and Path Configuration
 const isWindows = os.platform() === 'win32';
@@ -477,7 +481,115 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+// WebSocket handler for real-time simulator
+let simulatorProcess = null;
+
+wss.on('connection', (ws) => {
+  console.log('WebSocket client connected');
+  
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message);
+      
+      if (data.type === 'start_simulator') {
+        // Start the real-time simulator
+        const { graphId, numRobots } = data;
+        console.log(`Starting real-time simulator: Graph ${graphId}, ${numRobots} robots`);
+        
+        const SIMULATOR_DIR = path.resolve(__dirname, '../optimality/real_time_simulator');
+        let command;
+        
+        if (isWindows) {
+          const wslSimulatorPath = SIMULATOR_DIR.replace(/\\/g, '/').replace(/^([A-Z]):/, (match, drive) => `/mnt/${drive.toLowerCase()}`);
+          command = `wsl`;
+          // Run from the real_time_simulator directory (not build/) so relative paths work
+          const args = ['-e', 'bash', '-c', `cd ${wslSimulatorPath} && ./build/simulator ${graphId} ${numRobots}`];
+          simulatorProcess = spawn(command, args);
+        } else {
+          // Run from the real_time_simulator directory (not build/) so relative paths work
+          simulatorProcess = spawn('./build/simulator', [graphId.toString(), numRobots.toString()], {
+            cwd: SIMULATOR_DIR
+          });
+        }
+        
+        // Send stdout to client
+        simulatorProcess.stdout.on('data', (data) => {
+          const output = data.toString();
+          console.log('Simulator output:', output);
+          ws.send(JSON.stringify({
+            type: 'simulator_output',
+            data: output
+          }));
+        });
+        
+        // Send stderr to client
+        simulatorProcess.stderr.on('data', (data) => {
+          const error = data.toString();
+          console.error('Simulator error:', error);
+          ws.send(JSON.stringify({
+            type: 'simulator_error',
+            data: error
+          }));
+        });
+        
+        // Handle process exit
+        simulatorProcess.on('close', (code) => {
+          console.log(`Simulator process exited with code ${code}`);
+          ws.send(JSON.stringify({
+            type: 'simulator_closed',
+            code
+          }));
+          simulatorProcess = null;
+        });
+        
+        ws.send(JSON.stringify({
+          type: 'simulator_started',
+          message: 'Real-time simulator started successfully'
+        }));
+      } else if (data.type === 'send_command') {
+        // Send command to the running simulator
+        if (simulatorProcess && simulatorProcess.stdin) {
+          console.log('Sending command to simulator:', data.command);
+          simulatorProcess.stdin.write(data.command + '\n');
+        } else {
+          ws.send(JSON.stringify({
+            type: 'error',
+            message: 'Simulator is not running'
+          }));
+        }
+      } else if (data.type === 'stop_simulator') {
+        // Stop the simulator
+        if (simulatorProcess) {
+          console.log('Stopping simulator');
+          simulatorProcess.kill();
+          simulatorProcess = null;
+          ws.send(JSON.stringify({
+            type: 'simulator_stopped',
+            message: 'Simulator stopped'
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('WebSocket message error:', error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        message: error.message
+      }));
+    }
+  });
+  
+  ws.on('close', () => {
+    console.log('WebSocket client disconnected');
+    // Clean up simulator process if client disconnects
+    if (simulatorProcess) {
+      console.log('Cleaning up simulator process');
+      simulatorProcess.kill();
+      simulatorProcess = null;
+    }
+  });
+});
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Planner API server running on http://localhost:${PORT}`);
   console.log(`🔗 Use this server with your React frontend`);
   console.log(`📡 Server listening on all interfaces: 0.0.0.0:${PORT}`);
