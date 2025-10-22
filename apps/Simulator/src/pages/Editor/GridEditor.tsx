@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { useDistribution } from "../contexts/DistributionContext";
-import { useTheme } from "../contexts/ThemeContext";
+import { useDistribution } from "../../contexts/DistributionContext";
+import { useTheme } from "../../contexts/ThemeContext";
 
 type BrushKey = "EMPTY" | "PATH" | "OBSTACLE" | "RESTRICTED" | "CHARGER" | "PACKET";
 const BRUSH_TO_CHAR: Record<BrushKey, string> = {

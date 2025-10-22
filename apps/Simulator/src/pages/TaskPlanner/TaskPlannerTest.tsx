@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import TimelineVisualizer from '../components/TimelineVisualizer';
-import { useTheme } from '../contexts/ThemeContext';
+import TimelineVisualizer from './components/TimelineVisualizer';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface PlannerParams {
   algorithmId: number;

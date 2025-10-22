@@ -1,7 +1,7 @@
-// src/pages/IsometricView.tsx
+// src/pages/Isometric/IsometricView.tsx
 import { useMemo, useState, useEffect } from "react";
-import { useDistribution } from "../contexts/DistributionContext";
-import { useTheme } from "../contexts/ThemeContext";
+import { useDistribution } from "../../contexts/DistributionContext";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const COLORS: Record<string,string> = {
   "X":"#8b1d1e","#":"#a3a3a3","C":"#3b82f6","P":"#a16207",

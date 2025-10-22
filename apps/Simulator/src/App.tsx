@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import GridEditor from './pages/GridEditor';
-import IsometricView from './pages/IsometricView';
-import TaskPlannerTest from './pages/TaskPlannerTest';
+import GridEditor from './pages/Editor/GridEditor';
+import IsometricView from './pages/Isometric/IsometricView';
+import TaskPlannerTest from './pages/TaskPlanner/TaskPlannerTest';
 
 export default function App(){
   const [page, setPage] = useState<'grid'|'iso'|'task'>('grid');
