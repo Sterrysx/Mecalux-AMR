@@ -72,7 +72,8 @@ export default function App() {
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold">
-              {distribution.meta.name} <span className="text-slate-500">({W}×{H})</span>
+              {distribution.meta.name} 
+              <span className="text-slate-500">({W}×{H})</span>
             </h1>
             <p className="text-sm text-slate-600">cell size: {distribution.meta.cell_size_m} m</p>
           </div>

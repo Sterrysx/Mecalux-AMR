@@ -1,6 +1,7 @@
 // src/pages/IsometricView.tsx
 import { useMemo, useState, useEffect } from "react";
 import { useDistribution } from "../contexts/DistributionContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 const COLORS: Record<string,string> = {
   "X":"#8b1d1e","#":"#a3a3a3","C":"#3b82f6","P":"#a16207",
@@ -63,6 +64,7 @@ function darker(hex:string, f=0.75){
 
 export default function IsometricView(){
   const { distribution, grid, isLoading, error } = useDistribution();
+  const { darkMode } = useTheme();
   const [hover, setHover] = useState<{x:number;y:number;ch:string}|null>(null);
   const [panOffset, setPanOffset] = useState(() => {
     // Load saved pan position from localStorage
@@ -282,35 +284,35 @@ export default function IsometricView(){
   const vbY = centerY - mapH/2 - panOffset.y / zoomLevel;
 
   return (
-    <div className="mx-auto max-w-[1100px] p-6 space-y-4">
+    <div className={`mx-auto max-w-[1100px] p-6 space-y-4 ${darkMode ? 'text-slate-100' : 'text-slate-900'}`}>
       <div className="flex items-end justify-between">
-        <h1 className="text-2xl font-semibold">
-          {distribution.meta.name} <span className="text-slate-500">(isometric)</span>
+        <h1 className={`text-2xl font-semibold ${darkMode ? 'text-white' : ''}`}>
+          {distribution.meta.name} <span className={`${darkMode ? 'text-slate-300' : 'text-slate-500'}`}>(isometric)</span>
         </h1>
         <div className="flex gap-4 items-center">
           {hover ? (
-            <div className="text-sm rounded-md bg-slate-900 text-white px-2 py-1">
+            <div className={`${darkMode ? 'text-sm rounded-md bg-slate-800 text-white px-2 py-1' : 'text-sm rounded-md bg-slate-900 text-white px-2 py-1'}`}>
               {hover.ch} (x:{hover.x}, y:{hover.y})
             </div>
           ) : (
-            <div className="text-sm text-slate-500 px-2 py-1">
+            <div className={`text-sm px-2 py-1 ${darkMode ? 'text-slate-300' : 'text-slate-500'}`}>
               Left-click: Orbit • Right-click: Pan • Scroll: Zoom
             </div>
           )}
           
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">
+            <span className={`${darkMode ? 'text-slate-300 text-sm' : 'text-sm text-slate-600'}`}>
               Zoom: {Math.round(zoomLevel * 100)}%
             </span>
             <button 
               onClick={() => setZoomLevel(prev => Math.max(0.3, prev - 0.2))}
-              className="text-sm rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1"
+              className={`${darkMode ? 'text-sm rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 px-2 py-1' : 'text-sm rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1'}`}
             >
               -
             </button>
             <button 
               onClick={() => setZoomLevel(prev => Math.min(3.0, prev + 0.2))}
-              className="text-sm rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1"
+              className={`${darkMode ? 'text-sm rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 px-2 py-1' : 'text-sm rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1'}`}
             >
               +
             </button>
@@ -323,7 +325,7 @@ export default function IsometricView(){
               setPanOffset({ x: 0, y: 0 });
               setZoomLevel(1.0);
             }}
-            className="text-sm rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1"
+            className={`${darkMode ? 'text-sm rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 px-2 py-1' : 'text-sm rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-1'}`}
           >
             Reset View
           </button>
@@ -331,7 +333,7 @@ export default function IsometricView(){
       </div>
 
       <div 
-        className="relative overflow-auto rounded-lg border border-slate-300 bg-gradient-to-br from-slate-100 to-slate-200 p-6"
+        className={`${darkMode ? 'relative overflow-auto rounded-lg border border-slate-700 bg-slate-900 p-6' : 'relative overflow-auto rounded-lg border border-slate-300 bg-gradient-to-br from-slate-100 to-slate-200 p-6'}`}
         onMouseDown={handleMouseDown}
         onWheel={handleWheel}
         onContextMenu={handleContextMenu}
@@ -346,7 +348,7 @@ export default function IsometricView(){
             {tiles3D.map(({x, y, ch, faces}) => {
               return (
                 <g key={`${x}-${y}`} onMouseEnter={() => setHover({x, y, ch})} onMouseLeave={() => setHover(null)}>
-                  {faces.map((face, faceIndex) => {
+                      {faces.map((face, faceIndex) => {
                     // Project each point of the face to 2D
                     const projectedPoints = face.points.map(point => 
                       project3D(point, orbitAngles.horizontal, orbitAngles.vertical)
@@ -370,13 +372,13 @@ export default function IsometricView(){
                     const cross = v1x * v2y - v1y * v2x;
                     
                     // Always render top faces, and render other faces based on normal
-                    if (face.type === 'top' || cross > 0) {
+                      if (face.type === 'top' || cross > 0) {
                       return (
                         <polygon
                           key={`face-${faceIndex}`}
                           points={pointsString}
                           fill={face.color}
-                          stroke="#666"
+                          stroke={darkMode ? '#111827' : '#666'}
                           strokeWidth={0.5}
                           style={{ opacity: face.type === 'top' ? 1 : 0.9 }}
                         />
@@ -386,7 +388,7 @@ export default function IsometricView(){
                   })}
                   
                   {/* Add text labels for special tiles */}
-                  {(ch === "C" || ch === "P") && (() => {
+                      {(ch === "C" || ch === "P") && (() => {
                     const centerPoint = project3D(
                       { x: (x - W/2) * TILE_SIZE, y: getTileHeight(ch), z: (y - H/2) * TILE_SIZE },
                       orbitAngles.horizontal, 
@@ -398,7 +400,7 @@ export default function IsometricView(){
                         y={centerPoint.sy - 10} 
                         textAnchor="middle" 
                         fontSize={14} 
-                        fill="#fff" 
+                        fill={darkMode ? '#ffffff' : '#000'} 
                         fontWeight={700}
                         style={{ filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.5))' }}
                       >
@@ -416,8 +418,8 @@ export default function IsometricView(){
       <div className="flex flex-wrap gap-3">
         {Object.entries({"Restricted":"X","Obstacle":"#","Charger":"C","Packet":"P","Path":"g","Empty":"."}).map(([label,ch])=>(
           <div key={label} className="flex items-center gap-2">
-            <span className="inline-block h-4 w-4 rounded border border-slate-300" style={{background: COLORS[ch]}}/>
-            <span className="text-sm">{label}</span>
+            <span className={`inline-block h-4 w-4 rounded border ${darkMode ? 'border-slate-600' : 'border-slate-300'}`} style={{background: COLORS[ch]}}/>
+            <span className={`text-sm ${darkMode ? 'text-slate-300' : ''}`}>{label}</span>
           </div>
         ))}
       </div>
