@@ -1,0 +1,292 @@
+<!DOCTYPE html><html><head>
+      <title>Backend</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <link rel="stylesheet" href="file:////home/sterry/.vscode-server/extensions/shd101wyy.markdown-preview-enhanced-0.8.20/crossnote/dependencies/katex/katex.min.css">
+      
+      
+      
+      
+      
+      <style>
+      code[class*=language-],pre[class*=language-]{color:#333;background:0 0;font-family:Consolas,"Liberation Mono",Menlo,Courier,monospace;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.4;-moz-tab-size:8;-o-tab-size:8;tab-size:8;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}pre[class*=language-]{padding:.8em;overflow:auto;border-radius:3px;background:#f5f5f5}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal;background:#f5f5f5}.token.blockquote,.token.comment{color:#969896}.token.cdata{color:#183691}.token.doctype,.token.macro.property,.token.punctuation,.token.variable{color:#333}.token.builtin,.token.important,.token.keyword,.token.operator,.token.rule{color:#a71d5d}.token.attr-value,.token.regex,.token.string,.token.url{color:#183691}.token.atrule,.token.boolean,.token.code,.token.command,.token.constant,.token.entity,.token.number,.token.property,.token.symbol{color:#0086b3}.token.prolog,.token.selector,.token.tag{color:#63a35c}.token.attr-name,.token.class,.token.class-name,.token.function,.token.id,.token.namespace,.token.pseudo-class,.token.pseudo-element,.token.url-reference .token.variable{color:#795da3}.token.entity{cursor:help}.token.title,.token.title .token.punctuation{font-weight:700;color:#1d3e81}.token.list{color:#ed6a43}.token.inserted{background-color:#eaffea;color:#55a532}.token.deleted{background-color:#ffecec;color:#bd2c00}.token.bold{font-weight:700}.token.italic{font-style:italic}.language-json .token.property{color:#183691}.language-markup .token.tag .token.punctuation{color:#333}.language-css .token.function,code.language-css{color:#0086b3}.language-yaml .token.atrule{color:#63a35c}code.language-yaml{color:#183691}.language-ruby .token.function{color:#333}.language-markdown .token.url{color:#795da3}.language-makefile .token.symbol{color:#795da3}.language-makefile .token.variable{color:#183691}.language-makefile .token.builtin{color:#0086b3}.language-bash .token.keyword{color:#0086b3}pre[data-line]{position:relative;padding:1em 0 1em 3em}pre[data-line] .line-highlight-wrapper{position:absolute;top:0;left:0;background-color:transparent;display:block;width:100%}pre[data-line] .line-highlight{position:absolute;left:0;right:0;padding:inherit 0;margin-top:1em;background:hsla(24,20%,50%,.08);background:linear-gradient(to right,hsla(24,20%,50%,.1) 70%,hsla(24,20%,50%,0));pointer-events:none;line-height:inherit;white-space:pre}pre[data-line] .line-highlight:before,pre[data-line] .line-highlight[data-end]:after{content:attr(data-start);position:absolute;top:.4em;left:.6em;min-width:1em;padding:0 .5em;background-color:hsla(24,20%,50%,.4);color:#f4f1ef;font:bold 65%/1.5 sans-serif;text-align:center;vertical-align:.3em;border-radius:999px;text-shadow:none;box-shadow:0 1px #fff}pre[data-line] .line-highlight[data-end]:after{content:attr(data-end);top:auto;bottom:.4em}html body{font-family:'Helvetica Neue',Helvetica,'Segoe UI',Arial,freesans,sans-serif;font-size:16px;line-height:1.6;color:#333;background-color:#fff;overflow:initial;box-sizing:border-box;word-wrap:break-word}html body>:first-child{margin-top:0}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{line-height:1.2;margin-top:1em;margin-bottom:16px;color:#000}html body h1{font-size:2.25em;font-weight:300;padding-bottom:.3em}html body h2{font-size:1.75em;font-weight:400;padding-bottom:.3em}html body h3{font-size:1.5em;font-weight:500}html body h4{font-size:1.25em;font-weight:600}html body h5{font-size:1.1em;font-weight:600}html body h6{font-size:1em;font-weight:600}html body h1,html body h2,html body h3,html body h4,html body h5{font-weight:600}html body h5{font-size:1em}html body h6{color:#5c5c5c}html body strong{color:#000}html body del{color:#5c5c5c}html body a:not([href]){color:inherit;text-decoration:none}html body a{color:#08c;text-decoration:none}html body a:hover{color:#00a3f5;text-decoration:none}html body img{max-width:100%}html body>p{margin-top:0;margin-bottom:16px;word-wrap:break-word}html body>ol,html body>ul{margin-bottom:16px}html body ol,html body ul{padding-left:2em}html body ol.no-list,html body ul.no-list{padding:0;list-style-type:none}html body ol ol,html body ol ul,html body ul ol,html body ul ul{margin-top:0;margin-bottom:0}html body li{margin-bottom:0}html body li.task-list-item{list-style:none}html body li>p{margin-top:0;margin-bottom:0}html body .task-list-item-checkbox{margin:0 .2em .25em -1.8em;vertical-align:middle}html body .task-list-item-checkbox:hover{cursor:pointer}html body blockquote{margin:16px 0;font-size:inherit;padding:0 15px;color:#5c5c5c;background-color:#f0f0f0;border-left:4px solid #d6d6d6}html body blockquote>:first-child{margin-top:0}html body blockquote>:last-child{margin-bottom:0}html body hr{height:4px;margin:32px 0;background-color:#d6d6d6;border:0 none}html body table{margin:10px 0 15px 0;border-collapse:collapse;border-spacing:0;display:block;width:100%;overflow:auto;word-break:normal;word-break:keep-all}html body table th{font-weight:700;color:#000}html body table td,html body table th{border:1px solid #d6d6d6;padding:6px 13px}html body dl{padding:0}html body dl dt{padding:0;margin-top:16px;font-size:1em;font-style:italic;font-weight:700}html body dl dd{padding:0 16px;margin-bottom:16px}html body code{font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:.85em;color:#000;background-color:#f0f0f0;border-radius:3px;padding:.2em 0}html body code::after,html body code::before{letter-spacing:-.2em;content:'\00a0'}html body pre>code{padding:0;margin:0;word-break:normal;white-space:pre;background:0 0;border:0}html body .highlight{margin-bottom:16px}html body .highlight pre,html body pre{padding:1em;overflow:auto;line-height:1.45;border:#d6d6d6;border-radius:3px}html body .highlight pre{margin-bottom:0;word-break:normal}html body pre code,html body pre tt{display:inline;max-width:initial;padding:0;margin:0;overflow:initial;line-height:inherit;word-wrap:normal;background-color:transparent;border:0}html body pre code:after,html body pre code:before,html body pre tt:after,html body pre tt:before{content:normal}html body blockquote,html body dl,html body ol,html body p,html body pre,html body ul{margin-top:0;margin-bottom:16px}html body kbd{color:#000;border:1px solid #d6d6d6;border-bottom:2px solid #c7c7c7;padding:2px 4px;background-color:#f0f0f0;border-radius:3px}@media print{html body{background-color:#fff}html body h1,html body h2,html body h3,html body h4,html body h5,html body h6{color:#000;page-break-after:avoid}html body blockquote{color:#5c5c5c}html body pre{page-break-inside:avoid}html body table{display:table}html body img{display:block;max-width:100%;max-height:100%}html body code,html body pre{word-wrap:break-word;white-space:pre}}.markdown-preview{width:100%;height:100%;box-sizing:border-box}.markdown-preview ul{list-style:disc}.markdown-preview ul ul{list-style:circle}.markdown-preview ul ul ul{list-style:square}.markdown-preview ol{list-style:decimal}.markdown-preview ol ol,.markdown-preview ul ol{list-style-type:lower-roman}.markdown-preview ol ol ol,.markdown-preview ol ul ol,.markdown-preview ul ol ol,.markdown-preview ul ul ol{list-style-type:lower-alpha}.markdown-preview .newpage,.markdown-preview .pagebreak{page-break-before:always}.markdown-preview pre.line-numbers{position:relative;padding-left:3.8em;counter-reset:linenumber}.markdown-preview pre.line-numbers>code{position:relative}.markdown-preview pre.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:1em;font-size:100%;left:0;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.markdown-preview pre.line-numbers .line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.markdown-preview pre.line-numbers .line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}.markdown-preview .mathjax-exps .MathJax_Display{text-align:center!important}.markdown-preview:not([data-for=preview]) .code-chunk .code-chunk-btn-group{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .status{display:none}.markdown-preview:not([data-for=preview]) .code-chunk .output-div{margin-bottom:16px}.markdown-preview .md-toc{padding:0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link div,.markdown-preview .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}.markdown-preview .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}.scrollbar-style::-webkit-scrollbar{width:8px}.scrollbar-style::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}.scrollbar-style::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode]){position:relative;width:100%;height:100%;top:0;left:0;margin:0;padding:0;overflow:auto}html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{position:relative;top:0;min-height:100vh}@media screen and (min-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em calc(50% - 457px + 2em)}}@media screen and (max-width:914px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode]) .markdown-preview{font-size:14px!important;padding:1em}}@media print{html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{display:none}}html body[for=html-export]:not([data-presentation-mode]) #sidebar-toc-btn{position:fixed;bottom:8px;left:8px;font-size:28px;cursor:pointer;color:inherit;z-index:99;width:32px;text-align:center;opacity:.4}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] #sidebar-toc-btn{opacity:1}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc{position:fixed;top:0;left:0;width:300px;height:100%;padding:32px 0 48px 0;font-size:14px;box-shadow:0 0 4px rgba(150,150,150,.33);box-sizing:border-box;overflow:auto;background-color:inherit}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar{width:8px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-track{border-radius:10px;background-color:transparent}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc::-webkit-scrollbar-thumb{border-radius:5px;background-color:rgba(150,150,150,.66);border:4px solid rgba(150,150,150,.66);background-clip:content-box}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc a{text-decoration:none}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc{padding:0 16px}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link{display:inline;padding:.25rem 0}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link div,html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper .md-toc-link p{display:inline}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .md-sidebar-toc .md-toc .md-toc-link-wrapper.highlighted .md-toc-link{font-weight:800}html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{left:300px;width:calc(100% - 300px);padding:2em calc(50% - 457px - 300px / 2);margin:0;box-sizing:border-box}@media screen and (max-width:1274px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{padding:2em}}@media screen and (max-width:450px){html body[for=html-export]:not([data-presentation-mode])[html-show-sidebar-toc] .markdown-preview{width:100%}}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .markdown-preview{left:50%;transform:translateX(-50%)}html body[for=html-export]:not([data-presentation-mode]):not([html-show-sidebar-toc]) .md-sidebar-toc{display:none}
+/* Please visit the URL below for more information: */
+/*   https://shd101wyy.github.io/markdown-preview-enhanced/#/customize-css */
+
+      </style>
+      <!-- The content below will be included at the end of the <head> element. --><script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function () {
+    // your code here
+  });
+</script></head><body for="html-export">
+    
+    
+      <div class="crossnote markdown-preview  ">
+      
+<p>The backend is divided in 3 layers:</p>
+<ol>
+<li>Layer1: Mapping</li>
+<li>Layer2: Fleet Manager</li>
+<li>Layer3: The Real Time Robot Driver</li>
+</ol>
+<p>Let's start by defining the problem.</p>
+<h1 id="problem-definition">Problem definition </h1>
+<p>We must design the central "brain" for a dynamic Multi-Robot Task Allocation and Navigation System for a logistics warehouse.</p>
+<p>The goal is to assign and execute a continuous stream of tasks (packet pickups and dropoffs) to a fleet of robots in the most efficient way possible, minimizing overall completion time and robot-idle time.</p>
+<p>This must be achieved while respecting a set of complex, real-time constraints:</p>
+<ol>
+<li><strong>Dynamic Environment:</strong> The warehouse map has permanent obstacles (walls) but is also subject to dynamic obstacles (e.g., "dropped boxes") that can appear and block paths at any time.</li>
+<li><strong>Multi-Robot Deconfliction:</strong> Robots must navigate the same space and <strong>actively avoid collisions</strong> with each other.</li>
+<li><strong>Task Constraints:</strong> Robots have a limited <strong>capacity</strong> (1 packet at a time) and <strong>battery life</strong>, requiring them to periodically stop for charging.</li>
+<li><strong>Task Allocation (VRP):</strong> The system must intelligently decide <strong>which robot</strong> gets <strong>which task</strong> (or sequence of tasks) from a central queue to be globally efficient.</li>
+<li><strong>Dynamic Tasks:</strong> New tasks are continuously added to the queue, requiring the system to <strong>re-plan</strong> and adapt its assignments without stopping.</li>
+<li><strong>Centralized Hardware:</strong> The entire "brain" (both the high-level planner and the real-time pathfinder) runs on a <strong>single centralized server</strong>, which creates a computational bottleneck that must be managed.</li>
+</ol>
+<hr>
+<h1 id="our-solution">Our Solution </h1>
+<p>To solve this problem, we have proposed a multi-layered architecture that divides and conquers. Each layer has a distinct responsibility:</p>
+<ul>
+<li><strong>Layer 1 (Mapping):</strong> Provides two "views" of the world: a fast, static map for high-level planning and a detailed, dynamic map for real-time navigation.</li>
+<li><strong>Layer 2 (Fleet Manager):</strong> The "Strategic Brain." It decides <em>which robot</em> should do <em>which tasks</em> and in <em>what order</em> (solves the VRP).</li>
+<li><strong>Layer 3 (Robot Driver):</strong> The "Tactical Brain." It executes one command at a time, finding the <em>actual path</em> and avoiding all collisions (other robots and dropped boxes).</li>
+</ul>
+<h2 id="layer-1-mapping">Layer 1: Mapping </h2>
+<p>This layer is responsible for translating the static warehouse blueprint into the two map representations required by Layer 2 and Layer 3.</p>
+<h3 id="input">Input </h3>
+<ul>
+<li><strong><code>Static 2D Bitmap</code></strong>: A bitmap representing all <em>permanent</em> obstacles (walls, shelves, forbidden zones).</li>
+</ul>
+<h3 id="outputs-generated-maps">Outputs (Generated Maps) </h3>
+<p>This layer generates and maintains two distinct maps:</p>
+<h4 id="1-the-dynamic-occupancy-grid-live-map">1. The Dynamic Occupancy Grid (Live Map) </h4>
+<p><strong><code>Dynamic 2D Bitmap</code></strong><br>
+This map is the "source of truth" for real-time navigation.</p>
+<ul>
+<li><strong>What it is:</strong> A fine-grained grid (a copy of the static bitmap) that is <strong>continuously updated</strong> in real-time with all <em>temporary</em> obstacles (e.g., "dropped boxes").</li>
+<li><strong>Purpose:</strong> To provide a 100% accurate, live view of the world for low-level navigation.</li>
+<li><strong>Consumed By:</strong> <strong>Layer 3 (The Robot Driver)</strong>. The Theta* pathfinder runs on this grid, and the ORCA loop uses it to "see" static obstacles.</li>
+</ul>
+<h4 id="2-the-static-navigation-mesh-planning-map">2. The Static Navigation Mesh (Planning Map) </h4>
+<p><strong><code>Static PolygonGraph NavMesh</code></strong><br>
+This map is the "fast lookup" for strategic planning.</p>
+<ul>
+<li><strong>What it is:</strong> A graph of large, convex polygons, generated <strong>offline</strong> from <em>only</em> the <code>Static 2D Bitmap</code>.</li>
+<li><strong>Purpose:</strong> To drastically reduce the map's complexity. Instead of millions of grid cells, the planner sees a graph of a few hundred polygons. This allows the Fleet Manager to get path costs (e.g., <code>cost(A, B)</code>) almost instantly.</li>
+<li><strong>Consumed By:</strong> <strong>Layer 2 (The Fleet Manager)</strong>. The VRP solver queries this map thousands of times to build its cost matrix and find the most efficient task assignments.</li>
+</ul>
+<hr>
+<h2 id="layer-2-the-fleet-manager-ignores-temporary-obstacles">Layer 2: The Fleet Manager (IGNORES Temporary Obstacles) </h2>
+<p>This layer essentially solves 2 NP-Hard problems:</p>
+<ul>
+<li><code>Partition Scheduling:</code> Which robot gets which set of tasks?</li>
+<li><code>TSP:</code> For the set of tasks assigned to each robot, which is the best route itinerary?</li>
+</ul>
+<p>Which, for instance, exists a problem named <code>VRP</code> <strong>Vehicle Routing Problem</strong> which solves this problem. In fact, our variant is one that combines both:</p>
+<ul>
+<li><code>Capacitated VRP:</code> where each robot can only pick up 1 packet.</li>
+<li><code>Dynamic VRP:</code> packets keep arriving.</li>
+</ul>
+<h3 id="inputs">Inputs </h3>
+<ul>
+<li><strong><code>StaticPolygonGraph NavMesh</code></strong>: (From Layer 1) Used to query all travel costs.</li>
+<li><strong><code>Set of Tasks</code></strong>: A real-time stream of new tasks (pickups, dropoffs) to be assigned.</li>
+<li><strong><code>Robot State Data</code></strong>: A live feed of each robot's status (e.g., <code>position</code>, <code>battery_level</code>...).</li>
+</ul>
+<h3 id="processing-the-how">Processing (The "How") </h3>
+<p>This layer's primary job is to solve our variant of the <strong>VRP</strong>. It does this in a continuous, dynamic loop.</p>
+<ol>
+<li>
+<p><strong>Cost Matrix Generation: <code>OFFLINE</code></strong></p>
+<ul>
+<li>It runs the <em><em>A</em> algorithm</em>* on the NavMesh to get the <em>true, optimal travel cost</em> (time or distance) between any two points (e.g., <code>cost(P5, D11)</code>). It runs A* N * N times to get all the weights to go between 2 PoIs (Points of Interest). Each N is a PoI such as Charger Nodes, PickUp Nodes, DropOff Nodes...</li>
+<li>NavMesh is small, with V polygons and E edges. One A* is O(E + VlogV).<br>
+<strong><code>Total Cost = O(N^2 * (E + VlogV))</code></strong></li>
+</ul>
+</li>
+<li>
+<p><strong>Add current needed rows to the matrix: <code>ONLINE</code></strong></p>
+<ul>
+<li>Just need to add the rows from robot current positions to task PickUp positions.</li>
+</ul>
+</li>
+<li>
+<p><strong>VRP Solver (Task Assignment): <code>ONLINE</code></strong></p>
+<ul>
+<li>The <strong>Cost Matrix</strong>, along with all <strong><code>Task Constraints</code></strong> (capacity, battery) and <code>Robot State Data</code>, is fed into a <strong>VRP solver</strong> (e.g., a metaheuristic like Tabu Search or HC).</li>
+</ul>
+</li>
+</ol>
+<h3 id="outputs-artifacts">Outputs (Artifacts) </h3>
+<ul>
+<li><strong><code>Robot Itineraries</code></strong>: An ordered list of goals (e.g., <code>[P5, D11, C1]</code>) sent to each robot.  Note how instead of assigning the tasks, it takes a further step and directly gives the nodes that the robot has to visit, to ease Layer3 complexity.<br>
+This is the sole output of this layer.</li>
+</ul>
+<hr>
+<h2 id="layer-3-the-robot-driver-handles-temporary-obstacles">Layer 3: The Robot Driver (HANDLES Temporary Obstacles) </h2>
+<p>This layer is the one that must handle obstacles. The robot looks at its itnierary (e.g. Go to P5). It only cares about getting there as fast as possible without colliding.</p>
+<p>This layer will be working by a service and a fast loop executed every, say 50ms.</p>
+<h3 id="inputs-1">Inputs </h3>
+<ul>
+<li><strong><code>Robot Itinerary</code></strong>: (From Layer 2) The list of goals to complete.</li>
+<li><strong><code>Dynamic 2D Bitmap</code></strong>: (From Layer 1) The live-updated map used for all pathfinding.</li>
+<li><strong><code>Live Robot States</code></strong>: Positions and velocities of <em>other</em> robots, needed for collision avoidance.</li>
+</ul>
+<h3 id="processing-the-how-1">Processing (The "How") </h3>
+<h4 id="1-service-theta">1. Service (Theta*) </h4>
+<p>This is the planner that finds the optimal <em>route</em> to a goal using the Theta* algorithm on the <strong><code>Dynamic 2D Bitmap</code></strong>. It is better than A* because finds smooth, "any-angle" paths.</p>
+<h5 id="how-it-works-first-approach"><strong>How it works-First Approach?</strong> </h5>
+<ol>
+<li>A priority queue.<br>
+* Priority by heuristic (shortest job first): When a request comes in, we do a <em>very</em> cheap calculation: <code>distance = sqrt((x2-x1)^2 + (y2-y1)^2)</code>.<br>
+* Priority by Job Type: A robot that is <em>blocked</em> and needs a re-plan (<code>IsReplanNeeded = true</code>) is <strong>HIGH priority</strong>. A robot that just finished a task and needs its <em>next</em> goal is <strong>NORMAL priority</strong>.</li>
+<li>A thread pool. Let's assign one worker per CPU and let them run in parallel.</li>
+</ol>
+<p><strong>Note:</strong></p>
+<ol>
+<li>A second approach (later), may be running Lazy Theta* instead of normal Theta* to do less operations.</li>
+<li>A third, more advanced approach, would be dividing the grid into, say 10x10 sectors (like NavMesh). We pre-calculate all the paths <em>between</em> the "doors" of these sectors. Now a path request from A to B is now much faster. - The service just finds:
+<ol>
+<li>A path from <code>A</code> to the "door" of its sector.</li>
+<li>A super-fast, pre-calculated path <em>between sectors</em>.</li>
+<li>A path from the final "door" to <code>B</code>.<br>
+This is <em>much</em> more complex to set up, but it's the fastest method for very large maps.</li>
+</ol>
+</li>
+</ol>
+<h5 id="when-it-runs"><strong>When it runs?</strong> </h5>
+<p>This expensive operation is <em>only</em> triggered <strong>on-demmand</strong> in any of these cases:<br>
+1. The robot gets a <strong>new goal</strong> from its itinerary.<br>
+2. A <strong>"proactive pre-plan"</strong> is triggered (e.g., the robot is 10s from its goal, so it pre-calculates the <em>next</em> path).<br>
+3. The robot's "Smart Check" confirms its current path is <strong>completely</strong> blocked by a new <em>static</em> obstacle.</p>
+<p><strong>Problem</strong>: What if <code>Dynamic 2D BitMap</code> changes while the robot is following the original Theta* path?<br>
+ORCA handles it trivially adjusting speed and angle.</p>
+<h4 id="2-master-loop-orca">2. Master Loop (ORCA) </h4>
+<p>This is the "dumb" driver that runs in a continuous, fast loop (e.g., every 50ms) for <em>every</em> robot.</p>
+<ul>
+<li><strong>What it is:</strong> The <strong>ORCA (Optimal Reciprocal Collision Avoidance)</strong> algorithm.</li>
+<li><strong>Purpose:</strong> To handle <em>imminent, local</em> dangers. The Theta* path (<code>CurrentPath</code>) is the <em>input</em> that tells the ORCA loop <em>what to do</em>.</li>
+<li><strong>Logic:</strong>
+<ol>
+<li>Gets its "Preferred Velocity" from its <code>CurrentPath</code>.</li>
+<li>Scans its immediate "danger bubble" (e.g., 5-meter radius).</li>
+<li>Feeds <strong>all</strong> obstacles in this bubble (both <em>other robots</em> and <em>static obstacles</em> like "dropped boxes") into the ORCA algorithm.</li>
+<li>ORCA computes the <em>one</em> "Safe Velocity" that avoids everything.</li>
+</ol>
+</li>
+</ul>
+<pre data-role="codeBlock" data-info="c++" class="language-cpp c++"><code><span class="token comment">// This entire function runs every 50ms </span>
+<span class="token keyword keyword-void">void</span> <span class="token function">FastLoopManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> 
+
+	<span class="token comment">// Get all robot data at once </span>
+	List<span class="token operator">&lt;</span>Robot<span class="token operator">&gt;</span> robots <span class="token operator">=</span> <span class="token function">Get_All_Robot_States</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> 
+	<span class="token comment">// Iterate through every robot </span>
+	<span class="token keyword keyword-for">for</span> <span class="token punctuation">(</span>Robot robot <span class="token operator">:</span> robots<span class="token punctuation">)</span> <span class="token punctuation">{</span> 
+		<span class="token comment">// 1. Get Preferred </span>
+		Velocity vec2 preferred_vel <span class="token operator">=</span> <span class="token function">GetPreferredVelocity</span><span class="token punctuation">(</span>robot<span class="token punctuation">,</span> robot<span class="token punctuation">.</span>CurrentPath<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+		
+		<span class="token comment">// 2. Sense Nearby Obstacles (robots AND boxes) </span>
+		List<span class="token operator">&lt;</span>Obstacle<span class="token operator">&gt;</span> local_obstacles <span class="token operator">=</span> <span class="token function">GetLocalObstacles</span><span class="token punctuation">(</span>robot<span class="token punctuation">,</span> robots<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		 
+		<span class="token comment">// 3. Run ORCA </span>
+		vec2 safe_velocity <span class="token operator">=</span> <span class="token function">Run_ORCA</span><span class="token punctuation">(</span>preferred_vel<span class="token punctuation">,</span> local_obstacles<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+		
+		<span class="token comment">// 4. Send Command to Simulator</span>
+		<span class="token function">Send_Simulator_Command</span><span class="token punctuation">(</span>robot<span class="token punctuation">,</span> safe_velocity<span class="token punctuation">)</span><span class="token punctuation">;</span> 
+		<span class="token punctuation">}</span> 
+<span class="token punctuation">}</span>
+</code></pre><h3 id="outputs-artifacts-1">Outputs (Artifacts) </h3>
+<ul>
+<li><strong><code>Safe Velocity Vector</code></strong>: The final, low-level command (e.g., "set velocity to 0.8 m/s at 32 degrees") sent to the simulator hardware for the next 50ms.</li>
+</ul>
+<p><strong>Note:</strong> In Physics and Robotics a "velocity" is a vector that includes both speed and angle (direction).</p>
+<hr>
+<hr>
+<h1 id="how-this-works-irl">How this works IRL? </h1>
+<p>Let <code>T</code> be the initial number of Tasks waiting for the Boot-Up (8:00 AM). Let <code>R</code> be the total number of Robots in the fleet. Let <code>Tmax</code> be the tunable threshold for triggering a full re-plan.</p>
+<p>There are only 3 possible Scenarios.</p>
+<h2 id="scenario-a-the-800-am-boot-up"><code>Scenario A:</code> The 8:00 AM "Boot-Up" </h2>
+<p>This is the initial <strong>"Full VRP-Solve"</strong> when the system starts with a large queue of <code>T</code> tasks and all <code>R</code> robots are idle.</p>
+<ul>
+<li>
+<p><strong>Layer 2:</strong></p>
+<ol>
+<li>The solver runs <em><em>A</em> on the NavMesh</em>* to get all <code>R</code> "robot-to-task" costs and adds these rows to the pre-computed <code>OFFLINE</code> matrix.</li>
+<li>It solves the <strong>heavy VRP</strong> for all <code>T</code> tasks, generating the optimal initial itineraries for the fleet.</li>
+<li>It outputs these itineraries to the assigned robots.</li>
+</ol>
+</li>
+<li>
+<p><strong>Layer 3:</strong></p>
+<ol>
+<li>This creates the <strong>"Pathfinding Spike"</strong> as all <code>R</code> robots (or all <em>assigned</em> robots) request a Theta* path from the server at the same time.</li>
+<li><strong>How it's handled:</strong> This is not a problem. The <strong><code>Theta* Service</code></strong> handles this with its internal <strong>Pathfinding Queue</strong>. All <code>R</code> requests are added to this queue.</li>
+<li>The service's <strong>Thread Pool</strong> (e.g., 8 "worker" threads) grabs the first 8 requests and processes them in parallel.</li>
+<li>The server's <em>single</em> <strong><code>FastLoopManager</code> (Master Loop)</strong> starts its 50ms loop. It iterates through all <code>R</code> robots. At first, all robots have <code>CurrentPath = null</code>, so their <code>PreferredVelocity</code> is <code>(0,0)</code>, and they "actively stop."</li>
+<li>As the <code>Theta* Service</code> workers finish paths and send them to robots (e.g., <code>R1</code> gets its path 1.5s later), the <code>FastLoopManager</code> loop will start seeing a valid <code>CurrentPath</code> for those robots. They will begin to move, one by one. This <strong>staggers the load</strong> and prevents a system crash.</li>
+</ol>
+</li>
+</ul>
+<hr>
+<h2 id="scenario-b-streaming-new-tasks-online"><code>Scenario B:</code> "Streaming" New Tasks (Online) </h2>
+<p>This occurs when new tasks arrive in a <strong>small trickle</strong> (e.g., 1 or 2 at a time).</p>
+<ul>
+<li>
+<p><strong>Trigger:</strong> A new batch of tasks arrives where <code>NewTasks &lt;= Tmax</code>.</p>
+</li>
+<li>
+<p><strong>Layer 2:</strong></p>
+<ol>
+<li>A <strong>full re-plan is NOT triggered.</strong></li>
+<li>The server uses a <strong>"Cheap Insertion Heuristic."</strong></li>
+<li>It calculates the "cheapest" place to insert each new task into the <em>existing</em> itineraries of the robots (e.g., "What is the <em>extra</em> time if I add <code>Task_101</code> after <code>R1</code>'s current job?").</li>
+<li>It finds the "cheapest" slot (e.g., adding it to <code>R4</code>'s queue is the lowest cost) and updates <code>R4</code>'s itinerary.</li>
+</ol>
+</li>
+<li>
+<p><strong>Layer 3:</strong></p>
+<ol>
+<li><strong>No immediate effect.</strong> <code>R4</code> is not interrupted.</li>
+<li>When <code>R4</code> finishes its current goal, it will simply receive the <em>newly inserted task</em> as its next goal and request a Theta* path for it. Obviously it will ask for the path a couple of seconds before arriving to the path so it doesn't stay idle at any time.</li>
+</ol>
+</li>
+</ul>
+<hr>
+<h2 id="scenario-c-batch-new-tasks-online"><code>Scenario C:</code> "Batch" New Tasks (Online) </h2>
+<p>This occurs when a large set of new tasks arrives at once, making the old plan inefficient.</p>
+<ul>
+<li>
+<p><strong>Trigger:</strong> A new batch of tasks arrives where <code>NewTasks &gt; Tmax</code>.</p>
+</li>
+<li>
+<p><strong>Layer 2:</strong></p>
+<ol>
+<li>This triggers the <strong>"Smart, Self-Aware Re-plan."</strong></li>
+<li>The server estimates its own re-plan time (e.g., <code>T_replan = 45s</code>).</li>
+<li>It starts the <strong>heavy VRP solver</strong> (on <em>all</em> unstarted tasks) in the background.</li>
+<li>If any robot (<code>R5</code>) finishes its job <em>during</em> these 45s, the server checks its <em>next</em> (old) task's duration (<code>T_next</code>).</li>
+<li>If <code>T_next &lt; T_replan</code> (e.g., a 20s task), the server tells <code>R5</code> to <strong>wait</strong>.</li>
+<li>If <code>T_next &gt; T_replan</code> (e.g., a 90s task), the server tells <code>R5</code> to <strong>proceed</strong> (to keep it busy).</li>
+</ol>
+</li>
+<li>
+<p><strong>Layer 3:</strong></p>
+<ol>
+<li>After approximately 45s, the <em>new, optimal</em> itineraries are broadcast to all robots, overwriting the old ones.</li>
+<li>This may cause a <strong>"mini-spike."</strong> Any robot on a now-canceled path will immediately discard its <code>CurrentPath</code> and request a new Theta* path for its new goal.</li>
+<li>The <strong><code>Pathfinding Queue</code></strong> in the <code>Theta* Service</code> handles this small spike just as it did in Scenario A.</li>
+</ol>
+</li>
+</ul>
+
+      </div>
+      
+      
+    
+    
+    
+    
+    
+    
+  
+    </body></html>

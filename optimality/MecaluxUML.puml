@@ -1,0 +1,9 @@
+@startuml Mecalux
+
+package foo1 <<Node>> {
+  class Class1
+}
+
+
+
+@enduml

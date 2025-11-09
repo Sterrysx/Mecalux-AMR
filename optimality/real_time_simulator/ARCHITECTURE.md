@@ -188,7 +188,7 @@ Source Files                Object Files              Executable
 
 main.cc                 ─→ main.o                 ┐
 SimulationController.cc ─→ SimulationController.o │
-                                                   │
+                                                  │
 Planifier.cc            ─→ Planifier.o            │
 Robot.cc                ─→ Robot.o                │
 Task.cc                 ─→ Task.o                 ├─→ simulator
@@ -198,7 +198,7 @@ Task.cc                 ─→ Task.o                 ├─→ simulator
 SchedulerUtils.cc       ─→ SchedulerUtils.o       │
 TSPSolver.cc            ─→ TSPSolver.o            │
 AssignmentPrinter.cc    ─→ AssignmentPrinter.o    │
-                                                   │
+                                                  │
 Graph.cc                ─→ Graph.o                ┘
 ```
 
