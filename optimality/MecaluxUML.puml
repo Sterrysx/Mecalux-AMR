@@ -1,9 +1,49 @@
 @startuml Mecalux
 
-package foo1 <<Node>> {
-  class Class1
+allowmixing
+skinparam linetype ortho
+
+' Afegeixo molts tipus de package per probar
+namespace Backend.Layer1 {
+
+    ' 1. Define all packages first
+    package Input <<Node>> {
+        artifact "map_layout.txt" as MapFile
+        class Static_BitMap
+    }
+    
+    package Core <<Rectangle>> {
+        class NavMeshGenerator
+        class DynamicObstacleManager
+    }
+    
+    package Output <<Frame>> {
+        class Navmesh
+        class Dynamic_BitMap
+    }
+
+    ' === LAYOUT HINTS ===
+    Input -[hidden]down-> Core
+    Core -[hidden]down-> Output
+
+
+    ' === RELATIONSHIPS ===
+    Input.Static_BitMap ..> Input.MapFile : <<Loads>>
+    Core.NavMeshGenerator ..> Input.Static_BitMap : <<Uses>>
+    Core.NavMeshGenerator ..> Output.Navmesh : <<Creates>>
+    Core.DynamicObstacleManager ..> Output.Dynamic_BitMap : <<Updates>>
+    Input.Static_BitMap ..> Output.Dynamic_BitMap : "       <<Initializes>>"
 }
 
+
+
+namespace Backend.Layer2 {
+
+}
+
+namespace Backend.Layer3 {
+
+}
 
 
 @enduml
