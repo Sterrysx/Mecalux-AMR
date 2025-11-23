@@ -1,24 +1,53 @@
-@startuml Mecalux_Cleaned
+@startuml Mecalux_Architecture_Fixed
 
 allowmixing
 skinparam linetype ortho
-skinparam nodesep 60
+skinparam nodesep 50
 skinparam ranksep 60
 skinparam groupInheritance 2
 
+' === 1. TOP LEVEL: EXTERNAL API ===
+namespace API {
+    artifact "set_of_tasks.json" as TasksJson
+}
+
 namespace Backend {
 
-    ' === 1. COMMON (Placed on the Left) ===
-    namespace Common {
-        class SystemConstants <<Static>> {
-            + {static} const int ORCA_TICK_MS = 50
-            + {static} const int OBSTACLE_UPDATE_TICK_MS = 100
-        }
+    ' === 2. THE ORCHESTRATOR (Top Center) ===
+    class FleetManager <<Active>> {
+        ' --- Shared State ---
+        - Map<int, Layer2.Logic.RobotAgent> fleetRegistry
+        - Layer1.Output.DynamicBitMap* dynamicMap
+        
+        ' --- Sync ---
+        - Mutex fleetMutex
+        - Mutex mapMutex
+        
+        ' --- Threads ---
+        - Thread fleetThread
+        - Thread obstacleThread
+        - Thread mainThread
+        
+        ' --- Methods ---
+        + Start(): void
+        + Stop(): void
+        - runFleetLoop(): void
+        - runObstacleLoop(): void
+        - runMainLoop(): void
+    }
+    
+    class SystemConstants <<Static>> {
+        + {static} const int FLEET_STATE_UPDATE_TICK_MS = 50
+        + {static} const int OBSTACLE_UPDATE_TICK_MS = 100
+    }
 
+    ' === 3. SHARED TYPES (Top Right) ===
+    ' We define this right after Manager to help the visualizer group them
+    namespace Common {
         class Coordinates {
             + x: int
             + y: int
-            + DistanceTo(other): float
+            + DistanceTo(other: Coordinates): float
         }
 
         struct Node {
@@ -30,48 +59,45 @@ namespace Backend {
             + float cost
         }
 
-        enum Resolution {
-            METERS
-            DECIMETERS
-            CENTIMETERS
-            MILLIMETERS
+        struct Task {
+            + int taskId
+            + int sourceNode
+            + int destinationNode
         }
     }
 
-    ' === 2. LAYER 1 (Stacked Vertically on the Right) ===
+    ' === 4. THE LAYERS (Bottom Row) ===
+    
+    ' --- LAYER 1: MAPPING (LEFT) ---
     namespace Layer1 {
-
         abstract class AbstractGrid {
             # int width
             # int height
             # Resolution res
+            
             + IsAccessible(c: Coordinates): bool
             + GetDimensions(): Pair<int,int>
         }
-
+        
         package Input {
-            artifact "map_layout.txt" as MapFile
             class StaticBitMap {
-                + LoadFromFile(path: String): void
+                + LoadFromFile(): void
             }
         }
-        
         package Core {
             class NavMeshGenerator {
                 + compute_Recast()
             }
-
             class DynamicObstacle {
-                + Coordinates top_left_anchor                
+                - int size
+                - Coordinates top_left_anchor                
                 + GetOccupiedCells(): List<Coordinates>
             }
-            
             class DynamicObstacleManager {
                 - List<DynamicObstacle> active_obstacles
                 + SpawnRandomObstacle(): void
             }
         }
-        
         package Output {
             class NavMesh {
                 - vector<vector<Edge>> adjacencyList
@@ -79,37 +105,102 @@ namespace Backend {
                 + getAllNodes(): vector<Node>
                 + getNodeIdAt(c: Coordinates): int
             }
-            
             class DynamicBitMap {
                 + update(obstacles: set<DynamicObstacle>): bool
             }
         }
-
-        ' === LAYOUT & RELATIONS ===
         
-        ' 1. Inheritance (Upwards)
+        ' Relations
         Input.StaticBitMap -up-|> AbstractGrid
         Output.DynamicBitMap -up-|> AbstractGrid
-
-        Input.MapFile "1" <.down. "1" Input.StaticBitMap : <<Loads>>
-        Input.StaticBitMap "1" <.down. "1" Output.DynamicBitMap : <<Clones>>
-        Input.StaticBitMap "1" <.down. "1" Core.NavMeshGenerator : <<Reads>>
-        
-        Core.NavMeshGenerator "1" .down.> "1" Output.NavMesh : <<Creates>>
-        Core.DynamicObstacleManager "1" .down.> "1" Output.DynamicBitMap : <<Updates>>
-        Core.DynamicObstacleManager "1" o-right- "*" Core.DynamicObstacle
-        Output.NavMesh *-left- "*" Backend.Common.Node
-        Output.NavMesh *-left- "*" Backend.Common.Edge
+        Input.StaticBitMap <.down. Core.NavMeshGenerator
+        Core.NavMeshGenerator .down.> Output.NavMesh
+        Core.DynamicObstacleManager .down.> Output.DynamicBitMap
     }
 
-    ' === ALIGNMENT HINTS ===
-    ' Force Common to stay to the left of Layer 1
-    Backend.Common -[hidden]right- Backend.Layer1
+    ' --- LAYER 2: LOGIC (CENTER) ---
+    namespace Layer2 {
+        package Input {
+            class TaskLoader {
+                + {static} LoadTasks(path: String, mesh: NavMesh): vector<Task>
+            }
+        }
+        package Logic {
+            enum robotStatus {
+                IDLE,
+                BUSY,
+                CHARGING,
+                ERROR
+            }
+        
+            struct RobotState {
+                - int currentNodeId
+                - robotStatus status
+                - float currentBatteryLevel
+                - List<int> currentItinerary
+            }
+            class RobotAgent {
+                - int robotId
+                - float totalBatteryCapacity
+                - int chargingStationNodeId
+                - float averageSpeed_meters_per_second
+                - int capacity
+                - RobotState currentState
+                + updateState()
+                + assignItinerary(nodes: List<int>): void
+            }
+            class CostMatrixProvider {
+                - Map<Pair<int,int>, float> costsMatrix
+                + getCost(from: int, to: int): float
+            }
+            interface IVRPSolver {
+                + solve(tasks: List<Task>, robots: List<RobotAgent>, costs: CostMatrixProvider): Map<int, List<int>>
+            }
+            class HillClimbing implements IVRPSolver {
+                + solve(tasks: List<Task>, robots: List<RobotAgent>, costs: CostMatrixProvider): Map<int, List<int>>
+            }
+            class SimulatedAnnealing implements IVRPSolver {
+                + solve(tasks: List<Task>, robots: List<RobotAgent>, costs: CostMatrixProvider): Map<int, List<int>>
+            }
+        }
+        
+        ' Relations
+        Input.TaskLoader ..> Backend.Layer1.Output.NavMesh : <<Uses>>
+        Logic.CostMatrixProvider ..> Backend.Layer1.Output.NavMesh : <<Queries>>
+    }
+
+    ' --- LAYER 3: DRIVER (RIGHT) ---
+    namespace Layer3 {
+        class RobotDriver {
+             ' Placeholder for next step
+             + setGoal(nodeId: int)
+        }
+    }
     
-    ' Force internal Layer 1 ordering
-    Layer1.AbstractGrid -[hidden]down- Layer1.Input
-    Layer1.Input -[hidden]down- Layer1.Core
-    Layer1.Core -[hidden]down- Layer1.Output
+    ' === 5. SYSTEM LAYOUT & CONNECTIONS ===
+    
+    ' Wiring The Manager
+    Backend.FleetManager ..> Layer2.Input.TaskLoader : <<Calls>>
+    Backend.FleetManager --> Layer2.Logic.IVRPSolver : <<Delegates>>
+    Backend.FleetManager o-- Layer2.Logic.RobotAgent : <<Owns>>
+    Backend.FleetManager --> Layer3.RobotDriver : <<Commands>>
+    
+    ' Wiring The API
+    Layer2.Input.TaskLoader .up.> API.TasksJson : <<Parses>>
+
+    ' === CRITICAL LAYOUT ADJUSTMENTS ===
+    ' This section forces the T-Shape Grid you requested
+    
+    ' 1. Vertical Stack: API -> Manager -> Layer2
+    API -[hidden]down- Backend.FleetManager
+    Backend.FleetManager -[hidden]down- Backend.Layer2
+    
+    ' 2. Top Row: Manager (Center) -> Common (Right)
+    Backend.FleetManager -[hidden]right- Backend.Common
+    
+    ' 3. Bottom Row: Layer1 (Left) -> Layer2 (Center) -> Layer3 (Right)
+    Backend.Layer1 -[hidden]right- Backend.Layer2
+    Backend.Layer2 -[hidden]right- Backend.Layer3
 }
 
 @enduml
