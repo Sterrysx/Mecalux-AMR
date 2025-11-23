@@ -1,0 +1,115 @@
+@startuml Mecalux_Cleaned
+
+allowmixing
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 60
+skinparam groupInheritance 2
+
+namespace Backend {
+
+    ' === 1. COMMON (Placed on the Left) ===
+    namespace Common {
+        class SystemConstants <<Static>> {
+            + {static} const int ORCA_TICK_MS = 50
+            + {static} const int OBSTACLE_UPDATE_TICK_MS = 100
+        }
+
+        class Coordinates {
+            + x: int
+            + y: int
+            + DistanceTo(other): float
+        }
+
+        struct Node {
+            + Coordinates coords
+        }
+        
+        struct Edge {
+            + int targetNodeId
+            + float cost
+        }
+
+        enum Resolution {
+            METERS
+            DECIMETERS
+            CENTIMETERS
+            MILLIMETERS
+        }
+    }
+
+    ' === 2. LAYER 1 (Stacked Vertically on the Right) ===
+    namespace Layer1 {
+
+        abstract class AbstractGrid {
+            # int width
+            # int height
+            # Resolution res
+            + IsAccessible(c: Coordinates): bool
+            + GetDimensions(): Pair<int,int>
+        }
+
+        package Input {
+            artifact "map_layout.txt" as MapFile
+            class StaticBitMap {
+                + LoadFromFile(path: String): void
+            }
+        }
+        
+        package Core {
+            class NavMeshGenerator {
+                + compute_Recast()
+            }
+
+            class DynamicObstacle {
+                + Coordinates top_left_anchor                
+                + GetOccupiedCells(): List<Coordinates>
+            }
+            
+            class DynamicObstacleManager {
+                - List<DynamicObstacle> active_obstacles
+                + SpawnRandomObstacle(): void
+            }
+        }
+        
+        package Output {
+            class NavMesh {
+                - vector<vector<Edge>> adjacencyList
+                - vector<Node> allNodes
+                + getAllNodes(): vector<Node>
+                + getNodeIdAt(c: Coordinates): int
+            }
+            
+            class DynamicBitMap {
+                + update(obstacles: set<DynamicObstacle>): bool
+            }
+        }
+
+        ' === LAYOUT & RELATIONS ===
+        
+        ' 1. Inheritance (Upwards)
+        Input.StaticBitMap -up-|> AbstractGrid
+        Output.DynamicBitMap -up-|> AbstractGrid
+
+        Input.MapFile "1" <.down. "1" Input.StaticBitMap : <<Loads>>
+        Input.StaticBitMap "1" <.down. "1" Output.DynamicBitMap : <<Clones>>
+        Input.StaticBitMap "1" <.down. "1" Core.NavMeshGenerator : <<Reads>>
+        
+        Core.NavMeshGenerator "1" .down.> "1" Output.NavMesh : <<Creates>>
+        Core.DynamicObstacleManager "1" .down.> "1" Output.DynamicBitMap : <<Updates>>
+        Core.DynamicObstacleManager "1" o-right- "*" Core.DynamicObstacle
+        Output.NavMesh *-left- "*" Backend.Common.Node
+        Output.NavMesh *-left- "*" Backend.Common.Edge
+    }
+
+    ' === ALIGNMENT HINTS ===
+    ' Force Common to stay to the left of Layer 1
+    Backend.Common -[hidden]right- Backend.Layer1
+    
+    ' Force internal Layer 1 ordering
+    Layer1.AbstractGrid -[hidden]down- Layer1.Input
+    Layer1.Input -[hidden]down- Layer1.Core
+    Layer1.Core -[hidden]down- Layer1.Output
+}
+
+@enduml
