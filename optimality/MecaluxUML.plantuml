@@ -1,4 +1,4 @@
-@startuml Mecalux_Architecture_Fixed
+@startuml Mecalux_Final_Architecture_Corrected
 
 allowmixing
 skinparam linetype ortho
@@ -42,12 +42,19 @@ namespace Backend {
     }
 
     ' === 3. SHARED TYPES (Top Right) ===
-    ' We define this right after Manager to help the visualizer group them
     namespace Common {
         class Coordinates {
             + x: int
             + y: int
             + DistanceTo(other: Coordinates): float
+        }
+        
+        ' Added Vector2 as requested for Layer 3
+        class Vector2 {
+            + x: double
+            + y: double
+            + magnitude(): double
+            + normalize(): Vector2
         }
 
         struct Node {
@@ -110,12 +117,16 @@ namespace Backend {
             }
         }
         
-        ' Relations
+        ' Relations (Horizontal Flow enforced by .right.)
         Input.StaticBitMap -up-|> AbstractGrid
         Output.DynamicBitMap -up-|> AbstractGrid
-        Input.StaticBitMap <.down. Core.NavMeshGenerator
-        Core.NavMeshGenerator .down.> Output.NavMesh
-        Core.DynamicObstacleManager .down.> Output.DynamicBitMap
+        Input.StaticBitMap <.right. Core.NavMeshGenerator
+        Core.NavMeshGenerator .right.> Output.NavMesh
+        Core.DynamicObstacleManager .right.> Output.DynamicBitMap
+        
+        ' Horizontal Layout Hints for Layer 1
+        Input -[hidden]right- Core
+        Core -[hidden]right- Output
     }
 
     ' --- LAYER 2: LOGIC (CENTER) ---
@@ -147,6 +158,7 @@ namespace Backend {
                 - int capacity
                 - RobotState currentState
                 + updateState()
+                ' Added Assignment Method as argued
                 + assignItinerary(nodes: List<int>): void
             }
             class CostMatrixProvider {
@@ -171,10 +183,66 @@ namespace Backend {
 
     ' --- LAYER 3: DRIVER (RIGHT) ---
     namespace Layer3 {
-        class RobotDriver {
-             ' Placeholder for next step
-             + setGoal(nodeId: int)
+        package Pathfinding {
+            enum RequestPriority {
+                HIGH_REPLAN
+                NORMAL_NEXT_GOAL
+            }
+            struct PathRequest {
+                + int robotId
+                + Coordinates start
+                + Coordinates end
+                + RequestPriority priority
+            }
+            class ThetaStarSolver {
+                + {static} ComputePath(start: Coordinates, end: Coordinates, map: DynamicBitMap): List<Coordinates>
+            }
+            class PathfindingService <<Singleton>> {
+                - PriorityQueue<PathRequest> requestQueue
+                - List<Thread> workerPool
+                + RequestPath(req: PathRequest, callback: Function): void
+                - processNextRequest(): void
+            }
         }
+    
+        package Physics {
+            struct ObstacleData {
+                + Coordinates position
+                + Vector2 velocity
+                + double radius
+            }
+            class ORCASolver {
+                + {static} CalculateSafeVelocity(me: ObstacleData, neighbors: List<ObstacleData>, preferredVel: Vector2): Vector2
+            }
+        }
+    
+        package Core {
+            class RobotDriver {
+                - int robotId
+                - List<Coordinates> currentPath
+                - int pathIndex
+                - Vector2 currentVelocity
+                - sendToSimulator(v: Vector2): void
+                + setGoal(nodeId: int): void
+                + updateLoop(dt: float, neighbors: List<ObstacleData>): void
+                - calculatePreferredVelocity(): Vector2
+                + onPathFound(newPath: List<Coordinates>): void
+            }
+            class FastLoopManager <<Active>> {
+                - List<RobotDriver> drivers
+                + runPhysicsLoop(): void
+            }
+        }
+    
+        ' Relations
+        Pathfinding.PathfindingService o-- Pathfinding.PathRequest
+        Pathfinding.PathfindingService ..> Pathfinding.ThetaStarSolver : <<Calls>>
+        Pathfinding.ThetaStarSolver ..> Backend.Layer1.Output.DynamicBitMap : <<Reads>>
+        Physics.ORCASolver ..> Physics.ObstacleData : <<Uses>>
+        Core.RobotDriver ..> Pathfinding.PathfindingService : <<Requests Path>>
+        Core.RobotDriver ..> Physics.ORCASolver : <<Calculates Avoidance>>
+        Core.FastLoopManager *-- Core.RobotDriver : <<Owns>>
+        Core.RobotDriver ..> Backend.Common.Vector2 : <<Uses>>
     }
     
     ' === 5. SYSTEM LAYOUT & CONNECTIONS ===
@@ -183,14 +251,14 @@ namespace Backend {
     Backend.FleetManager ..> Layer2.Input.TaskLoader : <<Calls>>
     Backend.FleetManager --> Layer2.Logic.IVRPSolver : <<Delegates>>
     Backend.FleetManager o-- Layer2.Logic.RobotAgent : <<Owns>>
-    Backend.FleetManager --> Layer3.RobotDriver : <<Commands>>
+    
+    ' Corrected path to RobotDriver in Layer 3 Core
+    Backend.FleetManager --> Backend.Layer3.Core.RobotDriver : <<Commands>>
     
     ' Wiring The API
     Layer2.Input.TaskLoader .up.> API.TasksJson : <<Parses>>
 
     ' === CRITICAL LAYOUT ADJUSTMENTS ===
-    ' This section forces the T-Shape Grid you requested
-    
     ' 1. Vertical Stack: API -> Manager -> Layer2
     API -[hidden]down- Backend.FleetManager
     Backend.FleetManager -[hidden]down- Backend.Layer2
@@ -201,6 +269,9 @@ namespace Backend {
     ' 3. Bottom Row: Layer1 (Left) -> Layer2 (Center) -> Layer3 (Right)
     Backend.Layer1 -[hidden]right- Backend.Layer2
     Backend.Layer2 -[hidden]right- Backend.Layer3
+    
+    ' 4. Ensure Layer 1 stays below Common/Manager area
+    Backend.Common -[hidden]down- Backend.Layer2
 }
 
 @enduml
