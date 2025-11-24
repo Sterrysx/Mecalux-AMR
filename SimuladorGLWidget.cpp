@@ -23,7 +23,7 @@ SimuladorGLWidget::~SimuladorGLWidget ()
 void SimuladorGLWidget::initializeGL ()
 {
   // Initialize robots map with tuple (x, y, direction)
-  robots = std::map<int,std::tuple<float,float,int>>();
+  robots = std::map<int,std::tuple<float,float,float>>();
   
   // Cal inicialitzar l'ús de les funcions d'OpenGL
   initializeOpenGLFunctions();  
@@ -48,6 +48,7 @@ void SimuladorGLWidget::modifyselectedRobotID(QString robotID){
     selectedRObotID=robotID.toInt();
     if(robotCamera) {
       viewTransform();
+      projectTransform();
     }
     update();
   std::cout << "Robot seleccionat amb ID: " << selectedRObotID << "\n";
@@ -55,48 +56,6 @@ void SimuladorGLWidget::modifyselectedRobotID(QString robotID){
 
 void SimuladorGLWidget::updateAnimation() {
   makeCurrent();
-  for (auto& robot : robots) {
-      float& x = std::get<0>(robot.second);
-      float& y = std::get<1>(robot.second);
-      int& dir = std::get<2>(robot.second);
-      if (rand() % 100 < 10) {
-          dir = rand() % 4;  // Pick random direction (0-3)
-      }
-      // Move based on direction
-      switch(dir) {
-          case 0: // right
-            x += Speed/60.f;
-            if (x > 29.0f) {
-                x = 29.0f;
-                dir = (dir + 1) % 4; // turn to next direction
-            }
-            break;
-          case 1: // up
-            y += Speed/60.f;
-            if (y > 29.0f) {
-                y = 29.0f;
-                dir = (dir + 1) % 4;
-            }
-            break;
-          case 2: // left
-            x -= Speed/60.f;
-            if (x < 0.0f) {
-                x = 0.0f;
-                dir = (dir + 1) % 4;
-            }
-            break;
-          case 3: // down
-            y -= Speed/60.f;
-            if (y < 0.0f) {
-                y = 0.0f;
-                dir = (dir + 1) % 4;
-            }
-            break;
-      }
-  }
-  if(robotCamera) {
-      viewTransform();
-  }
   update();
 }
 
@@ -134,6 +93,7 @@ void SimuladorGLWidget::iniCamera ()
   fov = float(M_PI/3.0);  // 60 degrees
   zn = 0.1f;  // Use smaller near plane
   zf = 3*radiEsc;
+  zoomFactor = 1.0f;  // Initialize zoom to 1.0 (no zoom)
   orto = false;
   projectTransform();
   viewTransform();
@@ -142,7 +102,7 @@ void SimuladorGLWidget::iniCamera ()
 void SimuladorGLWidget::afegirRobot(int x, int y) {
     makeCurrent();
     std::cout << "Afegir robot a la posició: (" << x << ", " << y << ")\n";
-    robots[nextRobotID] = std::make_tuple(float(x), float(y), 0);  // Start facing right
+    robots[nextRobotID] = std::make_tuple(float(x), float(y), 0.f);  // Start facing right
     emit robotAfegit(nextRobotID);
     nextRobotID++;
     update();
@@ -156,15 +116,14 @@ void SimuladorGLWidget::eliminarRobot(int robotID){
   update();
 }
 
-void SimuladorGLWidget::modelTransforRobot (int id, float x, float y,int dir){
+void SimuladorGLWidget::modelTransforRobot (int id, float x, float y,float angle){
     glm::mat4 TG(1.0f);
     
     // Position translation
     TG = glm::translate(TG, glm::vec3(x, 0.f, y));
     // Rotation based on direction
-    float angle = 0.0f;
-    angle = glm::radians(90.0f * dir); // 90 degrees per direction
-    TG = glm::rotate(TG, angle, glm::vec3(0, 1, 0));
+    float angleRad = glm::radians(angle); // 90 degrees per direction
+    TG = glm::rotate(TG, angleRad, glm::vec3(0, 1, 0));
   
     
     // Model adjustments
@@ -211,7 +170,7 @@ void SimuladorGLWidget::paintGL ()
         if (it != robots.end()) {
             const float x = std::get<0>(it->second);
             const float y = std::get<1>(it->second);
-            const int dir = std::get<2>(it->second);
+            const float angle = std::get<2>(it->second);
 
 
 
@@ -220,7 +179,7 @@ void SimuladorGLWidget::paintGL ()
             glStencilMask(0xFF);
             glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
             
-            modelTransforRobot(selectedRObotID, x, y, dir);
+            modelTransforRobot(selectedRObotID, x, y, angle);
             glBindVertexArray(VAO_models[1]);
             glDrawArrays(GL_TRIANGLES, 0, models[1].faces().size() * 3);
 
@@ -234,8 +193,8 @@ void SimuladorGLWidget::paintGL ()
               glm::vec3 transDesp = glm::vec3(0, centreCapsaModels[1].y - minY[1], 0);
               glm::mat4 TG(1.0f);
               TG = glm::translate(TG, glm::vec3(x, 0.f, y));
-              float angle = glm::radians(90.0f * dir);
-              TG = glm::rotate(TG, angle, glm::vec3(0,1,0));
+              float angleRad = glm::radians(angle);
+              TG = glm::rotate(TG, angleRad, glm::vec3(0,1,0));
               TG = glm::translate(TG, transDesp);
               TG = glm::scale(TG, glm::vec3(1.1f)); // Scale up for outline
               TG = glm::translate(TG, glm::vec3(-centreCapsaModels[1].x, -centreCapsaModels[1].y, -centreCapsaModels[1].z));
@@ -260,16 +219,19 @@ void SimuladorGLWidget::paintGL ()
         if (it != robots.end()) {
             const float x = std::get<0>(it->second);
             const float y = std::get<1>(it->second);
-            const int dir = std::get<2>(it->second);
+            const float angle = std::get<2>(it->second);
 
             // Calculate camera position
             float transDesp = centreCapsaModels[1].y - minY[1];
             float t2 = centreCapsaModels[1].x - minX[1];
-            glm::vec3 robotPos(x, transDesp, y+t2);
+            float robotDepth = centreCapsaModels[1].z - minZ[1];
+            glm::vec3 robotPos(x, transDesp, y+robotDepth);
 
             // Draw small cube at camera position
             glm::mat4 TG(1.0f);
             TG = glm::translate(TG, robotPos);
+            float angleRad = glm::radians(angle);
+            TG = glm::rotate(TG, angleRad, glm::vec3(0,1,0));
             TG = glm::scale(TG, glm::vec3(0.2f)); // Small cube
             
             glUniformMatrix4fv(transLoc, 1, GL_FALSE, &TG[0][0]);
@@ -325,7 +287,8 @@ void SimuladorGLWidget::projectTransform ()
     } else {
       fov = baseAngle;
     }
-    glm::mat4 Proj = glm::perspective(fov, ra, zn, zf);
+    // Apply zoom by dividing FOV (smaller FOV = more zoom)
+    glm::mat4 Proj = glm::perspective(fov / zoomFactor, ra, zn, zf);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &Proj[0][0]);
   } else {
     float left,right,top,botom;
@@ -340,6 +303,12 @@ void SimuladorGLWidget::projectTransform ()
       botom=botom/ra;
       top=top/ra;
     }
+    // Apply zoom to orthographic projection
+    left /= zoomFactor;
+    right /= zoomFactor;
+    top /= zoomFactor;
+    botom /= zoomFactor;
+    
     glm::mat4 Proj;  // Matriu de projecció
     Proj=glm::ortho(left,right,botom,top,0.f,500.f);
     glUniformMatrix4fv (projLoc, 1, GL_FALSE, &Proj[0][0]);
@@ -353,21 +322,21 @@ void SimuladorGLWidget::viewTransform ()
         if (it != robots.end()) {
             const float x = std::get<0>(it->second);
             const float y = std::get<1>(it->second);
-            const int dir = std::get<2>(it->second);
+            const float angle = std::get<2>(it->second);
             
             // Calculate forward direction based on robot rotation
-            //float angle = glm::radians(90.0f * dir);
-            //glm::vec3 forward(sin(angle), 0, cos(angle));
-
-            // Calculate robot's actual height from ground
+            float angleRad = glm::radians(angle);
+            glm::vec3 forward(sin(angleRad), 0, cos(angleRad));
+            // Calculate robot dimensions
             float robotHeight = centreCapsaModels[1].y - minY[1];
-            float t2 = centreCapsaModels[1].x - minX[1];
-            // Position camera at robot position
-            glm::vec3 robotPos(x, robotHeight, y+t2);
-            glm::vec3 cameraPos = robotPos;
+            float robotDepth = centreCapsaModels[1].z - minZ[1];  // Half-depth from center to front edge
             
-            // Look point is ahead of robot
-            glm::vec3 lookAt = cameraPos + glm::vec3(0,0,1)*3.f;
+            // Position camera at the front of the robot, centered and at eye height
+            glm::vec3 cameraPos(x, robotHeight, y);
+            cameraPos += robotDepth * forward;  // Move to front edge based on robot's facing direction
+            
+            // Look point is ahead of robot in its facing direction
+            glm::vec3 lookAt = cameraPos + forward * 3.f;
             
             View = glm::lookAt(
                 cameraPos,          
@@ -375,9 +344,10 @@ void SimuladorGLWidget::viewTransform ()
                 glm::vec3(0,1,0)    
             );
 
-            // Set near plane based on camera height to prevent seeing through floor
-            zn = robotHeight * 0.8f;  // 80% of camera height
-            projectTransform();
+            // Since camera is at the front edge, near plane should be small but enough
+            // to prevent seeing through the floor when looking down
+            zn = 0.01f;  // Very small near plane since we're at the front edge
+            zf = 50.0f;  // Far enough to see the entire floor (floor is 30x30)
         }
     } else if (!orto) {
         // Regular perspective camera
@@ -386,9 +356,11 @@ void SimuladorGLWidget::viewTransform ()
         View = glm::rotate(View, angleX, glm::vec3(1, 0, 0));
         View = glm::rotate(View, -angleeX_2, glm::vec3(0, 1, 0));
         View = glm::translate(View, -centreEsc);
+        zf=3*radiEsc;
     } else {
         // Orthographic top-down view
         zn=0.1f;
+        zf=3*radiEsc;
         View = glm::lookAt(
             glm::vec3(centreEsc.x, 2*radiEsc, centreEsc.z),
             glm::vec3(centreEsc.x, 0, centreEsc.z),
@@ -418,15 +390,51 @@ void SimuladorGLWidget::keyPressEvent(QKeyEvent* event)
     case Qt::Key_Q: {
       // Toggle between perspective and orthographic
       orto = !orto;
-      projectTransform();
+      robotCamera = false;
+      zoomFactor = 1.0f;  // Reset zoom when changing camera mode
       viewTransform();
+      projectTransform();
       update();
       break;
     }
     case Qt::Key_Z: {
         if (selectedRObotID != -1) {
+
             robotCamera = !robotCamera;
+            orto = false;
+            zoomFactor = 1.0f;  // Reset zoom when changing camera mode
             viewTransform();
+            projectTransform();
+            update();
+        }
+        break;
+    }
+    case Qt::Key_L: {
+        // Reset zoom
+        zoomFactor = 1.0f;
+        projectTransform();
+        update();
+        break;
+    }
+    case Qt::Key_P: {
+        if (selectedRObotID != -1) {
+
+            auto r =robots.find(selectedRObotID);
+            if(r != robots.end()) {
+                float x = std::get<0>(r->second);
+                float y = std::get<1>(r->second);
+                float angle = std::get<2>(r->second);
+                
+                // Move robot forward by 0.5 units in its facing direction
+
+                if(angle==0.0f){
+                    angle=90.0f;
+                }else angle=0.0f;
+                // Update robot position
+                robots[selectedRObotID] = std::make_tuple(x, y, angle);
+            }
+            viewTransform();
+            projectTransform();
             update();
         }
         break;
@@ -473,6 +481,33 @@ if ((DoingInteractive == ROTATE) && !orto)
   yClick = e->y();
 
   update ();
+}
+
+void SimuladorGLWidget::wheelEvent(QWheelEvent *event)
+{
+  // Disable zoom in robot camera mode
+  if (robotCamera) {
+    return;
+  }
+  
+  makeCurrent();
+  // Get the scroll delta (positive = zoom in, negative = zoom out)
+  int delta = event->angleDelta().y();
+  
+  if (delta > 0) {
+    // Zoom in (increase zoom factor)
+    zoomFactor *= 1.1f;
+  } else if (delta < 0) {
+    // Zoom out (decrease zoom factor)
+    zoomFactor /= 1.1f;
+  }
+  
+  // Clamp zoom factor to reasonable values
+  if (zoomFactor < 0.1f) zoomFactor = 0.1f;
+  if (zoomFactor > 10.0f) zoomFactor = 10.0f;
+  
+  projectTransform();
+  update();
 }
 
 void SimuladorGLWidget::calculaCapsaModel (Model &p, float &escala, float ampladaDesitjada, glm::vec3 &centreCapsa,float &minY,float &minX,float &minZ)

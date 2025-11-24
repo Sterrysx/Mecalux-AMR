@@ -50,6 +50,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     virtual void mousePressEvent (QMouseEvent *event);
     virtual void mouseReleaseEvent (QMouseEvent *event);
     virtual void mouseMoveEvent (QMouseEvent *event);
+    virtual void wheelEvent (QWheelEvent *event);
     void updateAnimation();
     // model transforms
     virtual void modelTransformGround (); // model transform per pintar el terra de lego (model GROUND_BRICKS)
@@ -75,7 +76,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
 
     // creaBuffersTerra - crea els buffers per al terra
     void creaBuffersTerra ();
-    void modelTransforRobot (int id, float x, float y,int dir);
+    void modelTransforRobot (int id, float x, float y,float angle);
     /***********************************************/
     // Models, VAOS, capses contenidores i escales
     /***********************************************/
@@ -110,7 +111,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     /***************************************************/
     // Objectes (blocs de LEGO) --> instàncies de model        
     /***************************************************/
-    std::map<int,std::tuple<float,float,int>> robots;  // map that stores robots (id, (x,y,direction))
+    std::map<int,std::tuple<float,float,float>> robots;  // map that stores robots (id, (x,y,angle))
     int nextRobotID = 1; // ID que s'assignarà al següent robot afegit
     // Objectes guardats    
     bool pintarBricks[NUM_BRICKS]; // Array que indica si l'objecte (el bloc de Lego) s'ha de pintar perque ja ha sigut editat i guardat
@@ -155,6 +156,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
    
     glm::vec3 centreEsc; // centre de l'escena
     float radiEsc, ra, fov, zn, zf; // radi de l'escena, relació d'aspecte, field of view, znear i zfar
+    float zoomFactor; // zoom factor for all cameras (1.0 = no zoom)
 
     float angleX, angleY; // angles d'Euler per construir la view matrix
 
