@@ -1,0 +1,15 @@
+# Object files
+*.o
+
+# Executable
+examen
+
+# Qt generated files
+moc_*.cpp
+moc_*.h
+ui_*.h
+
+# Build directories
+build/
+debug/
+release/
