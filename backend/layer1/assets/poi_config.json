@@ -1,0 +1,134 @@
+{
+    "description": "Points of Interest (POI) configuration for the warehouse",
+    "version": "2.3",
+    "coordinate_system": "pixels (DECIMETERS resolution: 1px = 10cm)",
+    "note": "All POI coordinates validated against Configuration Space (InflatedBitMap, radius=4px)",
+    "poi_types": {
+        "CHARGING": "Battery charging stations (IDs: C0, C1, C2...)",
+        "PICKUP": "Locations where robot picks up packages (arrives empty, leaves full)",
+        "DROPOFF": "Locations where robot drops off packages (arrives full, leaves empty)"
+    },
+    "poi": [
+        {
+            "id": "C0",
+            "type": "CHARGING",
+            "x": 135,
+            "y": 17,
+            "active": true,
+            "metadata": {
+                "power_kw": "5.0",
+                "connector_type": "standard",
+                "note": "Inflated map at y=17 has walkable x=128-224"
+            }
+        },
+        {
+            "id": "C1",
+            "type": "CHARGING",
+            "x": 155,
+            "y": 17,
+            "active": true,
+            "metadata": {
+                "power_kw": "5.0",
+                "connector_type": "standard"
+            }
+        },
+        {
+            "id": "C2",
+            "type": "CHARGING",
+            "x": 175,
+            "y": 17,
+            "active": true,
+            "metadata": {
+                "power_kw": "10.0",
+                "connector_type": "fast"
+            }
+        },
+        {
+            "id": "P1",
+            "type": "DROPOFF",
+            "x": 220,
+            "y": 17,
+            "active": true,
+            "metadata": {
+                "zone": "SHIP-1",
+                "capacity": "10",
+                "description": "Shipping dock 1 (top corridor, right side)"
+            }
+        },
+        {
+            "id": "P2",
+            "type": "PICKUP",
+            "x": 27,
+            "y": 80,
+            "active": true,
+            "metadata": {
+                "zone": "INBOUND-B",
+                "capacity": "4",
+                "description": "Inbound receiving - Zone B (Express)"
+            }
+        },
+        {
+            "id": "P3",
+            "type": "DROPOFF",
+            "x": 210,
+            "y": 80,
+            "active": true,
+            "metadata": {
+                "zone": "SHIP-2",
+                "capacity": "10",
+                "description": "Shipping dock 2 (right area at y=80)",
+                "note": "y=80 walkable x=203-298, placed at x=210"
+            }
+        },
+        {
+            "id": "P4",
+            "type": "PICKUP",
+            "x": 27,
+            "y": 110,
+            "active": true,
+            "metadata": {
+                "zone": "INBOUND-C",
+                "capacity": "4",
+                "description": "Inbound receiving - Zone C (Standard)"
+            }
+        },
+        {
+            "id": "P5",
+            "type": "DROPOFF",
+            "x": 230,
+            "y": 110,
+            "active": true,
+            "metadata": {
+                "zone": "SHIP-3",
+                "capacity": "10",
+                "description": "Shipping dock 3 (right area at y=110)",
+                "note": "y=110 walkable x=223-298, placed at x=230"
+            }
+        },
+        {
+            "id": "P6",
+            "type": "PICKUP",
+            "x": 27,
+            "y": 140,
+            "active": true,
+            "metadata": {
+                "zone": "INBOUND-D",
+                "capacity": "4",
+                "description": "Inbound receiving - Zone D (Bulk)"
+            }
+        },
+        {
+            "id": "P7",
+            "type": "DROPOFF",
+            "x": 200,
+            "y": 140,
+            "active": true,
+            "metadata": {
+                "zone": "RETURNS",
+                "capacity": "5",
+                "description": "Returns processing (middle-right at y=140)",
+                "note": "y=140 walkable x=195-255, placed at x=200"
+            }
+        }
+    ]
+}

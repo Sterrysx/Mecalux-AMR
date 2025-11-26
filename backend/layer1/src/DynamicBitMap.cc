@@ -4,7 +4,7 @@ namespace Backend {
 namespace Layer1 {
 
     DynamicBitMap::DynamicBitMap(const StaticBitMap& source)
-        : AbstractGrid(source.GetDimensions().first, source.GetDimensions().second, Backend::Common::Resolution::METERS) {
+        : AbstractGrid(source.GetDimensions().first, source.GetDimensions().second, source.GetResolution()) {
         
         activeGrid = source.GetRawData();
     }

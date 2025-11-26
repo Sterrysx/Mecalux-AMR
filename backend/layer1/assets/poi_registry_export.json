@@ -1,0 +1,103 @@
+{
+  "poi": [
+    {
+      "id": "C0",
+      "type": "CHARGING",
+      "x": 135,
+      "y": 17,
+      "active": true,
+      "nearestNodeId": 22,
+      "distanceToNode": 2
+    },
+    {
+      "id": "C1",
+      "type": "CHARGING",
+      "x": 155,
+      "y": 17,
+      "active": true,
+      "nearestNodeId": 26,
+      "distanceToNode": 2
+    },
+    {
+      "id": "C2",
+      "type": "CHARGING",
+      "x": 175,
+      "y": 17,
+      "active": true,
+      "nearestNodeId": 30,
+      "distanceToNode": 2
+    },
+    {
+      "id": "P0",
+      "type": "PICKUP",
+      "x": 27,
+      "y": 50,
+      "active": true,
+      "nearestNodeId": 189,
+      "distanceToNode": 2
+    },
+    {
+      "id": "P1",
+      "type": "DROPOFF",
+      "x": 220,
+      "y": 17,
+      "active": true,
+      "nearestNodeId": 39,
+      "distanceToNode": 2
+    },
+    {
+      "id": "P2",
+      "type": "PICKUP",
+      "x": 27,
+      "y": 80,
+      "active": true,
+      "nearestNodeId": 413,
+      "distanceToNode": 2
+    },
+    {
+      "id": "P3",
+      "type": "DROPOFF",
+      "x": 210,
+      "y": 80,
+      "active": true,
+      "nearestNodeId": 396,
+      "distanceToNode": 3.60555
+    },
+    {
+      "id": "P4",
+      "type": "PICKUP",
+      "x": 27,
+      "y": 110,
+      "active": true,
+      "nearestNodeId": 634,
+      "distanceToNode": 2
+    },
+    {
+      "id": "P5",
+      "type": "DROPOFF",
+      "x": 230,
+      "y": 110,
+      "active": true,
+      "nearestNodeId": 656,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "P6",
+      "type": "PICKUP",
+      "x": 27,
+      "y": 140,
+      "active": true,
+      "nearestNodeId": 848,
+      "distanceToNode": 2
+    },
+    {
+      "id": "P7",
+      "type": "DROPOFF",
+      "x": 200,
+      "y": 140,
+      "active": true,
+      "nearestNodeId": 875,
+      "distanceToNode": 2.82843
+    }
+  ]
+}

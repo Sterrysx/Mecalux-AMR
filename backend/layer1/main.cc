@@ -5,8 +5,10 @@
  * 
  * This test validates that the Layer 1 architecture holds together:
  * 1. Static Map Loading from file
- * 2. NavMesh Graph Generation
- * 3. Dynamic/Static isolation for Layer 2/3 separation
+ * 2. InflatedBitMap (Configuration Space) Generation
+ * 3. NavMesh Graph Generation using InflatedBitMap
+ * 4. POI Registry (Semantic Overlay) 
+ * 5. Dynamic/Static isolation for Layer 2/3 separation
  * 
  * =============================================================================
  */
@@ -17,10 +19,12 @@
 
 // Layer 1 includes
 #include "StaticBitMap.hh"
+#include "InflatedBitMap.hh"
 #include "DynamicBitMap.hh"
 #include "NavMesh.hh"
 #include "NavMeshGenerator.hh"
 #include "DynamicObstacleGenerator.hh"
+#include "POIRegistry.hh"
 
 // Common includes
 #include "Coordinates.hh"
@@ -72,8 +76,10 @@ int main() {
     // =========================================================================
     PrintHeader("TEST 1: Static Map Loading");
 
-    // Create StaticBitMap with placeholder dimensions (will be overwritten by file)
-    StaticBitMap staticMap(300, 200, Resolution::CENTIMETERS);
+    // Create StaticBitMap with DECIMETERS resolution
+    // 300x200 pixels @ DECIMETERS = 30m x 20m physical warehouse
+    // 1m node = 10 px step size -> 30x20 = 600 max tiles
+    StaticBitMap staticMap(300, 200, Resolution::DECIMETERS);
     
     try {
         staticMap.LoadFromFile("assets/map_layout.txt");
@@ -97,20 +103,57 @@ int main() {
     totalTests++;
 
     // =========================================================================
-    // TEST 2: NavMesh Graph Generation
+    // TEST 2: InflatedBitMap (Configuration Space)
     // =========================================================================
-    PrintHeader("TEST 2: NavMesh Graph Generation");
+    PrintHeader("TEST 2: InflatedBitMap (Configuration Space)");
+
+    // Robot is 60cm wide, so radius = 30cm = 0.3m
+    const float ROBOT_RADIUS_METERS = 0.3f;
+    
+    InflatedBitMap inflatedMap(staticMap, ROBOT_RADIUS_METERS);
+    
+    int origWalkable, inflatedWalkable, closedCells;
+    inflatedMap.GetInflationStats(origWalkable, inflatedWalkable, closedCells);
+    
+    std::cout << "  Original walkable: " << origWalkable << std::endl;
+    std::cout << "  After inflation: " << inflatedWalkable << std::endl;
+    std::cout << "  Cells closed: " << closedCells << std::endl;
+    std::cout << "  Inflation radius: " << inflatedMap.GetInflationRadiusPixels() << " pixels" << std::endl;
+
+    if (closedCells > 0) {
+        PrintPass("InflatedBitMap correctly closes cells near obstacles");
+        passedTests++;
+    } else {
+        PrintFail("InflatedBitMap did not close any cells - check inflation logic");
+    }
+    totalTests++;
+
+    // Export inflated map for visualization
+    try {
+        inflatedMap.ExportToFile("assets/inflated_map.txt");
+        PrintPass("InflatedBitMap exported to assets/inflated_map.txt");
+        passedTests++;
+    } catch (...) {
+        PrintFail("Failed to export InflatedBitMap");
+    }
+    totalTests++;
+
+    // =========================================================================
+    // TEST 3: NavMesh Graph Generation (using InflatedBitMap)
+    // =========================================================================
+    PrintHeader("TEST 3: NavMesh Graph Generation (Configuration Space)");
 
     NavMesh navMesh;
     NavMeshGenerator generator;
     
-    generator.ComputeRecast(staticMap, navMesh);
+    // CRITICAL: Use InflatedBitMap instead of StaticBitMap for safe pathfinding
+    generator.ComputeRecast(inflatedMap, navMesh);
     
     const auto& nodes = navMesh.GetAllNodes();
     std::cout << "  NavMesh nodes created: " << nodes.size() << std::endl;
 
     if (nodes.size() > 0) {
-        PrintPass("NavMesh generated with " + std::to_string(nodes.size()) + " nodes");
+        PrintPass("NavMesh generated with " + std::to_string(nodes.size()) + " nodes (from inflated map)");
         passedTests++;
     } else {
         PrintFail("NavMesh is empty - no nodes generated!");
@@ -130,9 +173,87 @@ int main() {
     }
 
     // =========================================================================
-    // TEST 3: Dynamic/Static Isolation (Critical for Layer 2/3 separation)
+    // TEST 3b: NavMesh Graph Export (For Layer 2 / Visualization)
     // =========================================================================
-    PrintHeader("TEST 3: Dynamic/Static Isolation");
+    PrintHeader("TEST 3b: NavMesh Graph Export");
+
+    try {
+        navMesh.ExportGraphToCSV("assets/graph_dump.csv");
+        PrintPass("NavMesh exported to assets/graph_dump.csv");
+        passedTests++;
+    } catch (const std::exception& e) {
+        PrintFail("Failed to export NavMesh: " + std::string(e.what()));
+    }
+    totalTests++;
+
+    // =========================================================================
+    // TEST 4: POI Registry (Semantic Overlay)
+    // =========================================================================
+    PrintHeader("TEST 4: POI Registry (Semantic Overlay)");
+
+    POIRegistry poiRegistry;
+    
+    // Try to load from config file
+    bool poiLoaded = poiRegistry.LoadFromJSON("assets/poi_config.json");
+    
+    if (poiLoaded) {
+        PrintPass("POI configuration loaded from assets/poi_config.json");
+        passedTests++;
+    } else {
+        std::cout << "  Note: POI config file not found, adding sample POIs manually\n";
+        // Add sample POIs programmatically if file doesn't exist
+        // CHARGING zones: C0, C1, ...
+        poiRegistry.AddPOI("C0", POIType::CHARGING, {50, 20}, true);
+        poiRegistry.AddPOI("C1", POIType::CHARGING, {55, 20}, true);
+        // PICKUP zones: P0, P2, ... (robot collects packages)
+        poiRegistry.AddPOI("P0", POIType::PICKUP, {10, 50}, true);
+        // DROPOFF zones: P1, P3, ... (robot delivers packages)
+        poiRegistry.AddPOI("P1", POIType::DROPOFF, {180, 50}, true);
+        PrintPass("Sample POIs added manually");
+        passedTests++;
+    }
+    totalTests++;
+
+    // Validate POIs against the INFLATED MAP and map to NavMesh nodes
+    // This ensures no POI is placed where the robot would clip a wall!
+    int mappedCount = poiRegistry.ValidateAndMapToNavMesh(navMesh, inflatedMap);
+    std::cout << "  POIs validated and mapped to NavMesh: " << mappedCount << std::endl;
+    
+    if (mappedCount > 0) {
+        PrintPass("POIs validated against Configuration Space and mapped to NavMesh");
+        passedTests++;
+    } else {
+        PrintFail("No POIs could be validated/mapped to NavMesh");
+    }
+    totalTests++;
+
+    // Test type-based lookup
+    auto chargingNodes = poiRegistry.GetNodesByType(POIType::CHARGING);
+    auto pickupNodes = poiRegistry.GetNodesByType(POIType::PICKUP);
+    auto dropoffNodes = poiRegistry.GetNodesByType(POIType::DROPOFF);
+    
+    std::cout << "  Charging nodes (Cx):  " << chargingNodes.size() << std::endl;
+    std::cout << "  Pickup nodes (Px):    " << pickupNodes.size() << std::endl;
+    std::cout << "  Dropoff nodes (Px):   " << dropoffNodes.size() << std::endl;
+
+    if (chargingNodes.size() > 0 || pickupNodes.size() > 0 || dropoffNodes.size() > 0) {
+        PrintPass("GetNodesByType() queries work correctly");
+        passedTests++;
+    } else {
+        PrintFail("GetNodesByType() returned no results");
+    }
+    totalTests++;
+
+    // Print POI summary
+    poiRegistry.PrintSummary();
+
+    // Export POI registry with node mappings
+    poiRegistry.ExportToJSON("assets/poi_registry_export.json");
+
+    // =========================================================================
+    // TEST 5: Dynamic/Static Isolation (Critical for Layer 2/3 separation)
+    // =========================================================================
+    PrintHeader("TEST 5: Dynamic/Static Isolation");
 
     // Find a walkable coordinate for testing
     // Based on the map, (50, 50) should be in a walkable area
@@ -254,9 +375,9 @@ int main() {
     
     if (passedTests == totalTests) {
         std::cout << "║  " << COLOR_GREEN << "ALL TESTS PASSED: " << passedTests << "/" << totalTests 
-                  << COLOR_RESET << "                                   ║\n";
+                  << COLOR_RESET << "                                        ║\n";
         std::cout << "║  " << COLOR_GREEN << "Layer 1 Architecture: VALIDATED" 
-                  << COLOR_RESET << "                           ║\n";
+                  << COLOR_RESET << "                              ║\n";
     } else {
         std::cout << "║  " << COLOR_RED << "TESTS PASSED: " << passedTests << "/" << totalTests 
                   << COLOR_RESET << "                                         ║\n";

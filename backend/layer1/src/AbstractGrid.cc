@@ -10,6 +10,10 @@ namespace Layer1 {
         return {width, height};
     }
 
+    Backend::Common::Resolution AbstractGrid::GetResolution() const {
+        return resolution;
+    }
+
     bool AbstractGrid::IsWithinBounds(Backend::Common::Coordinates coords) const {
         return coords.x >= 0 && coords.x < width && 
                coords.y >= 0 && coords.y < height;

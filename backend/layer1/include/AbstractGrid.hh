@@ -22,6 +22,9 @@ namespace Layer1 {
 
         std::pair<int, int> GetDimensions() const;
         
+        // Get the resolution of this grid (for physical scale calculations)
+        Backend::Common::Resolution GetResolution() const;
+        
         bool IsWithinBounds(Backend::Common::Coordinates coords) const;
 
         // The Pure Virtual Contract

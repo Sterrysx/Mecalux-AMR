@@ -2,6 +2,7 @@
 #define BACKEND_LAYER1_NAVMESH_HH
 
 #include <vector>
+#include <string>
 #include "Coordinates.hh" // From common
 
 // Since Node and Edge are simple structs defined in Common, we use them here.
@@ -51,6 +52,15 @@ namespace Layer1 {
         // --- Modifiers (Used by Generator) ---
         void AddNode(Backend::Common::Coordinates centroid);
         void AddEdge(int sourceId, int targetId, float cost);
+        
+        // Remove nodes that have no edges (unreachable)
+        // Returns the number of nodes removed
+        int RemoveOrphanNodes();
+
+        // --- Export (For Layer 2 Integration / Visualization) ---
+        // Exports graph topology to CSV for external analysis
+        // Format: NodeID, CentroidX, CentroidY, Neighbors(ID:Cost|ID:Cost...)
+        void ExportGraphToCSV(const std::string& filename) const;
     };
 
 } // namespace Layer1
