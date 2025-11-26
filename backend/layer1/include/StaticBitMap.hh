@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include "layer1/AbstractGrid.hh"
+#include "AbstractGrid.hh"
 
 namespace Backend {
 namespace Layer1 {
@@ -14,12 +14,15 @@ namespace Layer1 {
         std::vector<bool> gridData;
 
     public:
+        // Default constructor for manual sizing
         StaticBitMap(int w, int h, Backend::Common::Resolution res);
 
         // Implement the contract
         bool IsAccessible(Backend::Common::Coordinates coords) const override;
 
-        void LoadFromFile();
+        // Load map from file - reads dimensions from first line, then parses grid
+        // '.' = walkable, '#' = obstacle
+        void LoadFromFile(const std::string& filepath);
         
         // Used by DynamicBitMap to clone data
         const std::vector<bool>& GetRawData() const;

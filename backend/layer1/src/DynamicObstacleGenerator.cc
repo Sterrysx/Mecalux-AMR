@@ -1,4 +1,4 @@
-#include "DynamicObstacleManager.hh"
+#include "DynamicObstacleGenerator.hh"
 #include <cstdlib> // rand
 #include <ctime>   // time
 
@@ -17,6 +17,10 @@ namespace Layer1 {
         int y = std::rand() % maxY;
 
         active_obstacles.emplace_back(Backend::Common::Coordinates{x, y}, size);
+    }
+
+    void DynamicObstacleManager::SpawnObstacleAt(Backend::Common::Coordinates coords, int size) {
+        active_obstacles.emplace_back(coords, size);
     }
 
     const std::vector<DynamicObstacle>& DynamicObstacleManager::GetActiveObstacles() const {

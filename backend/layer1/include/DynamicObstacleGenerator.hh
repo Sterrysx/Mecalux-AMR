@@ -14,6 +14,9 @@ namespace Layer1 {
     public:
         // Spawns a new obstacle within the given map bounds
         void SpawnRandomObstacle(int mapWidth, int mapHeight);
+        
+        // Spawns an obstacle at a specific location with given size
+        void SpawnObstacleAt(Backend::Common::Coordinates coords, int size);
 
         const std::vector<DynamicObstacle>& GetActiveObstacles() const;
         

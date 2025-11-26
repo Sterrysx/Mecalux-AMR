@@ -1,4 +1,4 @@
-#include "common/Coordinates.hh"
+#include "Coordinates.hh"
 #include <cmath> // For std::sqrt, std::pow
 
 namespace Backend {

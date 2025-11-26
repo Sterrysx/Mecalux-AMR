@@ -1,4 +1,4 @@
-#include "layer1/AbstractGrid.hh"
+#include "AbstractGrid.hh"
 
 namespace Backend {
 namespace Layer1 {

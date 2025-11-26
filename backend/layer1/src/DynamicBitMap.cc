@@ -1,5 +1,4 @@
-#include "layer1/DynamicBitMap.hh"
-// #include "layer1/core/DynamicObstacle.hh" // Uncomment when we implement Core
+#include "DynamicBitMap.hh"
 
 namespace Backend {
 namespace Layer1 {
@@ -18,7 +17,7 @@ namespace Layer1 {
         return activeGrid[coords.y * width + coords.x];
     }
 
-    void DynamicBitMap::Update(const std::vector<Core::DynamicObstacle>& obstacles, const StaticBitMap& source) {
+    void DynamicBitMap::Update(const std::vector<DynamicObstacle>& obstacles, const StaticBitMap& source) {
         // LOCK WRITE
         std::lock_guard<std::mutex> lock(mapMutex);
 
@@ -26,16 +25,13 @@ namespace Layer1 {
         activeGrid = source.GetRawData();
 
         // 2. Paint Obstacles
-        // (Logic commented out until DynamicObstacle is implemented)
-        /*
         for (const auto& obs : obstacles) {
-            for (auto cell : obs.GetOccupiedCells()) {
+            for (const auto& cell : obs.GetOccupiedCells()) {
                 if (IsWithinBounds(cell)) {
                     activeGrid[cell.y * width + cell.x] = false;
                 }
             }
         }
-        */
     }
 
 } // namespace Layer1

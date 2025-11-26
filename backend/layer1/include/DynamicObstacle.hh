@@ -2,7 +2,7 @@
 #define BACKEND_LAYER1_DYNAMICOBSTACLE_HH
 
 #include <vector>
-#include "Coordinates.hh" // Assuming ../common/include is in Makefile path
+#include "Coordinates.hh"
 
 namespace Backend {
 namespace Layer1 {

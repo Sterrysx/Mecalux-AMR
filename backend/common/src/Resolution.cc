@@ -1,4 +1,4 @@
-#include "common/Resolution.hh"
+#include "Resolution.hh"
 
 namespace Backend {
 namespace Common {

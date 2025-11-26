@@ -3,12 +3,9 @@
 
 #include <vector>
 #include <mutex>
-#include <set> // For set<DynamicObstacle>
-#include "layer1/AbstractGrid.hh"
-#include "layer1/StaticBitMap.hh"
-
-// Forward Declaration to avoid circular include issues if they arise later
-namespace Backend { namespace Layer1 { namespace Core { class DynamicObstacle; } } }
+#include "AbstractGrid.hh"
+#include "StaticBitMap.hh"
+#include "DynamicObstacle.hh"
 
 namespace Backend {
 namespace Layer1 {
@@ -28,7 +25,7 @@ namespace Layer1 {
 
         // The Update Loop
         // We use the Static Map to "Reset" the canvas, then paint obstacles
-        void Update(const std::vector<Core::DynamicObstacle>& obstacles, const StaticBitMap& source);
+        void Update(const std::vector<DynamicObstacle>& obstacles, const StaticBitMap& source);
     };
 
 } // namespace Layer1

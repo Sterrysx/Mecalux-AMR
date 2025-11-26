@@ -2,8 +2,8 @@
 #define BACKEND_LAYER1_ABSTRACTGRID_HH
 
 #include <utility> 
-#include "common/Coordinates.hh"
-#include "common/Resolution.hh" 
+#include "Coordinates.hh"
+#include "Resolution.hh" 
 
 namespace Backend {
 namespace Layer1 {
