@@ -1,0 +1,13 @@
+{
+    "orca_tick_ms": 50,
+    "warehouse_tick_ms": 100,
+    "node_radius_meters": 0.25,
+    
+    "robot_physical_width_meters": 0.6,
+    "robot_physical_length_meters": 0.6,
+    "robot_radius_meters": 0.3,
+    
+    "inflation_margin_meters": 0.05,
+    
+    "poi_config_path": "layer1/assets/poi_config.json"
+}

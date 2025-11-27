@@ -1,0 +1,270 @@
+{
+    "description": "Auto-generated Points of Interest for the warehouse",
+    "version": "3.0",
+    "coordinate_system": "pixels (0.1m/pixel)",
+    "generation_config": {
+        "robot_radius_m": 0.3,
+        "cluster_spacing_px": 10,
+        "inter_cluster_spacing_px": 30
+    },
+    "poi_types": {
+        "CHARGING": "Battery charging stations (IDs: C0, C1, C2...)",
+        "PICKUP": "Locations where robot picks up packages (even P-numbers)",
+        "DROPOFF": "Locations where robot drops off packages (odd P-numbers)"
+    },
+    "poi": [
+        {
+            "id": "C0",
+            "type": "CHARGING",
+            "x": 79,
+            "y": 147,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(84, 145)",
+                "generated": true
+            }
+        },
+        {
+            "id": "C1",
+            "type": "CHARGING",
+            "x": 88,
+            "y": 93,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(76, 94)",
+                "generated": true
+            }
+        },
+        {
+            "id": "C2",
+            "type": "CHARGING",
+            "x": 37,
+            "y": 97,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(45, 88)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P0",
+            "type": "PICKUP",
+            "x": 75,
+            "y": 177,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(78, 189)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P2",
+            "type": "PICKUP",
+            "x": 86,
+            "y": 189,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(78, 189)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P4",
+            "type": "PICKUP",
+            "x": 66,
+            "y": 190,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(78, 189)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P6",
+            "type": "PICKUP",
+            "x": 135,
+            "y": 49,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(126, 53)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P8",
+            "type": "PICKUP",
+            "x": 129,
+            "y": 40,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(126, 53)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P10",
+            "type": "PICKUP",
+            "x": 123,
+            "y": 54,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(126, 53)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P12",
+            "type": "PICKUP",
+            "x": 175,
+            "y": 24,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(178, 30)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P14",
+            "type": "PICKUP",
+            "x": 179,
+            "y": 43,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(178, 30)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P16",
+            "type": "PICKUP",
+            "x": 189,
+            "y": 34,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(178, 30)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P18",
+            "type": "PICKUP",
+            "x": 233,
+            "y": 144,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(226, 133)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P20",
+            "type": "PICKUP",
+            "x": 236,
+            "y": 123,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(226, 133)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P22",
+            "type": "PICKUP",
+            "x": 223,
+            "y": 125,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(226, 133)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P1",
+            "type": "DROPOFF",
+            "x": 107,
+            "y": 129,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(116, 119)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P3",
+            "type": "DROPOFF",
+            "x": 124,
+            "y": 119,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(116, 119)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P5",
+            "type": "DROPOFF",
+            "x": 114,
+            "y": 120,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(116, 119)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P7",
+            "type": "DROPOFF",
+            "x": 102,
+            "y": 114,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(116, 119)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P9",
+            "type": "DROPOFF",
+            "x": 234,
+            "y": 71,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(232, 78)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P11",
+            "type": "DROPOFF",
+            "x": 221,
+            "y": 84,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(232, 78)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P13",
+            "type": "DROPOFF",
+            "x": 244,
+            "y": 82,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(232, 78)",
+                "generated": true
+            }
+        },
+        {
+            "id": "P15",
+            "type": "DROPOFF",
+            "x": 232,
+            "y": 88,
+            "active": true,
+            "metadata": {
+                "cluster_center": "(232, 78)",
+                "generated": true
+            }
+        }
+    ]
+}

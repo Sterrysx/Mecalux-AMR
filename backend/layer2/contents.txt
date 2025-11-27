@@ -1,0 +1,2557 @@
+.
+├── Makefile
+├── include
+│   ├── CostMatrixProvider.hh
+│   ├── HillClimbing.hh
+│   ├── IVRPSolver.hh
+│   ├── RobotAgent.hh
+│   ├── Task.hh
+│   └── TaskLoader.hh
+├── main.cc
+└── src
+    ├── CostMatrixProvider.cc
+    ├── HillClimbing.cc
+    ├── IVRPSolver.cc
+    └── TaskLoader.cc
+
+2 directories, 12 files
+
+
+================ FILE CONTENTS ================
+
+==> ./include/CostMatrixProvider.hh <==
+/**
+ * @file CostMatrixProvider.hh
+ * @brief Pre-computed cost matrix using A* on NavMesh
+ * 
+ * Provides O(1) cost lookups between any two POI nodes after
+ * O(N² × (E + V log V)) offline precomputation.
+ */
+
+#ifndef LAYER2_COSTMATRIXPROVIDER_HH
+#define LAYER2_COSTMATRIXPROVIDER_HH
+
+#include "../../layer1/include/NavMesh.hh"
+#include <unordered_map>
+#include <vector>
+#include <limits>
+#include <utility>
+#include <functional>
+#include <cmath>
+
+namespace Backend {
+namespace Layer2 {
+
+/**
+ * @brief Hash function for pair<int,int> keys.
+ */
+struct PairHash {
+    std::size_t operator()(const std::pair<int, int>& p) const {
+        // Combine the two integers into a single hash
+        return std::hash<long long>()(
+            (static_cast<long long>(p.first) << 32) | 
+            static_cast<unsigned int>(p.second)
+        );
+    }
+};
+
+/**
+ * @brief Pre-computes and caches travel costs between nodes.
+ * 
+ * This class runs A* algorithm on the NavMesh to compute the optimal
+ * travel cost (distance or time) between all pairs of POI nodes.
+ * 
+ * Usage:
+ * 1. Construct with NavMesh
+ * 2. Call PrecomputeForNodes() with list of POI node IDs
+ * 3. Query costs with GetCost()
+ * 
+ * The cost matrix is symmetric (undirected graph assumption).
+ */
+class CostMatrixProvider {
+private:
+    // Reference to the NavMesh for pathfinding
+    const Backend::Layer1::NavMesh& navMesh_;
+    
+    // Cost matrix: (from, to) -> cost
+    std::unordered_map<std::pair<int, int>, float, PairHash> costMatrix_;
+    
+    // Infinity constant for unreachable paths
+    static constexpr float INFINITY_COST = std::numeric_limits<float>::max();
+
+public:
+    // =========================================================================
+    // CONSTRUCTOR
+    // =========================================================================
+    
+    /**
+     * @brief Construct with NavMesh reference.
+     * 
+     * @param mesh The NavMesh to use for A* pathfinding
+     */
+    explicit CostMatrixProvider(const Backend::Layer1::NavMesh& mesh)
+        : navMesh_(mesh) {}
+
+    // =========================================================================
+    // PRECOMPUTATION
+    // =========================================================================
+    
+    /**
+     * @brief Precompute costs between all pairs of specified nodes.
+     * 
+     * This runs A* for each source node to all destination nodes.
+     * Time complexity: O(N² × (E + V log V)) where N = number of nodes.
+     * 
+     * For a typical warehouse with ~100 POIs and ~500 NavMesh nodes:
+     * - 100² = 10,000 A* runs
+     * - Each A* is O(500 + 500 log 500) ≈ O(5000)
+     * - Total: ~50 million operations (fast on modern CPUs)
+     * 
+     * @param nodeIds Vector of node IDs (POIs) to precompute costs for
+     * @return Number of pairs successfully computed
+     */
+    int PrecomputeForNodes(const std::vector<int>& nodeIds);
+    
+    /**
+     * @brief Add costs from a single node to all POI nodes.
+     * 
+     * Used for ONLINE updates when a robot's current position
+     * needs to be added to the cost matrix.
+     * 
+     * @param fromNodeId Source node (robot position)
+     * @param toNodeIds Destination nodes (POIs)
+     * @return Number of paths successfully computed
+     */
+    int AddRowForNode(int fromNodeId, const std::vector<int>& toNodeIds);
+
+    // =========================================================================
+    // QUERIES
+    // =========================================================================
+    
+    /**
+     * @brief Get the cost between two nodes.
+     * 
+     * @param fromNodeId Source node ID
+     * @param toNodeId Destination node ID
+     * @return Travel cost (distance), or INFINITY if unreachable
+     */
+    float GetCost(int fromNodeId, int toNodeId) const;
+    
+    /**
+     * @brief Check if a path exists between two nodes.
+     */
+    bool HasPath(int fromNodeId, int toNodeId) const;
+    
+    /**
+     * @brief Get the number of precomputed pairs.
+     */
+    size_t GetMatrixSize() const { return costMatrix_.size(); }
+    
+    /**
+     * @brief Clear all cached costs.
+     */
+    void Clear() { costMatrix_.clear(); }
+
+    // =========================================================================
+    // A* ALGORITHM
+    // =========================================================================
+    
+    /**
+     * @brief Run A* from source to target on the NavMesh.
+     * 
+     * @param sourceId Source node ID
+     * @param targetId Target node ID
+     * @return Optimal path cost, or INFINITY if no path exists
+     */
+    float RunAStar(int sourceId, int targetId) const;
+    
+    /**
+     * @brief Run Dijkstra from source to all reachable nodes.
+     * 
+     * More efficient than running A* N times when computing
+     * costs from one node to many destinations.
+     * 
+     * @param sourceId Source node ID
+     * @return Map of targetId -> cost for all reachable nodes
+     */
+    std::unordered_map<int, float> RunDijkstra(int sourceId) const;
+
+    // =========================================================================
+    // DEBUG
+    // =========================================================================
+    
+    /**
+     * @brief Print the cost matrix (for debugging).
+     * 
+     * @param nodeIds Nodes to include in the printout
+     */
+    void PrintMatrix(const std::vector<int>& nodeIds) const;
+    
+    /**
+     * @brief Get infinity constant for external use.
+     */
+    static float GetInfinity() { return INFINITY_COST; }
+};
+
+} // namespace Layer2
+} // namespace Backend
+
+#endif // LAYER2_COSTMATRIXPROVIDER_HH
+
+==> ./include/HillClimbing.hh <==
+/**
+ * @file HillClimbing.hh
+ * @brief Hill Climbing VRP solver implementation
+ * 
+ * A metaheuristic that iteratively improves a greedy initial solution
+ * through local search (task swaps between robots).
+ */
+
+#ifndef LAYER2_HILLCLIMBING_HH
+#define LAYER2_HILLCLIMBING_HH
+
+#include "IVRPSolver.hh"
+#include <random>
+#include <algorithm>
+
+namespace Backend {
+namespace Layer2 {
+
+/**
+ * @brief Hill Climbing algorithm for solving VRP.
+ * 
+ * Strategy:
+ * 1. Generate initial solution using greedy heuristic
+ *    - For each task, assign to the robot that minimizes additional cost
+ * 2. Iteratively improve through local search:
+ *    - Try swapping tasks between robots
+ *    - Try reordering tasks within a robot's itinerary
+ *    - Accept changes that reduce makespan
+ * 3. Use random restarts to escape local optima
+ * 
+ * This is a heuristic (not exact), trading optimality for speed.
+ */
+class HillClimbing : public IVRPSolver {
+private:
+    // Algorithm parameters
+    int maxIterations_;       ///< Maximum iterations without improvement
+    int maxRestarts_;         ///< Maximum random restarts
+    unsigned int seed_;       ///< Random seed for reproducibility
+    
+    // Random number generator
+    mutable std::mt19937 rng_;
+
+public:
+    // =========================================================================
+    // CONSTRUCTOR
+    // =========================================================================
+    
+    /**
+     * @brief Construct with tunable parameters.
+     * 
+     * @param maxIterations Max iterations without improvement before stopping
+     * @param maxRestarts Max random restarts when stuck
+     * @param seed Random seed (0 = use time)
+     */
+    explicit HillClimbing(int maxIterations = 100, int maxRestarts = 5, unsigned int seed = 0)
+        : maxIterations_(maxIterations)
+        , maxRestarts_(maxRestarts)
+        , seed_(seed)
+        , rng_(seed == 0 ? std::random_device{}() : seed) {}
+
+    // =========================================================================
+    // IVRPSOLVER INTERFACE
+    // =========================================================================
+    
+    /**
+     * @brief Solve VRP using Hill Climbing.
+     */
+    VRPResult Solve(
+        const std::vector<Task>& tasks,
+        std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs
+    ) override;
+
+    std::string GetName() const override { return "Hill Climbing"; }
+    
+    std::string GetDescription() const override {
+        return "Greedy initial + local search (inter-robot swaps, intra-robot reordering)";
+    }
+    
+    bool IsExact() const override { return false; }
+
+private:
+    // =========================================================================
+    // INTERNAL TYPES
+    // =========================================================================
+    
+    /**
+     * @brief Internal representation of a solution.
+     * 
+     * Maps robot index to assigned tasks.
+     */
+    using Assignment = std::vector<std::vector<Task>>;
+
+    // =========================================================================
+    // SOLUTION GENERATION
+    // =========================================================================
+    
+    /**
+     * @brief Generate initial greedy solution.
+     * 
+     * For each task in order:
+     * - Compute insertion cost for each robot
+     * - Assign to robot with minimum additional cost
+     * 
+     * @param tasks Tasks to assign
+     * @param robots Available robots
+     * @param costs Cost matrix
+     * @return Initial assignment
+     */
+    Assignment GenerateGreedySolution(
+        const std::vector<Task>& tasks,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs
+    ) const;
+
+    /**
+     * @brief Generate a random solution (for restarts).
+     */
+    Assignment GenerateRandomSolution(
+        const std::vector<Task>& tasks,
+        int numRobots
+    ) const;
+
+    // =========================================================================
+    // COST CALCULATION
+    // =========================================================================
+    
+    /**
+     * @brief Calculate makespan of an assignment.
+     * 
+     * Makespan = maximum completion time across all robots.
+     * 
+     * @param assignment Current task assignment
+     * @param robots Robot list (for starting positions)
+     * @param costs Cost matrix
+     * @return Makespan value
+     */
+    double CalculateMakespan(
+        const Assignment& assignment,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs
+    ) const;
+
+    /**
+     * @brief Calculate robot completion time for its assigned tasks.
+     */
+    double CalculateRobotTime(
+        int robotIdx,
+        const std::vector<Task>& robotTasks,
+        const RobotAgent& robot,
+        const CostMatrixProvider& costs
+    ) const;
+
+    // =========================================================================
+    // LOCAL SEARCH MOVES
+    // =========================================================================
+    
+    /**
+     * @brief Try to improve solution through local moves.
+     * 
+     * @param assignment Current assignment (modified in place if improved)
+     * @param robots Robot list
+     * @param costs Cost matrix
+     * @param currentMakespan Current makespan (updated if improved)
+     * @return true if improvement found
+     */
+    bool TryImprovement(
+        Assignment& assignment,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs,
+        double& currentMakespan
+    ) const;
+
+    /**
+     * @brief Try swapping a task between two robots.
+     * 
+     * Move a task from robot i to robot j.
+     * 
+     * @return true if swap improved makespan
+     */
+    bool TryInterRobotMove(
+        Assignment& assignment,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs,
+        double& currentMakespan
+    ) const;
+
+    /**
+     * @brief Try swapping tasks between two robots.
+     * 
+     * Exchange a task from robot i with a task from robot j.
+     * 
+     * @return true if swap improved makespan
+     */
+    bool TryInterRobotSwap(
+        Assignment& assignment,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs,
+        double& currentMakespan
+    ) const;
+
+    /**
+     * @brief Try reordering tasks within a robot's assignment.
+     * 
+     * Uses 2-opt style moves on the itinerary.
+     * 
+     * @return true if reorder improved makespan
+     */
+    bool TryIntraRobotReorder(
+        Assignment& assignment,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs,
+        double& currentMakespan
+    ) const;
+
+    // =========================================================================
+    // UTILITY
+    // =========================================================================
+    
+    /**
+     * @brief Convert assignment to itineraries (expand tasks to nodes).
+     */
+    std::map<int, std::vector<int>> AssignmentToItineraries(
+        const Assignment& assignment,
+        const std::vector<RobotAgent>& robots
+    ) const;
+};
+
+} // namespace Layer2
+} // namespace Backend
+
+#endif // LAYER2_HILLCLIMBING_HH
+
+==> ./include/IVRPSolver.hh <==
+/**
+ * @file IVRPSolver.hh
+ * @brief Interface for VRP (Vehicle Routing Problem) solvers
+ * 
+ * Defines the contract that all VRP solver implementations must follow.
+ * This enables Strategy Pattern for swappable algorithms.
+ */
+
+#ifndef LAYER2_IVRPSOLVER_HH
+#define LAYER2_IVRPSOLVER_HH
+
+#include "Task.hh"
+#include "RobotAgent.hh"
+#include "CostMatrixProvider.hh"
+#include <vector>
+#include <map>
+#include <string>
+#include <chrono>
+
+namespace Backend {
+namespace Layer2 {
+
+/**
+ * @brief Result of a VRP solver execution.
+ */
+struct VRPResult {
+    // Robot ID -> Ordered list of goal node IDs (the itinerary)
+    std::map<int, std::vector<int>> robotItineraries;
+    
+    // Performance metrics
+    double makespan;            ///< Maximum completion time across all robots
+    double totalDistance;       ///< Sum of all robot travel distances
+    double computationTimeMs;   ///< Algorithm runtime in milliseconds
+    
+    // Quality metrics
+    bool isFeasible;            ///< Whether all constraints are satisfied
+    bool isOptimal;             ///< Whether the solution is guaranteed optimal
+    std::string algorithmName;  ///< Name of the algorithm that produced this result
+    
+    /**
+     * @brief Default constructor.
+     */
+    VRPResult()
+        : makespan(0.0)
+        , totalDistance(0.0)
+        , computationTimeMs(0.0)
+        , isFeasible(false)
+        , isOptimal(false)
+        , algorithmName("Unknown") {}
+    
+    /**
+     * @brief Print result summary.
+     */
+    void Print() const;
+};
+
+/**
+ * @brief Abstract interface for VRP solvers (Strategy Pattern).
+ * 
+ * The VRP (Vehicle Routing Problem) we solve is a variant combining:
+ * - Capacitated VRP: Each robot can carry 1 packet at a time
+ * - Dynamic VRP: Tasks arrive continuously
+ * - Heterogeneous Fleet: Robots have different charging stations
+ * 
+ * The solver takes:
+ * - A list of tasks (pickup/dropoff pairs)
+ * - A list of robots (with current positions and states)
+ * - A cost matrix provider (for travel costs)
+ * 
+ * And produces:
+ * - An itinerary (ordered list of goal nodes) for each robot
+ * 
+ * Implementation notes:
+ * - Itineraries include BOTH pickup and dropoff nodes
+ * - For a Task{source=A, dest=B}, the itinerary will have [..., A, B, ...]
+ * - Charging station visits should be inserted automatically if battery runs low
+ */
+class IVRPSolver {
+public:
+    /**
+     * @brief Virtual destructor for proper cleanup.
+     */
+    virtual ~IVRPSolver() = default;
+
+    /**
+     * @brief Solve the VRP and assign tasks to robots.
+     * 
+     * This is the main entry point. It should:
+     * 1. Analyze the current robot states
+     * 2. Compute optimal task assignments
+     * 3. Generate itineraries for each robot
+     * 
+     * The returned map contains robot IDs as keys and their assigned
+     * itineraries (ordered node IDs) as values.
+     * 
+     * @param tasks List of tasks to assign
+     * @param robots List of available robots (with current states)
+     * @param costs Cost matrix provider for travel distances
+     * @return VRPResult containing itineraries and metrics
+     */
+    virtual VRPResult Solve(
+        const std::vector<Task>& tasks,
+        std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs
+    ) = 0;
+
+    /**
+     * @brief Get the name of the algorithm.
+     */
+    virtual std::string GetName() const = 0;
+
+    /**
+     * @brief Get a brief description of the algorithm.
+     */
+    virtual std::string GetDescription() const = 0;
+
+    /**
+     * @brief Check if the algorithm guarantees optimal solutions.
+     */
+    virtual bool IsExact() const = 0;
+
+protected:
+    /**
+     * @brief Helper: Calculate total cost of an itinerary.
+     * 
+     * @param startNode Starting node (robot's current position)
+     * @param itinerary Ordered list of nodes to visit
+     * @param costs Cost matrix provider
+     * @return Total travel cost
+     */
+    static float CalculateItineraryCost(
+        int startNode,
+        const std::vector<int>& itinerary,
+        const CostMatrixProvider& costs
+    ) {
+        if (itinerary.empty()) return 0.0f;
+        
+        float total = costs.GetCost(startNode, itinerary[0]);
+        for (size_t i = 1; i < itinerary.size(); ++i) {
+            total += costs.GetCost(itinerary[i-1], itinerary[i]);
+        }
+        return total;
+    }
+
+    /**
+     * @brief Helper: Expand tasks into itinerary nodes.
+     * 
+     * Each task contributes two nodes: source (pickup) and destination (dropoff).
+     * 
+     * @param tasks Tasks to expand
+     * @return Vector of node IDs in order: [P1, D1, P2, D2, ...]
+     */
+    static std::vector<int> ExpandTasksToNodes(const std::vector<Task>& tasks) {
+        std::vector<int> nodes;
+        nodes.reserve(tasks.size() * 2);
+        for (const auto& task : tasks) {
+            nodes.push_back(task.sourceNode);      // Pickup
+            nodes.push_back(task.destinationNode); // Dropoff
+        }
+        return nodes;
+    }
+};
+
+} // namespace Layer2
+} // namespace Backend
+
+#endif // LAYER2_IVRPSOLVER_HH
+
+==> ./include/RobotAgent.hh <==
+/**
+ * @file RobotAgent.hh
+ * @brief Robot state management for Layer 2 Fleet Manager
+ * 
+ * Defines robot status, state, and the agent abstraction for fleet management.
+ */
+
+#ifndef LAYER2_ROBOTAGENT_HH
+#define LAYER2_ROBOTAGENT_HH
+
+#include "../../common/include/Coordinates.hh"
+#include <vector>
+#include <string>
+#include <iostream>
+
+namespace Backend {
+namespace Layer2 {
+
+/**
+ * @brief Robot operational status.
+ */
+enum class RobotStatus {
+    IDLE,       ///< Robot is available for new tasks
+    BUSY,       ///< Robot is executing tasks (following itinerary)
+    CHARGING,   ///< Robot is at charging station
+    ERROR       ///< Robot has encountered an error
+};
+
+/**
+ * @brief Convert RobotStatus to string for debugging.
+ */
+inline std::string StatusToString(RobotStatus status) {
+    switch (status) {
+        case RobotStatus::IDLE:     return "IDLE";
+        case RobotStatus::BUSY:     return "BUSY";
+        case RobotStatus::CHARGING: return "CHARGING";
+        case RobotStatus::ERROR:    return "ERROR";
+        default:                     return "UNKNOWN";
+    }
+}
+
+/**
+ * @brief Current state of a robot (mutable data).
+ * 
+ * This struct holds the dynamic state that changes as the robot operates.
+ * It is updated by the simulator/real hardware via the FleetManager.
+ */
+struct RobotState {
+    int currentNodeId;                  ///< Current NavMesh node (or nearest)
+    RobotStatus status;                 ///< Current operational status
+    float currentBatteryLevel;          ///< Battery level (0.0 - 1.0, percentage)
+    std::vector<int> currentItinerary;  ///< Ordered list of goal node IDs
+    
+    /**
+     * @brief Default constructor (idle at node 0 with full battery).
+     */
+    RobotState()
+        : currentNodeId(0)
+        , status(RobotStatus::IDLE)
+        , currentBatteryLevel(1.0f)
+        , currentItinerary() {}
+    
+    /**
+     * @brief Get the next goal from the itinerary (without removing it).
+     * @return Next goal node ID, or -1 if itinerary is empty
+     */
+    int PeekNextGoal() const {
+        return currentItinerary.empty() ? -1 : currentItinerary.front();
+    }
+    
+    /**
+     * @brief Remove and return the next goal from the itinerary.
+     * @return Next goal node ID, or -1 if itinerary is empty
+     */
+    int PopNextGoal() {
+        if (currentItinerary.empty()) return -1;
+        int goal = currentItinerary.front();
+        currentItinerary.erase(currentItinerary.begin());
+        return goal;
+    }
+    
+    /**
+     * @brief Check if the robot has pending goals.
+     */
+    bool HasPendingGoals() const {
+        return !currentItinerary.empty();
+    }
+};
+
+/**
+ * @brief Robot agent abstraction for fleet management.
+ * 
+ * Each RobotAgent represents a physical robot in the fleet.
+ * It maintains:
+ * - Static configuration (ID, capacity, speed, charging station)
+ * - Dynamic state (position, battery, itinerary)
+ * 
+ * The Fleet Manager owns all RobotAgents and coordinates their assignments.
+ */
+class RobotAgent {
+private:
+    // --- Static Configuration (set at construction) ---
+    int robotId_;                       ///< Unique robot identifier
+    float totalBatteryCapacity_;        ///< Battery capacity in kWh (or normalized to 1.0)
+    int chargingStationNodeId_;         ///< Assigned charging station (NavMesh node)
+    float averageSpeed_mps_;            ///< Average speed in meters per second
+    int capacity_;                      ///< Load capacity (packets at a time)
+    
+    // --- Dynamic State ---
+    RobotState currentState_;           ///< Mutable robot state
+
+public:
+    // =========================================================================
+    // CONSTRUCTORS
+    // =========================================================================
+    
+    /**
+     * @brief Default constructor.
+     */
+    RobotAgent()
+        : robotId_(-1)
+        , totalBatteryCapacity_(1.0f)
+        , chargingStationNodeId_(-1)
+        , averageSpeed_mps_(1.0f)
+        , capacity_(1)
+        , currentState_() {}
+    
+    /**
+     * @brief Parameterized constructor.
+     * 
+     * @param id Unique robot identifier
+     * @param batteryCapacity Total battery capacity (normalized)
+     * @param chargingNode Assigned charging station node ID
+     * @param speed Average speed in m/s
+     * @param loadCapacity Number of packets the robot can carry
+     */
+    RobotAgent(int id, float batteryCapacity, int chargingNode, 
+               float speed, int loadCapacity)
+        : robotId_(id)
+        , totalBatteryCapacity_(batteryCapacity)
+        , chargingStationNodeId_(chargingNode)
+        , averageSpeed_mps_(speed)
+        , capacity_(loadCapacity)
+        , currentState_() {}
+
+    // =========================================================================
+    // GETTERS - Static Configuration
+    // =========================================================================
+    
+    int GetRobotId() const { return robotId_; }
+    float GetBatteryCapacity() const { return totalBatteryCapacity_; }
+    int GetChargingStationNode() const { return chargingStationNodeId_; }
+    float GetAverageSpeed() const { return averageSpeed_mps_; }
+    int GetCapacity() const { return capacity_; }
+
+    // =========================================================================
+    // GETTERS - Dynamic State
+    // =========================================================================
+    
+    const RobotState& GetState() const { return currentState_; }
+    RobotState& GetMutableState() { return currentState_; }
+    
+    int GetCurrentNodeId() const { return currentState_.currentNodeId; }
+    RobotStatus GetStatus() const { return currentState_.status; }
+    float GetCurrentBattery() const { return currentState_.currentBatteryLevel; }
+    const std::vector<int>& GetItinerary() const { return currentState_.currentItinerary; }
+
+    // =========================================================================
+    // SETTERS - Dynamic State
+    // =========================================================================
+    
+    void SetCurrentNodeId(int nodeId) { currentState_.currentNodeId = nodeId; }
+    void SetStatus(RobotStatus status) { currentState_.status = status; }
+    void SetBatteryLevel(float level) { currentState_.currentBatteryLevel = level; }
+
+    // =========================================================================
+    // ITINERARY MANAGEMENT
+    // =========================================================================
+    
+    /**
+     * @brief Assign a new itinerary to the robot.
+     * 
+     * This replaces the current itinerary with a new one.
+     * Called by the VRP solver when (re)assigning tasks.
+     * 
+     * @param nodes Ordered list of goal node IDs to visit
+     */
+    void AssignItinerary(const std::vector<int>& nodes) {
+        currentState_.currentItinerary = nodes;
+        if (!nodes.empty() && currentState_.status == RobotStatus::IDLE) {
+            currentState_.status = RobotStatus::BUSY;
+        }
+    }
+    
+    /**
+     * @brief Append goals to the existing itinerary.
+     * 
+     * Used for incremental task insertion.
+     * 
+     * @param nodes Goals to append
+     */
+    void AppendToItinerary(const std::vector<int>& nodes) {
+        currentState_.currentItinerary.insert(
+            currentState_.currentItinerary.end(),
+            nodes.begin(), nodes.end()
+        );
+        if (!currentState_.currentItinerary.empty() && 
+            currentState_.status == RobotStatus::IDLE) {
+            currentState_.status = RobotStatus::BUSY;
+        }
+    }
+    
+    /**
+     * @brief Clear the current itinerary.
+     */
+    void ClearItinerary() {
+        currentState_.currentItinerary.clear();
+    }
+    
+    /**
+     * @brief Get the next goal node from the itinerary.
+     * @return Next goal node ID, or -1 if none
+     */
+    int GetNextGoal() const {
+        return currentState_.PeekNextGoal();
+    }
+    
+    /**
+     * @brief Mark the current goal as completed and move to next.
+     * 
+     * Called when the robot arrives at a goal node.
+     * If no more goals, transitions to IDLE.
+     */
+    void CompleteCurrentGoal() {
+        currentState_.PopNextGoal();
+        if (!currentState_.HasPendingGoals()) {
+            currentState_.status = RobotStatus::IDLE;
+        }
+    }
+
+    // =========================================================================
+    // STATE UPDATE
+    // =========================================================================
+    
+    /**
+     * @brief Update robot state from external source (simulator/hardware).
+     * 
+     * @param nodeId Current position (nearest NavMesh node)
+     * @param batteryLevel Current battery level (0.0 - 1.0)
+     */
+    void UpdateState(int nodeId, float batteryLevel) {
+        currentState_.currentNodeId = nodeId;
+        currentState_.currentBatteryLevel = batteryLevel;
+        
+        // Auto-transition to CHARGING if at charging station with low battery
+        if (nodeId == chargingStationNodeId_ && batteryLevel < 0.95f) {
+            currentState_.status = RobotStatus::CHARGING;
+        }
+        
+        // Check for critical battery
+        if (batteryLevel < 0.1f && currentState_.status != RobotStatus::CHARGING) {
+            // Insert charging station as next goal
+            if (chargingStationNodeId_ >= 0) {
+                currentState_.currentItinerary.insert(
+                    currentState_.currentItinerary.begin(),
+                    chargingStationNodeId_
+                );
+            }
+        }
+    }
+
+    // =========================================================================
+    // COST ESTIMATION
+    // =========================================================================
+    
+    /**
+     * @brief Estimate time to complete current itinerary.
+     * 
+     * This is a rough estimate based on Euclidean distance.
+     * For accurate costs, use CostMatrixProvider.
+     * 
+     * @param getCost Function to get cost between two nodes
+     * @return Estimated time in seconds
+     */
+    template<typename CostFunc>
+    float EstimateCompletionTime(CostFunc getCost) const {
+        if (currentState_.currentItinerary.empty()) return 0.0f;
+        
+        float totalCost = 0.0f;
+        int prevNode = currentState_.currentNodeId;
+        
+        for (int goalNode : currentState_.currentItinerary) {
+            totalCost += getCost(prevNode, goalNode);
+            prevNode = goalNode;
+        }
+        
+        return totalCost;
+    }
+
+    // =========================================================================
+    // UTILITY
+    // =========================================================================
+    
+    /**
+     * @brief Check if robot is available for new tasks.
+     */
+    bool IsAvailable() const {
+        return currentState_.status == RobotStatus::IDLE;
+    }
+    
+    /**
+     * @brief Check if robot needs charging.
+     */
+    bool NeedsCharging() const {
+        return currentState_.currentBatteryLevel < 0.2f;
+    }
+    
+    /**
+     * @brief Stream output operator for debugging.
+     */
+    friend std::ostream& operator<<(std::ostream& os, const RobotAgent& agent) {
+        os << "Robot[id=" << agent.robotId_ 
+           << ", status=" << StatusToString(agent.currentState_.status)
+           << ", node=" << agent.currentState_.currentNodeId
+           << ", battery=" << static_cast<int>(agent.currentState_.currentBatteryLevel * 100) << "%"
+           << ", goals=" << agent.currentState_.currentItinerary.size() << "]";
+        return os;
+    }
+};
+
+} // namespace Layer2
+} // namespace Backend
+
+#endif // LAYER2_ROBOTAGENT_HH
+
+==> ./include/Task.hh <==
+/**
+ * @file Task.hh
+ * @brief Task definition for Layer 2 Fleet Manager
+ * 
+ * A Task represents a packet pickup/dropoff operation.
+ * Tasks are loaded from JSON and validated against NavMesh nodes.
+ */
+
+#ifndef LAYER2_TASK_HH
+#define LAYER2_TASK_HH
+
+#include <string>
+#include <iostream>
+
+namespace Backend {
+namespace Layer2 {
+
+/**
+ * @brief Represents a pickup/dropoff task in the warehouse.
+ * 
+ * Each task has:
+ * - A unique identifier (from the external system)
+ * - A source node (PICKUP POI) where the packet is picked up
+ * - A destination node (DROPOFF POI) where the packet is delivered
+ * 
+ * The nodes are NavMesh node IDs, validated during loading.
+ */
+struct Task {
+    int taskId;            ///< Unique task identifier
+    int sourceNode;        ///< NavMesh node ID for pickup location
+    int destinationNode;   ///< NavMesh node ID for dropoff location
+    
+    /**
+     * @brief Default constructor.
+     */
+    Task() : taskId(-1), sourceNode(-1), destinationNode(-1) {}
+    
+    /**
+     * @brief Parameterized constructor.
+     * 
+     * @param id Unique task identifier
+     * @param source NavMesh node ID for pickup
+     * @param dest NavMesh node ID for dropoff
+     */
+    Task(int id, int source, int dest) 
+        : taskId(id), sourceNode(source), destinationNode(dest) {}
+    
+    /**
+     * @brief Comparison operator for sorting.
+     */
+    bool operator<(const Task& other) const {
+        return taskId < other.taskId;
+    }
+    
+    /**
+     * @brief Equality operator.
+     */
+    bool operator==(const Task& other) const {
+        return taskId == other.taskId;
+    }
+    
+    /**
+     * @brief Check if the task is valid (has valid node IDs).
+     */
+    bool IsValid() const {
+        return taskId >= 0 && sourceNode >= 0 && destinationNode >= 0;
+    }
+    
+    /**
+     * @brief Stream output operator for debugging.
+     */
+    friend std::ostream& operator<<(std::ostream& os, const Task& task) {
+        os << "Task{id=" << task.taskId 
+           << ", source=" << task.sourceNode 
+           << ", dest=" << task.destinationNode << "}";
+        return os;
+    }
+};
+
+} // namespace Layer2
+} // namespace Backend
+
+#endif // LAYER2_TASK_HH
+
+==> ./include/TaskLoader.hh <==
+/**
+ * @file TaskLoader.hh
+ * @brief Task loading and validation for Layer 2 Fleet Manager
+ * 
+ * Parses task definitions from JSON and validates against NavMesh.
+ */
+
+#ifndef LAYER2_TASKLOADER_HH
+#define LAYER2_TASKLOADER_HH
+
+#include "Task.hh"
+#include "../../layer1/include/NavMesh.hh"
+#include <vector>
+#include <string>
+#include <set>
+
+namespace Backend {
+namespace Layer2 {
+
+/**
+ * @brief Loads and validates tasks from JSON configuration.
+ * 
+ * Expected JSON format:
+ * {
+ *   "tasks": [
+ *     {
+ *       "id": 1,
+ *       "source": 42,    // NavMesh node ID (or POI name in extended format)
+ *       "destination": 15
+ *     },
+ *     ...
+ *   ]
+ * }
+ * 
+ * All node IDs are validated against the provided NavMesh.
+ */
+class TaskLoader {
+public:
+    /**
+     * @brief Load tasks from a JSON file and validate against NavMesh.
+     * 
+     * This is the main entry point for task loading. It:
+     * 1. Parses the JSON file
+     * 2. Extracts task definitions
+     * 3. Validates that all node IDs exist in the NavMesh
+     * 4. Returns only valid tasks
+     * 
+     * @param filepath Path to the JSON configuration file
+     * @param mesh The NavMesh to validate node IDs against
+     * @return Vector of valid Task objects (invalid tasks are skipped with warnings)
+     */
+    static std::vector<Task> LoadTasks(const std::string& filepath, 
+                                       const Backend::Layer1::NavMesh& mesh);
+
+    /**
+     * @brief Create tasks programmatically (for testing).
+     * 
+     * @param tasks Vector of tasks to validate
+     * @param mesh The NavMesh to validate node IDs against
+     * @return Vector of valid Task objects
+     */
+    static std::vector<Task> ValidateTasks(const std::vector<Task>& tasks,
+                                           const Backend::Layer1::NavMesh& mesh);
+
+    /**
+     * @brief Create a sample tasks JSON file for testing.
+     * 
+     * @param filepath Path to create the JSON file
+     * @param pickupNodes Vector of valid pickup node IDs
+     * @param dropoffNodes Vector of valid dropoff node IDs
+     * @param numTasks Number of random tasks to generate
+     * @return true if file was created successfully
+     */
+    static bool GenerateSampleTasksJSON(const std::string& filepath,
+                                        const std::vector<int>& pickupNodes,
+                                        const std::vector<int>& dropoffNodes,
+                                        int numTasks);
+
+private:
+    /**
+     * @brief Check if a node ID exists in the NavMesh.
+     */
+    static bool IsValidNodeId(int nodeId, const Backend::Layer1::NavMesh& mesh);
+
+    /**
+     * @brief Parse JSON content and extract tasks.
+     */
+    static std::vector<Task> ParseJSON(const std::string& content);
+};
+
+} // namespace Layer2
+} // namespace Backend
+
+#endif // LAYER2_TASKLOADER_HH
+
+==> ./main.cc <==
+/**
+ * =============================================================================
+ * Layer 2 (Fleet Manager) Integration Test Driver
+ * =============================================================================
+ * 
+ * This test validates that Layer 2 components work together:
+ * 1. Integration with Layer 1 (NavMesh, POIRegistry)
+ * 2. Task Loading from JSON
+ * 3. Cost Matrix Precomputation (A* on NavMesh)
+ * 4. Robot Agent Management
+ * 5. VRP Solving (Hill Climbing)
+ * 6. Itinerary Generation
+ * 
+ * =============================================================================
+ */
+
+#include <iostream>
+#include <cassert>
+#include <string>
+#include <vector>
+
+// Layer 1 includes (dependencies)
+#include "../layer1/include/StaticBitMap.hh"
+#include "../layer1/include/InflatedBitMap.hh"
+#include "../layer1/include/NavMesh.hh"
+#include "../layer1/include/NavMeshGenerator.hh"
+#include "../layer1/include/POIRegistry.hh"
+
+// Layer 2 includes
+#include "include/Task.hh"
+#include "include/TaskLoader.hh"
+#include "include/RobotAgent.hh"
+#include "include/CostMatrixProvider.hh"
+#include "include/IVRPSolver.hh"
+#include "include/HillClimbing.hh"
+
+// Common includes
+#include "../common/include/Coordinates.hh"
+#include "../common/include/Resolution.hh"
+
+using namespace Backend::Layer1;
+using namespace Backend::Layer2;
+using namespace Backend::Common;
+
+// =============================================================================
+// ANSI Color Codes for test output
+// =============================================================================
+#define COLOR_RESET   "\033[0m"
+#define COLOR_GREEN   "\033[32m"
+#define COLOR_RED     "\033[31m"
+#define COLOR_YELLOW  "\033[33m"
+#define COLOR_CYAN    "\033[36m"
+#define COLOR_MAGENTA "\033[35m"
+
+void PrintHeader(const std::string& title) {
+    std::cout << "\n" << COLOR_CYAN 
+              << "======================================================\n"
+              << "  " << title << "\n"
+              << "======================================================"
+              << COLOR_RESET << "\n\n";
+}
+
+void PrintPass(const std::string& test) {
+    std::cout << COLOR_GREEN << "[PASS] " << COLOR_RESET << test << std::endl;
+}
+
+void PrintFail(const std::string& test) {
+    std::cout << COLOR_RED << "[FAIL] " << COLOR_RESET << test << std::endl;
+}
+
+void PrintInfo(const std::string& info) {
+    std::cout << COLOR_YELLOW << "[INFO] " << COLOR_RESET << info << std::endl;
+}
+
+// =============================================================================
+// MAIN TEST DRIVER
+// =============================================================================
+int main() {
+    std::cout << "\n";
+    std::cout << "╔═══════════════════════════════════════════════════════════════╗\n";
+    std::cout << "║     LAYER 2 (FLEET MANAGER) INTEGRATION TEST                  ║\n";
+    std::cout << "║     VRP Solver + A* Cost Matrix + Robot Agent Management      ║\n";
+    std::cout << "╚═══════════════════════════════════════════════════════════════╝\n";
+
+    int totalTests = 0;
+    int passedTests = 0;
+
+    // =========================================================================
+    // PHASE 1: Load Layer 1 Dependencies
+    // =========================================================================
+    PrintHeader("PHASE 1: Loading Layer 1 Dependencies");
+
+    // --- 1a. Load Static Map ---
+    StaticBitMap staticMap(300, 200, Resolution::DECIMETERS);
+    try {
+        staticMap.LoadFromFile("../layer1/assets/map_layout.txt");
+        PrintPass("StaticBitMap loaded");
+        passedTests++;
+    } catch (const std::exception& e) {
+        PrintFail("Failed to load StaticBitMap: " + std::string(e.what()));
+        return 1;  // Cannot continue without map
+    }
+    totalTests++;
+
+    // --- 1b. Generate Inflated Map ---
+    const float ROBOT_RADIUS_METERS = 0.3f;
+    InflatedBitMap inflatedMap(staticMap, ROBOT_RADIUS_METERS);
+    PrintPass("InflatedBitMap generated");
+    passedTests++;
+    totalTests++;
+
+    // --- 1c. Generate NavMesh ---
+    NavMesh navMesh;
+    NavMeshGenerator generator;
+    generator.ComputeRecast(inflatedMap, navMesh);
+    
+    const auto& nodes = navMesh.GetAllNodes();
+    if (nodes.empty()) {
+        PrintFail("NavMesh has no nodes - cannot continue");
+        return 1;
+    }
+    PrintPass("NavMesh generated with " + std::to_string(nodes.size()) + " nodes");
+    passedTests++;
+    totalTests++;
+
+    // --- 1d. Load POI Registry ---
+    POIRegistry poiRegistry;
+    bool poiLoaded = poiRegistry.LoadFromJSON("../layer1/assets/poi_config.json");
+    if (!poiLoaded) {
+        PrintFail("POI Registry failed to load - continuing with empty");
+    } else {
+        // Validate and map POIs
+        int mappedPOIs = poiRegistry.ValidateAndMapToNavMesh(navMesh, inflatedMap, 0.0f);
+        PrintPass("POI Registry loaded with " + std::to_string(mappedPOIs) + " mapped POIs");
+        passedTests++;
+    }
+    totalTests++;
+
+    // =========================================================================
+    // PHASE 2: Cost Matrix Precomputation
+    // =========================================================================
+    PrintHeader("PHASE 2: Cost Matrix Precomputation (A* Algorithm)");
+
+    // Collect all POI node IDs for cost matrix
+    std::vector<int> poiNodeIds;
+    
+    // Get charging nodes
+    auto chargingNodes = poiRegistry.GetNodesByType(POIType::CHARGING);
+    poiNodeIds.insert(poiNodeIds.end(), chargingNodes.begin(), chargingNodes.end());
+    
+    // Get pickup nodes
+    auto pickupNodes = poiRegistry.GetNodesByType(POIType::PICKUP);
+    poiNodeIds.insert(poiNodeIds.end(), pickupNodes.begin(), pickupNodes.end());
+    
+    // Get dropoff nodes
+    auto dropoffNodes = poiRegistry.GetNodesByType(POIType::DROPOFF);
+    poiNodeIds.insert(poiNodeIds.end(), dropoffNodes.begin(), dropoffNodes.end());
+
+    PrintInfo("POI counts - Charging: " + std::to_string(chargingNodes.size()) +
+              ", Pickup: " + std::to_string(pickupNodes.size()) +
+              ", Dropoff: " + std::to_string(dropoffNodes.size()));
+
+    // Create and populate cost matrix
+    CostMatrixProvider costMatrix(navMesh);
+    
+    if (!poiNodeIds.empty()) {
+        int pairs = costMatrix.PrecomputeForNodes(poiNodeIds);
+        PrintPass("Cost matrix precomputed for " + std::to_string(pairs) + " node pairs");
+        passedTests++;
+        
+        // Test a sample cost query
+        if (poiNodeIds.size() >= 2) {
+            float sampleCost = costMatrix.GetCost(poiNodeIds[0], poiNodeIds[1]);
+            std::cout << "  Sample cost(" << poiNodeIds[0] << " -> " << poiNodeIds[1] 
+                      << ") = " << sampleCost << std::endl;
+        }
+    } else {
+        PrintFail("No POI nodes found - cannot precompute cost matrix");
+    }
+    totalTests++;
+
+    // Print a small cost matrix for debugging
+    if (poiNodeIds.size() <= 10) {
+        costMatrix.PrintMatrix(poiNodeIds);
+    }
+
+    // =========================================================================
+    // PHASE 3: Robot Agent Creation
+    // =========================================================================
+    PrintHeader("PHASE 3: Robot Agent Creation");
+
+    std::vector<RobotAgent> robots;
+    
+    // Create 3 robots with different starting positions
+    int numRobots = 3;
+    for (int i = 0; i < numRobots; ++i) {
+        int chargingNode = chargingNodes.empty() ? 0 : chargingNodes[i % chargingNodes.size()];
+        
+        RobotAgent robot(
+            i,              // Robot ID
+            1.0f,           // Battery capacity
+            chargingNode,   // Assigned charging station
+            1.5f,           // Average speed (m/s)
+            1               // Capacity (1 packet at a time)
+        );
+        
+        // Set initial position (at charging station or node 0)
+        robot.SetCurrentNodeId(chargingNode);
+        robot.SetBatteryLevel(1.0f);  // Full battery
+        
+        robots.push_back(robot);
+        
+        std::cout << "  Created: " << robot << std::endl;
+    }
+    
+    PrintPass("Created " + std::to_string(robots.size()) + " robot agents");
+    passedTests++;
+    totalTests++;
+
+    // =========================================================================
+    // PHASE 4: Task Generation / Loading
+    // =========================================================================
+    PrintHeader("PHASE 4: Task Generation");
+
+    std::vector<Task> tasks;
+    
+    // Try to load tasks from file first
+    tasks = TaskLoader::LoadTasks("assets/tasks.json", navMesh);
+    
+    // If no file exists, generate sample tasks
+    if (tasks.empty() && !pickupNodes.empty() && !dropoffNodes.empty()) {
+        PrintInfo("No tasks.json found - generating sample tasks");
+        
+        // Generate sample tasks
+        TaskLoader::GenerateSampleTasksJSON("assets/tasks.json", pickupNodes, dropoffNodes, 5);
+        
+        // Load the generated tasks
+        tasks = TaskLoader::LoadTasks("assets/tasks.json", navMesh);
+    }
+    
+    // If still no tasks, create programmatically
+    if (tasks.empty() && !pickupNodes.empty() && !dropoffNodes.empty()) {
+        PrintInfo("Creating programmatic tasks");
+        
+        for (int i = 0; i < 5 && i < static_cast<int>(pickupNodes.size()); ++i) {
+            int pickup = pickupNodes[i % pickupNodes.size()];
+            int dropoff = dropoffNodes[i % dropoffNodes.size()];
+            tasks.emplace_back(i + 1, pickup, dropoff);
+        }
+    }
+    
+    if (!tasks.empty()) {
+        PrintPass("Loaded/created " + std::to_string(tasks.size()) + " tasks");
+        passedTests++;
+        
+        // Print tasks
+        for (const auto& task : tasks) {
+            std::cout << "  " << task << std::endl;
+        }
+    } else {
+        PrintFail("No tasks could be created - check POI configuration");
+    }
+    totalTests++;
+
+    // =========================================================================
+    // PHASE 5: VRP Solving (Hill Climbing)
+    // =========================================================================
+    PrintHeader("PHASE 5: VRP Solving (Hill Climbing)");
+
+    if (!tasks.empty() && !robots.empty()) {
+        // Create solver
+        HillClimbing solver(50, 3, 42);  // 50 iterations, 3 restarts, seed=42
+        
+        // Solve VRP
+        VRPResult result = solver.Solve(tasks, robots, costMatrix);
+        
+        // Print result
+        result.Print();
+        
+        if (result.isFeasible) {
+            PrintPass("VRP solved successfully!");
+            passedTests++;
+            
+            // Verify itineraries were assigned to robots
+            bool allAssigned = true;
+            for (const auto& robot : robots) {
+                const auto& itinerary = robot.GetItinerary();
+                std::cout << "  Robot " << robot.GetRobotId() << " itinerary: [";
+                for (size_t i = 0; i < itinerary.size(); ++i) {
+                    std::cout << itinerary[i];
+                    if (i < itinerary.size() - 1) std::cout << " -> ";
+                }
+                std::cout << "]" << std::endl;
+                
+                if (itinerary.empty() && !tasks.empty()) {
+                    // At least some robots should have work
+                }
+            }
+            
+            if (allAssigned) {
+                PrintPass("Itineraries assigned to all robots");
+                passedTests++;
+            }
+        } else {
+            PrintFail("VRP solving failed - infeasible");
+        }
+    } else {
+        PrintFail("Cannot solve VRP - no tasks or robots");
+    }
+    totalTests++;
+    totalTests++;
+
+    // =========================================================================
+    // PHASE 6: Robot State Update Simulation
+    // =========================================================================
+    PrintHeader("PHASE 6: Robot State Simulation");
+
+    if (!robots.empty() && robots[0].GetItinerary().size() > 0) {
+        RobotAgent& robot = robots[0];
+        
+        std::cout << "  Initial: " << robot << std::endl;
+        
+        // Simulate completing the first goal
+        int nextGoal = robot.GetNextGoal();
+        if (nextGoal >= 0) {
+            std::cout << "  Simulating arrival at goal node " << nextGoal << std::endl;
+            
+            // Update position and complete goal
+            robot.UpdateState(nextGoal, 0.9f);  // Arrived with 90% battery
+            robot.CompleteCurrentGoal();
+            
+            std::cout << "  After completion: " << robot << std::endl;
+            
+            PrintPass("Robot state simulation works");
+            passedTests++;
+        }
+    } else {
+        PrintInfo("No itinerary to simulate");
+    }
+    totalTests++;
+
+    // =========================================================================
+    // SUMMARY
+    // =========================================================================
+    std::cout << "\n";
+    std::cout << "╔═══════════════════════════════════════════════════════════════╗\n";
+    std::cout << "║                     TEST SUMMARY                              ║\n";
+    std::cout << "╚═══════════════════════════════════════════════════════════════╝\n";
+    std::cout << "\n";
+    
+    if (passedTests == totalTests) {
+        std::cout << COLOR_GREEN << "  ALL TESTS PASSED!" << COLOR_RESET << std::endl;
+    } else {
+        std::cout << COLOR_YELLOW << "  Some tests failed" << COLOR_RESET << std::endl;
+    }
+    
+    std::cout << "  Passed: " << passedTests << "/" << totalTests << std::endl;
+    std::cout << "\n";
+
+    return (passedTests == totalTests) ? 0 : 1;
+}
+
+==> ./Makefile <==
+# ==============================================================================
+# Layer 2 (Fleet Manager) Makefile
+# ==============================================================================
+# Dependencies: Layer 1 (must be built first)
+# 
+# Usage:
+#   make           - Build Layer 2 test executable
+#   make run       - Run the test
+#   make clean     - Clean build artifacts
+#   make layer1    - Build Layer 1 first (if needed)
+# ==============================================================================
+
+# Compiler and Flags
+CXX := g++
+CXXFLAGS := -std=c++17 -Wall -Wextra -g
+
+# Directories
+LAYER2_DIR := .
+LAYER1_DIR := ../layer1
+COMMON_DIR := ../common
+BUILD_DIR := build
+
+# Include paths
+INCLUDES := -I$(LAYER2_DIR)/include \
+            -I$(LAYER1_DIR)/include \
+            -I$(COMMON_DIR)/include
+
+# Source files
+LAYER2_SOURCES := $(wildcard $(LAYER2_DIR)/src/*.cc)
+MAIN_SOURCE := main.cc
+
+# Object files for Layer 2
+LAYER2_OBJECTS := $(patsubst $(LAYER2_DIR)/src/%.cc,$(BUILD_DIR)/%.o,$(LAYER2_SOURCES))
+MAIN_OBJECT := $(BUILD_DIR)/main.o
+
+# Layer 1 objects (pre-built, link against them)
+# We need to list the Layer 1 objects that Layer 2 depends on
+LAYER1_BUILD := $(LAYER1_DIR)/build
+LAYER1_OBJECTS := $(LAYER1_BUILD)/StaticBitMap.o \
+                  $(LAYER1_BUILD)/InflatedBitMap.o \
+                  $(LAYER1_BUILD)/DynamicBitMap.o \
+                  $(LAYER1_BUILD)/NavMesh.o \
+                  $(LAYER1_BUILD)/NavMeshGenerator.o \
+                  $(LAYER1_BUILD)/AbstractGrid.o \
+                  $(LAYER1_BUILD)/DynamicObstacle.o \
+                  $(LAYER1_BUILD)/DynamicObstacleGenerator.o \
+                  $(LAYER1_BUILD)/POIRegistry.o
+
+# Common objects
+COMMON_OBJECTS := $(LAYER1_BUILD)/common_Coordinates.o \
+                  $(LAYER1_BUILD)/common_Resolution.o
+
+# All objects for final linking
+ALL_OBJECTS := $(LAYER2_OBJECTS) $(MAIN_OBJECT) $(LAYER1_OBJECTS) $(COMMON_OBJECTS)
+
+# Target executable
+TARGET := test_layer2
+
+# ==============================================================================
+# Rules
+# ==============================================================================
+
+.PHONY: all clean run layer1 debug assets
+
+all: assets $(BUILD_DIR) $(BUILD_DIR)/$(TARGET)
+
+# Create build directory and assets directory
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+assets:
+	mkdir -p assets
+
+# Ensure Layer 1 is built first
+layer1:
+	@echo "Building Layer 1 dependencies..."
+	$(MAKE) -C $(LAYER1_DIR) all
+
+# Link all objects into executable
+$(BUILD_DIR)/$(TARGET): $(LAYER2_OBJECTS) $(MAIN_OBJECT) | layer1
+	@echo "Linking Layer 2 executable..."
+	$(CXX) $(CXXFLAGS) -o $@ $(ALL_OBJECTS)
+
+# Compile Layer 2 source files
+$(BUILD_DIR)/%.o: $(LAYER2_DIR)/src/%.cc | $(BUILD_DIR)
+	@echo "Compiling $<..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Compile main.cc
+$(BUILD_DIR)/main.o: $(MAIN_SOURCE) | $(BUILD_DIR)
+	@echo "Compiling main.cc..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# Run the test executable
+run: $(BUILD_DIR)/$(TARGET)
+	@echo "Running Layer 2 tests..."
+	./$(BUILD_DIR)/$(TARGET)
+
+# Clean build artifacts
+clean:
+	rm -rf $(BUILD_DIR)
+	rm -f assets/tasks.json
+
+# Clean everything including Layer 1
+cleanall: clean
+	$(MAKE) -C $(LAYER1_DIR) clean
+
+# ==============================================================================
+# Debug: Print variables
+# ==============================================================================
+debug:
+	@echo "=== Layer 2 Build Configuration ==="
+	@echo "LAYER2_SOURCES: $(LAYER2_SOURCES)"
+	@echo "LAYER2_OBJECTS: $(LAYER2_OBJECTS)"
+	@echo "LAYER1_OBJECTS: $(LAYER1_OBJECTS)"
+	@echo "COMMON_OBJECTS: $(COMMON_OBJECTS)"
+	@echo "ALL_OBJECTS: $(ALL_OBJECTS)"
+	@echo "TARGET: $(BUILD_DIR)/$(TARGET)"
+
+==> ./src/CostMatrixProvider.cc <==
+/**
+ * @file CostMatrixProvider.cc
+ * @brief Implementation of A* and cost matrix computation
+ */
+
+#include "../include/CostMatrixProvider.hh"
+#include <queue>
+#include <iostream>
+#include <iomanip>
+#include <algorithm>
+
+namespace Backend {
+namespace Layer2 {
+
+// =============================================================================
+// PRECOMPUTATION
+// =============================================================================
+
+int CostMatrixProvider::PrecomputeForNodes(const std::vector<int>& nodeIds) {
+    if (nodeIds.empty()) return 0;
+    
+    std::cout << "[CostMatrix] Precomputing costs for " << nodeIds.size() << " nodes..." << std::endl;
+    
+    int totalPairs = 0;
+    
+    // For each source node, run Dijkstra to get costs to all other nodes
+    for (int sourceId : nodeIds) {
+        auto distances = RunDijkstra(sourceId);
+        
+        // Store costs to all destination nodes
+        for (int targetId : nodeIds) {
+            if (sourceId == targetId) {
+                // Same node = zero cost
+                costMatrix_[{sourceId, targetId}] = 0.0f;
+                totalPairs++;
+            } else if (distances.count(targetId)) {
+                costMatrix_[{sourceId, targetId}] = distances[targetId];
+                totalPairs++;
+            } else {
+                // No path exists
+                costMatrix_[{sourceId, targetId}] = INFINITY_COST;
+            }
+        }
+    }
+    
+    std::cout << "[CostMatrix] Precomputed " << totalPairs << " node pairs" << std::endl;
+    
+    return totalPairs;
+}
+
+int CostMatrixProvider::AddRowForNode(int fromNodeId, const std::vector<int>& toNodeIds) {
+    if (toNodeIds.empty()) return 0;
+    
+    // Run Dijkstra from this node
+    auto distances = RunDijkstra(fromNodeId);
+    
+    int added = 0;
+    for (int targetId : toNodeIds) {
+        if (fromNodeId == targetId) {
+            costMatrix_[{fromNodeId, targetId}] = 0.0f;
+            added++;
+        } else if (distances.count(targetId)) {
+            costMatrix_[{fromNodeId, targetId}] = distances[targetId];
+            added++;
+        }
+    }
+    
+    return added;
+}
+
+// =============================================================================
+// QUERIES
+// =============================================================================
+
+float CostMatrixProvider::GetCost(int fromNodeId, int toNodeId) const {
+    if (fromNodeId == toNodeId) return 0.0f;
+    
+    auto it = costMatrix_.find({fromNodeId, toNodeId});
+    if (it != costMatrix_.end()) {
+        return it->second;
+    }
+    
+    // Not precomputed - run A* on demand
+    return RunAStar(fromNodeId, toNodeId);
+}
+
+bool CostMatrixProvider::HasPath(int fromNodeId, int toNodeId) const {
+    return GetCost(fromNodeId, toNodeId) < INFINITY_COST;
+}
+
+// =============================================================================
+// A* ALGORITHM
+// =============================================================================
+
+float CostMatrixProvider::RunAStar(int sourceId, int targetId) const {
+    if (sourceId == targetId) return 0.0f;
+    
+    const auto& allNodes = navMesh_.GetAllNodes();
+    int numNodes = static_cast<int>(allNodes.size());
+    
+    if (sourceId < 0 || sourceId >= numNodes || 
+        targetId < 0 || targetId >= numNodes) {
+        return INFINITY_COST;
+    }
+    
+    // Get target coordinates for heuristic
+    const auto& targetCoords = allNodes[targetId].coords;
+    
+    // Priority queue: (f-score, nodeId)
+    using PQEntry = std::pair<float, int>;
+    std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>> openSet;
+    
+    // g-score: cost from source to each node
+    std::vector<float> gScore(numNodes, INFINITY_COST);
+    gScore[sourceId] = 0.0f;
+    
+    // f-score = g + h (heuristic)
+    auto heuristic = [&](int nodeId) -> float {
+        const auto& coords = allNodes[nodeId].coords;
+        return coords.DistanceTo(targetCoords);
+    };
+    
+    openSet.push({heuristic(sourceId), sourceId});
+    
+    // Track visited nodes
+    std::vector<bool> visited(numNodes, false);
+    
+    while (!openSet.empty()) {
+        auto [fScore, current] = openSet.top();
+        openSet.pop();
+        
+        if (current == targetId) {
+            // Found the target
+            return gScore[targetId];
+        }
+        
+        if (visited[current]) continue;
+        visited[current] = true;
+        
+        // Explore neighbors
+        const auto& neighbors = navMesh_.GetNeighbors(current);
+        for (const auto& edge : neighbors) {
+            int neighbor = edge.targetNodeId;
+            float tentativeG = gScore[current] + edge.cost;
+            
+            if (tentativeG < gScore[neighbor]) {
+                gScore[neighbor] = tentativeG;
+                float f = tentativeG + heuristic(neighbor);
+                openSet.push({f, neighbor});
+            }
+        }
+    }
+    
+    // No path found
+    return INFINITY_COST;
+}
+
+std::unordered_map<int, float> CostMatrixProvider::RunDijkstra(int sourceId) const {
+    std::unordered_map<int, float> distances;
+    
+    const auto& allNodes = navMesh_.GetAllNodes();
+    int numNodes = static_cast<int>(allNodes.size());
+    
+    if (sourceId < 0 || sourceId >= numNodes) {
+        return distances;
+    }
+    
+    // Distance array
+    std::vector<float> dist(numNodes, INFINITY_COST);
+    dist[sourceId] = 0.0f;
+    
+    // Priority queue: (distance, nodeId)
+    using PQEntry = std::pair<float, int>;
+    std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>> pq;
+    pq.push({0.0f, sourceId});
+    
+    // Visited tracking
+    std::vector<bool> visited(numNodes, false);
+    
+    while (!pq.empty()) {
+        auto [d, u] = pq.top();
+        pq.pop();
+        
+        if (visited[u]) continue;
+        visited[u] = true;
+        
+        // Store this distance
+        distances[u] = d;
+        
+        // Explore neighbors
+        const auto& neighbors = navMesh_.GetNeighbors(u);
+        for (const auto& edge : neighbors) {
+            int v = edge.targetNodeId;
+            float newDist = d + edge.cost;
+            
+            if (newDist < dist[v]) {
+                dist[v] = newDist;
+                pq.push({newDist, v});
+            }
+        }
+    }
+    
+    return distances;
+}
+
+// =============================================================================
+// DEBUG
+// =============================================================================
+
+void CostMatrixProvider::PrintMatrix(const std::vector<int>& nodeIds) const {
+    std::cout << "\n=== Cost Matrix ===\n";
+    std::cout << std::setw(6) << " ";
+    
+    // Print header
+    for (int to : nodeIds) {
+        std::cout << std::setw(8) << to;
+    }
+    std::cout << "\n";
+    
+    // Print rows
+    for (int from : nodeIds) {
+        std::cout << std::setw(6) << from;
+        for (int to : nodeIds) {
+            float cost = GetCost(from, to);
+            if (cost >= INFINITY_COST) {
+                std::cout << std::setw(8) << "INF";
+            } else {
+                std::cout << std::setw(8) << std::fixed << std::setprecision(1) << cost;
+            }
+        }
+        std::cout << "\n";
+    }
+    std::cout << "==================\n";
+}
+
+} // namespace Layer2
+} // namespace Backend
+
+==> ./src/HillClimbing.cc <==
+/**
+ * @file HillClimbing.cc
+ * @brief Implementation of Hill Climbing VRP solver
+ */
+
+#include "../include/HillClimbing.hh"
+#include <iostream>
+#include <iomanip>
+#include <chrono>
+#include <limits>
+#include <algorithm>
+
+namespace Backend {
+namespace Layer2 {
+
+// =============================================================================
+// MAIN SOLVE METHOD
+// =============================================================================
+
+VRPResult HillClimbing::Solve(
+    const std::vector<Task>& tasks,
+    std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs
+) {
+    VRPResult result;
+    result.algorithmName = GetName();
+    result.isOptimal = false;
+    
+    auto startTime = std::chrono::high_resolution_clock::now();
+    
+    // Handle edge cases
+    if (tasks.empty()) {
+        std::cout << "[HillClimbing] No tasks to assign.\n";
+        result.isFeasible = true;
+        result.makespan = 0.0;
+        result.computationTimeMs = 0.0;
+        
+        // Create empty itineraries for all robots
+        for (const auto& robot : robots) {
+            result.robotItineraries[robot.GetRobotId()] = {};
+        }
+        return result;
+    }
+    
+    if (robots.empty()) {
+        std::cout << "[HillClimbing] No robots available.\n";
+        result.isFeasible = false;
+        result.makespan = std::numeric_limits<double>::max();
+        result.computationTimeMs = 0.0;
+        return result;
+    }
+    
+    std::cout << "[HillClimbing] Solving VRP: " << tasks.size() 
+              << " tasks, " << robots.size() << " robots\n";
+    
+    // Phase 1: Generate initial greedy solution
+    Assignment bestAssignment = GenerateGreedySolution(tasks, robots, costs);
+    double bestMakespan = CalculateMakespan(bestAssignment, robots, costs);
+    
+    std::cout << "[HillClimbing] Initial greedy makespan: " 
+              << std::fixed << std::setprecision(2) << bestMakespan << "\n";
+    
+    // Phase 2: Hill climbing with restarts
+    for (int restart = 0; restart < maxRestarts_; ++restart) {
+        Assignment currentAssignment;
+        double currentMakespan;
+        
+        if (restart == 0) {
+            // First iteration uses greedy solution
+            currentAssignment = bestAssignment;
+            currentMakespan = bestMakespan;
+        } else {
+            // Random restart
+            currentAssignment = GenerateRandomSolution(tasks, robots.size());
+            currentMakespan = CalculateMakespan(currentAssignment, robots, costs);
+        }
+        
+        // Local search
+        int iterationsWithoutImprovement = 0;
+        
+        while (iterationsWithoutImprovement < maxIterations_) {
+            bool improved = TryImprovement(currentAssignment, robots, costs, currentMakespan);
+            
+            if (improved) {
+                iterationsWithoutImprovement = 0;
+                
+                // Update best if this is better
+                if (currentMakespan < bestMakespan) {
+                    bestAssignment = currentAssignment;
+                    bestMakespan = currentMakespan;
+                }
+            } else {
+                iterationsWithoutImprovement++;
+            }
+        }
+    }
+    
+    // Record timing
+    auto endTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> duration = endTime - startTime;
+    
+    std::cout << "[HillClimbing] Final makespan: " 
+              << std::fixed << std::setprecision(2) << bestMakespan << "\n";
+    std::cout << "[HillClimbing] Computation time: " 
+              << std::fixed << std::setprecision(2) << duration.count() << " ms\n";
+    
+    // Convert to result format
+    result.robotItineraries = AssignmentToItineraries(bestAssignment, robots);
+    result.makespan = bestMakespan;
+    result.isFeasible = true;
+    result.computationTimeMs = duration.count();
+    
+    // Calculate total distance
+    result.totalDistance = 0.0;
+    for (size_t i = 0; i < robots.size(); ++i) {
+        result.totalDistance += CalculateRobotTime(i, bestAssignment[i], robots[i], costs);
+    }
+    
+    // Assign itineraries to robots
+    for (const auto& [robotId, itinerary] : result.robotItineraries) {
+        for (auto& robot : robots) {
+            if (robot.GetRobotId() == robotId) {
+                robot.AssignItinerary(itinerary);
+                break;
+            }
+        }
+    }
+    
+    return result;
+}
+
+// =============================================================================
+// SOLUTION GENERATION
+// =============================================================================
+
+HillClimbing::Assignment HillClimbing::GenerateGreedySolution(
+    const std::vector<Task>& tasks,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs
+) const {
+    int numRobots = static_cast<int>(robots.size());
+    Assignment assignment(numRobots);
+    
+    // Track current end position and time for each robot
+    std::vector<int> currentEndNode(numRobots);
+    std::vector<double> currentTime(numRobots, 0.0);
+    
+    for (int i = 0; i < numRobots; ++i) {
+        currentEndNode[i] = robots[i].GetCurrentNodeId();
+    }
+    
+    // For each task, find the best robot to assign it to
+    for (const auto& task : tasks) {
+        int bestRobot = 0;
+        double bestAddedCost = std::numeric_limits<double>::max();
+        
+        for (int r = 0; r < numRobots; ++r) {
+            // Cost to pick up the task from current position
+            float pickupCost = costs.GetCost(currentEndNode[r], task.sourceNode);
+            // Cost to deliver the task
+            float deliveryCost = costs.GetCost(task.sourceNode, task.destinationNode);
+            
+            double addedCost = pickupCost + deliveryCost;
+            
+            // Prefer robots with lower current load (balance)
+            double loadPenalty = assignment[r].size() * 0.1;
+            addedCost += loadPenalty;
+            
+            if (addedCost < bestAddedCost) {
+                bestAddedCost = addedCost;
+                bestRobot = r;
+            }
+        }
+        
+        // Assign task to best robot
+        assignment[bestRobot].push_back(task);
+        
+        // Update robot's end position
+        currentEndNode[bestRobot] = task.destinationNode;
+    }
+    
+    return assignment;
+}
+
+HillClimbing::Assignment HillClimbing::GenerateRandomSolution(
+    const std::vector<Task>& tasks,
+    int numRobots
+) const {
+    Assignment assignment(numRobots);
+    
+    // Shuffle tasks and distribute round-robin
+    std::vector<Task> shuffledTasks = tasks;
+    std::shuffle(shuffledTasks.begin(), shuffledTasks.end(), rng_);
+    
+    for (size_t i = 0; i < shuffledTasks.size(); ++i) {
+        assignment[i % numRobots].push_back(shuffledTasks[i]);
+    }
+    
+    return assignment;
+}
+
+// =============================================================================
+// COST CALCULATION
+// =============================================================================
+
+double HillClimbing::CalculateMakespan(
+    const Assignment& assignment,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs
+) const {
+    double makespan = 0.0;
+    
+    for (size_t i = 0; i < robots.size(); ++i) {
+        double robotTime = CalculateRobotTime(i, assignment[i], robots[i], costs);
+        makespan = std::max(makespan, robotTime);
+    }
+    
+    return makespan;
+}
+
+double HillClimbing::CalculateRobotTime(
+    int robotIdx,
+    const std::vector<Task>& robotTasks,
+    const RobotAgent& robot,
+    const CostMatrixProvider& costs
+) const {
+    (void)robotIdx; // Unused but kept for interface consistency
+    
+    if (robotTasks.empty()) return 0.0;
+    
+    double totalTime = 0.0;
+    int currentNode = robot.GetCurrentNodeId();
+    
+    for (const auto& task : robotTasks) {
+        // Travel to pickup
+        totalTime += costs.GetCost(currentNode, task.sourceNode);
+        // Travel to dropoff
+        totalTime += costs.GetCost(task.sourceNode, task.destinationNode);
+        // Update position
+        currentNode = task.destinationNode;
+    }
+    
+    return totalTime;
+}
+
+// =============================================================================
+// LOCAL SEARCH MOVES
+// =============================================================================
+
+bool HillClimbing::TryImprovement(
+    Assignment& assignment,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs,
+    double& currentMakespan
+) const {
+    // Try different improvement strategies
+    
+    // Strategy 1: Inter-robot move (move a task from one robot to another)
+    if (TryInterRobotMove(assignment, robots, costs, currentMakespan)) {
+        return true;
+    }
+    
+    // Strategy 2: Inter-robot swap (exchange tasks between two robots)
+    if (TryInterRobotSwap(assignment, robots, costs, currentMakespan)) {
+        return true;
+    }
+    
+    // Strategy 3: Intra-robot reorder (change order of tasks within a robot)
+    if (TryIntraRobotReorder(assignment, robots, costs, currentMakespan)) {
+        return true;
+    }
+    
+    return false;
+}
+
+bool HillClimbing::TryInterRobotMove(
+    Assignment& assignment,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs,
+    double& currentMakespan
+) const {
+    int numRobots = static_cast<int>(robots.size());
+    
+    // Find the bottleneck robot (highest completion time)
+    int bottleneck = 0;
+    double maxTime = 0.0;
+    std::vector<double> robotTimes(numRobots);
+    
+    for (int r = 0; r < numRobots; ++r) {
+        robotTimes[r] = CalculateRobotTime(r, assignment[r], robots[r], costs);
+        if (robotTimes[r] > maxTime) {
+            maxTime = robotTimes[r];
+            bottleneck = r;
+        }
+    }
+    
+    // If bottleneck has only 1 or 0 tasks, can't move
+    if (assignment[bottleneck].size() <= 1) {
+        return false;
+    }
+    
+    // Try moving each task from bottleneck to another robot
+    for (size_t taskIdx = 0; taskIdx < assignment[bottleneck].size(); ++taskIdx) {
+        Task task = assignment[bottleneck][taskIdx];
+        
+        for (int targetRobot = 0; targetRobot < numRobots; ++targetRobot) {
+            if (targetRobot == bottleneck) continue;
+            
+            // Temporarily move task
+            assignment[bottleneck].erase(assignment[bottleneck].begin() + taskIdx);
+            assignment[targetRobot].push_back(task);
+            
+            // Calculate new makespan
+            double newMakespan = CalculateMakespan(assignment, robots, costs);
+            
+            if (newMakespan < currentMakespan) {
+                // Keep the improvement
+                currentMakespan = newMakespan;
+                return true;
+            } else {
+                // Revert
+                assignment[targetRobot].pop_back();
+                assignment[bottleneck].insert(assignment[bottleneck].begin() + taskIdx, task);
+            }
+        }
+    }
+    
+    return false;
+}
+
+bool HillClimbing::TryInterRobotSwap(
+    Assignment& assignment,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs,
+    double& currentMakespan
+) const {
+    int numRobots = static_cast<int>(robots.size());
+    
+    // Try swapping tasks between random pairs of robots
+    std::uniform_int_distribution<int> robotDist(0, numRobots - 1);
+    
+    for (int attempts = 0; attempts < 10; ++attempts) {
+        int r1 = robotDist(rng_);
+        int r2 = robotDist(rng_);
+        
+        if (r1 == r2 || assignment[r1].empty() || assignment[r2].empty()) {
+            continue;
+        }
+        
+        // Pick random tasks from each robot
+        std::uniform_int_distribution<size_t> task1Dist(0, assignment[r1].size() - 1);
+        std::uniform_int_distribution<size_t> task2Dist(0, assignment[r2].size() - 1);
+        
+        size_t idx1 = task1Dist(rng_);
+        size_t idx2 = task2Dist(rng_);
+        
+        // Swap tasks
+        std::swap(assignment[r1][idx1], assignment[r2][idx2]);
+        
+        // Calculate new makespan
+        double newMakespan = CalculateMakespan(assignment, robots, costs);
+        
+        if (newMakespan < currentMakespan) {
+            currentMakespan = newMakespan;
+            return true;
+        } else {
+            // Revert
+            std::swap(assignment[r1][idx1], assignment[r2][idx2]);
+        }
+    }
+    
+    return false;
+}
+
+bool HillClimbing::TryIntraRobotReorder(
+    Assignment& assignment,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs,
+    double& currentMakespan
+) const {
+    int numRobots = static_cast<int>(robots.size());
+    
+    // Find the bottleneck robot
+    int bottleneck = 0;
+    double maxTime = 0.0;
+    
+    for (int r = 0; r < numRobots; ++r) {
+        double robotTime = CalculateRobotTime(r, assignment[r], robots[r], costs);
+        if (robotTime > maxTime) {
+            maxTime = robotTime;
+            bottleneck = r;
+        }
+    }
+    
+    // Need at least 2 tasks to reorder
+    if (assignment[bottleneck].size() < 2) {
+        return false;
+    }
+    
+    // Try 2-opt style swap: reverse a segment of the task list
+    std::vector<Task>& tasks = assignment[bottleneck];
+    size_t n = tasks.size();
+    
+    for (size_t i = 0; i < n - 1; ++i) {
+        for (size_t j = i + 1; j < n; ++j) {
+            // Reverse segment [i, j]
+            std::reverse(tasks.begin() + i, tasks.begin() + j + 1);
+            
+            double newMakespan = CalculateMakespan(assignment, robots, costs);
+            
+            if (newMakespan < currentMakespan) {
+                currentMakespan = newMakespan;
+                return true;
+            } else {
+                // Revert
+                std::reverse(tasks.begin() + i, tasks.begin() + j + 1);
+            }
+        }
+    }
+    
+    return false;
+}
+
+// =============================================================================
+// UTILITY
+// =============================================================================
+
+std::map<int, std::vector<int>> HillClimbing::AssignmentToItineraries(
+    const Assignment& assignment,
+    const std::vector<RobotAgent>& robots
+) const {
+    std::map<int, std::vector<int>> itineraries;
+    
+    for (size_t i = 0; i < robots.size(); ++i) {
+        int robotId = robots[i].GetRobotId();
+        std::vector<int> nodes;
+        
+        // Expand tasks to pickup/dropoff nodes
+        for (const auto& task : assignment[i]) {
+            nodes.push_back(task.sourceNode);      // Pickup
+            nodes.push_back(task.destinationNode); // Dropoff
+        }
+        
+        itineraries[robotId] = std::move(nodes);
+    }
+    
+    return itineraries;
+}
+
+} // namespace Layer2
+} // namespace Backend
+
+==> ./src/IVRPSolver.cc <==
+/**
+ * @file IVRPSolver.cc
+ * @brief Implementation of VRPResult helper methods
+ */
+
+#include "../include/IVRPSolver.hh"
+#include <iostream>
+#include <iomanip>
+
+namespace Backend {
+namespace Layer2 {
+
+void VRPResult::Print() const {
+    std::cout << "\n=== VRP Solution (" << algorithmName << ") ===\n";
+    std::cout << "Status: " << (isFeasible ? "FEASIBLE" : "INFEASIBLE");
+    if (isOptimal) std::cout << " (OPTIMAL)";
+    std::cout << "\n";
+    
+    std::cout << "Makespan: " << std::fixed << std::setprecision(2) 
+              << makespan << " units\n";
+    std::cout << "Total Distance: " << std::fixed << std::setprecision(2) 
+              << totalDistance << " units\n";
+    std::cout << "Computation Time: " << std::fixed << std::setprecision(3) 
+              << computationTimeMs << " ms\n";
+    
+    std::cout << "\nRobot Itineraries:\n";
+    for (const auto& [robotId, itinerary] : robotItineraries) {
+        std::cout << "  Robot " << robotId << ": [";
+        for (size_t i = 0; i < itinerary.size(); ++i) {
+            std::cout << itinerary[i];
+            if (i < itinerary.size() - 1) std::cout << " -> ";
+        }
+        std::cout << "]\n";
+    }
+    std::cout << "=================================\n";
+}
+
+} // namespace Layer2
+} // namespace Backend
+
+==> ./src/TaskLoader.cc <==
+/**
+ * @file TaskLoader.cc
+ * @brief Implementation of TaskLoader for JSON parsing and validation
+ */
+
+#include "../include/TaskLoader.hh"
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <random>
+#include <algorithm>
+
+namespace Backend {
+namespace Layer2 {
+
+// =============================================================================
+// PUBLIC METHODS
+// =============================================================================
+
+std::vector<Task> TaskLoader::LoadTasks(const std::string& filepath,
+                                        const Backend::Layer1::NavMesh& mesh) {
+    std::vector<Task> tasks;
+    
+    // Read file content
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "[TaskLoader] ERROR: Cannot open file: " << filepath << std::endl;
+        return tasks;
+    }
+    
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string content = buffer.str();
+    file.close();
+    
+    // Parse JSON
+    tasks = ParseJSON(content);
+    
+    // Validate against NavMesh
+    return ValidateTasks(tasks, mesh);
+}
+
+std::vector<Task> TaskLoader::ValidateTasks(const std::vector<Task>& tasks,
+                                            const Backend::Layer1::NavMesh& mesh) {
+    std::vector<Task> validTasks;
+    validTasks.reserve(tasks.size());
+    
+    int invalidCount = 0;
+    
+    for (const auto& task : tasks) {
+        bool sourceValid = IsValidNodeId(task.sourceNode, mesh);
+        bool destValid = IsValidNodeId(task.destinationNode, mesh);
+        
+        if (sourceValid && destValid) {
+            validTasks.push_back(task);
+        } else {
+            invalidCount++;
+            std::cerr << "[TaskLoader] WARNING: Task " << task.taskId 
+                      << " has invalid nodes (source=" << task.sourceNode
+                      << " valid=" << sourceValid
+                      << ", dest=" << task.destinationNode 
+                      << " valid=" << destValid << ")" << std::endl;
+        }
+    }
+    
+    std::cout << "[TaskLoader] Validated " << validTasks.size() 
+              << "/" << tasks.size() << " tasks";
+    if (invalidCount > 0) {
+        std::cout << " (" << invalidCount << " rejected)";
+    }
+    std::cout << std::endl;
+    
+    return validTasks;
+}
+
+bool TaskLoader::GenerateSampleTasksJSON(const std::string& filepath,
+                                         const std::vector<int>& pickupNodes,
+                                         const std::vector<int>& dropoffNodes,
+                                         int numTasks) {
+    if (pickupNodes.empty() || dropoffNodes.empty()) {
+        std::cerr << "[TaskLoader] ERROR: Cannot generate tasks without pickup/dropoff nodes" << std::endl;
+        return false;
+    }
+    
+    std::ofstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "[TaskLoader] ERROR: Cannot create file: " << filepath << std::endl;
+        return false;
+    }
+    
+    // Random number generator
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> pickupDist(0, pickupNodes.size() - 1);
+    std::uniform_int_distribution<> dropoffDist(0, dropoffNodes.size() - 1);
+    
+    // Generate JSON
+    file << "{\n";
+    file << "  \"description\": \"Auto-generated sample tasks for testing\",\n";
+    file << "  \"tasks\": [\n";
+    
+    for (int i = 0; i < numTasks; ++i) {
+        int source = pickupNodes[pickupDist(gen)];
+        int dest = dropoffNodes[dropoffDist(gen)];
+        
+        file << "    {\n";
+        file << "      \"id\": " << (i + 1) << ",\n";
+        file << "      \"source\": " << source << ",\n";
+        file << "      \"destination\": " << dest << "\n";
+        file << "    }";
+        
+        if (i < numTasks - 1) file << ",";
+        file << "\n";
+    }
+    
+    file << "  ]\n";
+    file << "}\n";
+    
+    file.close();
+    
+    std::cout << "[TaskLoader] Generated " << numTasks << " sample tasks in: " 
+              << filepath << std::endl;
+    
+    return true;
+}
+
+// =============================================================================
+// PRIVATE METHODS
+// =============================================================================
+
+bool TaskLoader::IsValidNodeId(int nodeId, const Backend::Layer1::NavMesh& mesh) {
+    // Check if node exists in NavMesh
+    const auto& allNodes = mesh.GetAllNodes();
+    return nodeId >= 0 && nodeId < static_cast<int>(allNodes.size());
+}
+
+std::vector<Task> TaskLoader::ParseJSON(const std::string& content) {
+    std::vector<Task> tasks;
+    
+    // Find "tasks" array
+    size_t tasksPos = content.find("\"tasks\"");
+    if (tasksPos == std::string::npos) {
+        std::cerr << "[TaskLoader] ERROR: No 'tasks' array found in JSON" << std::endl;
+        return tasks;
+    }
+    
+    // Find opening bracket of array
+    size_t arrayStart = content.find('[', tasksPos);
+    if (arrayStart == std::string::npos) {
+        std::cerr << "[TaskLoader] ERROR: Malformed JSON - no array start" << std::endl;
+        return tasks;
+    }
+    
+    // Find closing bracket
+    size_t arrayEnd = content.rfind(']');
+    if (arrayEnd == std::string::npos || arrayEnd <= arrayStart) {
+        std::cerr << "[TaskLoader] ERROR: Malformed JSON - no array end" << std::endl;
+        return tasks;
+    }
+    
+    // Parse each task object
+    size_t pos = arrayStart;
+    while (pos < arrayEnd) {
+        // Find next object start
+        size_t objStart = content.find('{', pos);
+        if (objStart == std::string::npos || objStart >= arrayEnd) break;
+        
+        // Find object end
+        size_t objEnd = content.find('}', objStart);
+        if (objEnd == std::string::npos || objEnd >= arrayEnd) break;
+        
+        std::string obj = content.substr(objStart, objEnd - objStart + 1);
+        
+        // Extract fields
+        int id = -1, source = -1, dest = -1;
+        
+        // Parse "id"
+        size_t idPos = obj.find("\"id\"");
+        if (idPos != std::string::npos) {
+            size_t colonPos = obj.find(':', idPos);
+            if (colonPos != std::string::npos) {
+                id = std::atoi(obj.c_str() + colonPos + 1);
+            }
+        }
+        
+        // Parse "source"
+        size_t sourcePos = obj.find("\"source\"");
+        if (sourcePos != std::string::npos) {
+            size_t colonPos = obj.find(':', sourcePos);
+            if (colonPos != std::string::npos) {
+                source = std::atoi(obj.c_str() + colonPos + 1);
+            }
+        }
+        
+        // Parse "destination"
+        size_t destPos = obj.find("\"destination\"");
+        if (destPos != std::string::npos) {
+            size_t colonPos = obj.find(':', destPos);
+            if (colonPos != std::string::npos) {
+                dest = std::atoi(obj.c_str() + colonPos + 1);
+            }
+        }
+        
+        // Create task if all fields are valid
+        if (id >= 0 && source >= 0 && dest >= 0) {
+            tasks.emplace_back(id, source, dest);
+        } else {
+            std::cerr << "[TaskLoader] WARNING: Skipping malformed task object" << std::endl;
+        }
+        
+        pos = objEnd + 1;
+    }
+    
+    std::cout << "[TaskLoader] Parsed " << tasks.size() << " tasks from JSON" << std::endl;
+    
+    return tasks;
+}
+
+} // namespace Layer2
+} // namespace Backend

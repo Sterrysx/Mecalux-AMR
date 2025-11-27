@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <utility>
 #include "AbstractGrid.hh"
 
 namespace Backend {
@@ -26,6 +27,13 @@ namespace Layer1 {
         
         // Used by DynamicBitMap to clone data
         const std::vector<bool>& GetRawData() const;
+        
+        // Static factory to create from file with auto-detected dimensions
+        static StaticBitMap CreateFromFile(const std::string& filepath, 
+                                           Backend::Common::Resolution res);
+        
+        // Static utility to get file dimensions before loading
+        static std::pair<int, int> GetFileDimensions(const std::string& filepath);
     };
 
 } // namespace Layer1
