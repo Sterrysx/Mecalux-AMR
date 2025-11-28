@@ -96,6 +96,16 @@ run: $(BUILD_DIR)/$(TARGET)
 	@echo "Running Layer 2 tests..."
 	./$(BUILD_DIR)/$(TARGET)
 
+# Build and run algorithm comparison benchmark
+compare: $(BUILD_DIR)/algorithm_comparison
+	@echo "Running algorithm comparison..."
+	./$(BUILD_DIR)/algorithm_comparison
+
+# Compile algorithm comparison executable
+$(BUILD_DIR)/algorithm_comparison: algorithm_comparison.cc $(LAYER2_OBJECTS) | layer1 $(BUILD_DIR)
+	@echo "Building algorithm comparison..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ algorithm_comparison.cc $(LAYER2_OBJECTS) $(LAYER1_OBJECTS) $(COMMON_OBJECTS)
+
 # Clean build artifacts
 clean:
 	rm -rf $(BUILD_DIR)

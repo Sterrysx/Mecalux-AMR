@@ -19,11 +19,11 @@
         {
             "id": "C0",
             "type": "CHARGING",
-            "x": 599,
-            "y": 343,
+            "x": 1466,
+            "y": 205,
             "active": true,
             "metadata": {
-                "cluster_center": "(598, 350)",
+                "cluster_center": "(1474, 199)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -31,11 +31,11 @@
         {
             "id": "C1",
             "type": "CHARGING",
-            "x": 582,
-            "y": 349,
+            "x": 1487,
+            "y": 194,
             "active": true,
             "metadata": {
-                "cluster_center": "(598, 350)",
+                "cluster_center": "(1474, 199)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -43,11 +43,11 @@
         {
             "id": "C2",
             "type": "CHARGING",
-            "x": 576,
-            "y": 341,
+            "x": 1467,
+            "y": 216,
             "active": true,
             "metadata": {
-                "cluster_center": "(598, 350)",
+                "cluster_center": "(1474, 199)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -55,11 +55,11 @@
         {
             "id": "C3",
             "type": "CHARGING",
-            "x": 693,
-            "y": 470,
+            "x": 1397,
+            "y": 43,
             "active": true,
             "metadata": {
-                "cluster_center": "(672, 476)",
+                "cluster_center": "(1403, 21)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -67,11 +67,11 @@
         {
             "id": "C4",
             "type": "CHARGING",
-            "x": 651,
-            "y": 459,
+            "x": 1400,
+            "y": 8,
             "active": true,
             "metadata": {
-                "cluster_center": "(672, 476)",
+                "cluster_center": "(1403, 21)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -79,11 +79,11 @@
         {
             "id": "C5",
             "type": "CHARGING",
-            "x": 660,
-            "y": 471,
+            "x": 1417,
+            "y": 32,
             "active": true,
             "metadata": {
-                "cluster_center": "(672, 476)",
+                "cluster_center": "(1403, 21)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -91,11 +91,11 @@
         {
             "id": "PU0",
             "type": "PICKUP",
-            "x": 979,
-            "y": 289,
+            "x": 520,
+            "y": 482,
             "active": true,
             "metadata": {
-                "cluster_center": "(967, 302)",
+                "cluster_center": "(525, 490)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -103,11 +103,11 @@
         {
             "id": "PU1",
             "type": "PICKUP",
-            "x": 975,
-            "y": 323,
+            "x": 533,
+            "y": 513,
             "active": true,
             "metadata": {
-                "cluster_center": "(967, 302)",
+                "cluster_center": "(525, 490)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -115,11 +115,11 @@
         {
             "id": "PU2",
             "type": "PICKUP",
-            "x": 985,
-            "y": 282,
+            "x": 543,
+            "y": 496,
             "active": true,
             "metadata": {
-                "cluster_center": "(967, 302)",
+                "cluster_center": "(525, 490)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -127,11 +127,11 @@
         {
             "id": "PU3",
             "type": "PICKUP",
-            "x": 966,
-            "y": 308,
+            "x": 524,
+            "y": 513,
             "active": true,
             "metadata": {
-                "cluster_center": "(967, 302)",
+                "cluster_center": "(525, 490)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -139,11 +139,11 @@
         {
             "id": "PU4",
             "type": "PICKUP",
-            "x": 959,
-            "y": 200,
+            "x": 207,
+            "y": 432,
             "active": true,
             "metadata": {
-                "cluster_center": "(957, 186)",
+                "cluster_center": "(199, 417)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -151,11 +151,11 @@
         {
             "id": "PU5",
             "type": "PICKUP",
-            "x": 935,
-            "y": 180,
+            "x": 211,
+            "y": 402,
             "active": true,
             "metadata": {
-                "cluster_center": "(957, 186)",
+                "cluster_center": "(199, 417)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -163,11 +163,11 @@
         {
             "id": "PU6",
             "type": "PICKUP",
-            "x": 945,
-            "y": 186,
+            "x": 214,
+            "y": 419,
             "active": true,
             "metadata": {
-                "cluster_center": "(957, 186)",
+                "cluster_center": "(199, 417)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -175,11 +175,11 @@
         {
             "id": "PU7",
             "type": "PICKUP",
-            "x": 949,
-            "y": 175,
+            "x": 185,
+            "y": 440,
             "active": true,
             "metadata": {
-                "cluster_center": "(957, 186)",
+                "cluster_center": "(199, 417)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -187,11 +187,11 @@
         {
             "id": "PU8",
             "type": "PICKUP",
-            "x": 543,
-            "y": 306,
+            "x": 93,
+            "y": 72,
             "active": true,
             "metadata": {
-                "cluster_center": "(532, 288)",
+                "cluster_center": "(87, 85)",
                 "cluster_id": 2,
                 "generated": true
             }
@@ -199,11 +199,11 @@
         {
             "id": "PU9",
             "type": "PICKUP",
-            "x": 533,
-            "y": 266,
+            "x": 78,
+            "y": 69,
             "active": true,
             "metadata": {
-                "cluster_center": "(532, 288)",
+                "cluster_center": "(87, 85)",
                 "cluster_id": 2,
                 "generated": true
             }
@@ -211,11 +211,11 @@
         {
             "id": "PU10",
             "type": "PICKUP",
-            "x": 538,
-            "y": 278,
+            "x": 65,
+            "y": 76,
             "active": true,
             "metadata": {
-                "cluster_center": "(532, 288)",
+                "cluster_center": "(87, 85)",
                 "cluster_id": 2,
                 "generated": true
             }
@@ -223,11 +223,11 @@
         {
             "id": "PU11",
             "type": "PICKUP",
-            "x": 514,
-            "y": 288,
+            "x": 80,
+            "y": 83,
             "active": true,
             "metadata": {
-                "cluster_center": "(532, 288)",
+                "cluster_center": "(87, 85)",
                 "cluster_id": 2,
                 "generated": true
             }
@@ -235,11 +235,11 @@
         {
             "id": "PU12",
             "type": "PICKUP",
-            "x": 1513,
-            "y": 400,
+            "x": 580,
+            "y": 332,
             "active": true,
             "metadata": {
-                "cluster_center": "(1507, 400)",
+                "cluster_center": "(561, 344)",
                 "cluster_id": 3,
                 "generated": true
             }
@@ -247,11 +247,11 @@
         {
             "id": "PU13",
             "type": "PICKUP",
-            "x": 1532,
-            "y": 399,
+            "x": 542,
+            "y": 358,
             "active": true,
             "metadata": {
-                "cluster_center": "(1507, 400)",
+                "cluster_center": "(561, 344)",
                 "cluster_id": 3,
                 "generated": true
             }
@@ -259,11 +259,11 @@
         {
             "id": "PU14",
             "type": "PICKUP",
-            "x": 1485,
-            "y": 399,
+            "x": 559,
+            "y": 318,
             "active": true,
             "metadata": {
-                "cluster_center": "(1507, 400)",
+                "cluster_center": "(561, 344)",
                 "cluster_id": 3,
                 "generated": true
             }
@@ -271,11 +271,11 @@
         {
             "id": "PU15",
             "type": "PICKUP",
-            "x": 1499,
-            "y": 386,
+            "x": 549,
+            "y": 340,
             "active": true,
             "metadata": {
-                "cluster_center": "(1507, 400)",
+                "cluster_center": "(561, 344)",
                 "cluster_id": 3,
                 "generated": true
             }
@@ -283,11 +283,11 @@
         {
             "id": "DO0",
             "type": "DROPOFF",
-            "x": 121,
-            "y": 239,
+            "x": 1047,
+            "y": 284,
             "active": true,
             "metadata": {
-                "cluster_center": "(147, 243)",
+                "cluster_center": "(1055, 299)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -295,11 +295,11 @@
         {
             "id": "DO1",
             "type": "DROPOFF",
-            "x": 127,
-            "y": 245,
+            "x": 1048,
+            "y": 302,
             "active": true,
             "metadata": {
-                "cluster_center": "(147, 243)",
+                "cluster_center": "(1055, 299)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -307,11 +307,11 @@
         {
             "id": "DO2",
             "type": "DROPOFF",
-            "x": 139,
-            "y": 246,
+            "x": 1048,
+            "y": 292,
             "active": true,
             "metadata": {
-                "cluster_center": "(147, 243)",
+                "cluster_center": "(1055, 299)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -319,11 +319,11 @@
         {
             "id": "DO3",
             "type": "DROPOFF",
-            "x": 166,
-            "y": 259,
+            "x": 1045,
+            "y": 310,
             "active": true,
             "metadata": {
-                "cluster_center": "(147, 243)",
+                "cluster_center": "(1055, 299)",
                 "cluster_id": 0,
                 "generated": true
             }
@@ -331,11 +331,11 @@
         {
             "id": "DO4",
             "type": "DROPOFF",
-            "x": 1114,
-            "y": 373,
+            "x": 219,
+            "y": 123,
             "active": true,
             "metadata": {
-                "cluster_center": "(1112, 399)",
+                "cluster_center": "(194, 114)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -343,11 +343,11 @@
         {
             "id": "DO5",
             "type": "DROPOFF",
-            "x": 1087,
-            "y": 390,
+            "x": 204,
+            "y": 93,
             "active": true,
             "metadata": {
-                "cluster_center": "(1112, 399)",
+                "cluster_center": "(194, 114)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -355,11 +355,11 @@
         {
             "id": "DO6",
             "type": "DROPOFF",
-            "x": 1102,
-            "y": 398,
+            "x": 193,
+            "y": 97,
             "active": true,
             "metadata": {
-                "cluster_center": "(1112, 399)",
+                "cluster_center": "(194, 114)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -367,11 +367,11 @@
         {
             "id": "DO7",
             "type": "DROPOFF",
-            "x": 1100,
-            "y": 378,
+            "x": 183,
+            "y": 112,
             "active": true,
             "metadata": {
-                "cluster_center": "(1112, 399)",
+                "cluster_center": "(194, 114)",
                 "cluster_id": 1,
                 "generated": true
             }
@@ -379,11 +379,11 @@
         {
             "id": "DO8",
             "type": "DROPOFF",
-            "x": 651,
-            "y": 568,
+            "x": 974,
+            "y": 154,
             "active": true,
             "metadata": {
-                "cluster_center": "(664, 554)",
+                "cluster_center": "(967, 156)",
                 "cluster_id": 2,
                 "generated": true
             }
@@ -391,11 +391,11 @@
         {
             "id": "DO9",
             "type": "DROPOFF",
-            "x": 677,
-            "y": 536,
+            "x": 971,
+            "y": 172,
             "active": true,
             "metadata": {
-                "cluster_center": "(664, 554)",
+                "cluster_center": "(967, 156)",
                 "cluster_id": 2,
                 "generated": true
             }
@@ -403,11 +403,11 @@
         {
             "id": "DO10",
             "type": "DROPOFF",
-            "x": 685,
-            "y": 545,
+            "x": 985,
+            "y": 174,
             "active": true,
             "metadata": {
-                "cluster_center": "(664, 554)",
+                "cluster_center": "(967, 156)",
                 "cluster_id": 2,
                 "generated": true
             }
@@ -415,11 +415,11 @@
         {
             "id": "DO11",
             "type": "DROPOFF",
-            "x": 660,
-            "y": 531,
+            "x": 964,
+            "y": 178,
             "active": true,
             "metadata": {
-                "cluster_center": "(664, 554)",
+                "cluster_center": "(967, 156)",
                 "cluster_id": 2,
                 "generated": true
             }
@@ -427,11 +427,11 @@
         {
             "id": "DO12",
             "type": "DROPOFF",
-            "x": 901,
-            "y": 73,
+            "x": 565,
+            "y": 480,
             "active": true,
             "metadata": {
-                "cluster_center": "(925, 75)",
+                "cluster_center": "(567, 493)",
                 "cluster_id": 3,
                 "generated": true
             }
@@ -439,11 +439,11 @@
         {
             "id": "DO13",
             "type": "DROPOFF",
-            "x": 949,
-            "y": 71,
+            "x": 578,
+            "y": 515,
             "active": true,
             "metadata": {
-                "cluster_center": "(925, 75)",
+                "cluster_center": "(567, 493)",
                 "cluster_id": 3,
                 "generated": true
             }
@@ -451,11 +451,11 @@
         {
             "id": "DO14",
             "type": "DROPOFF",
-            "x": 915,
-            "y": 97,
+            "x": 547,
+            "y": 479,
             "active": true,
             "metadata": {
-                "cluster_center": "(925, 75)",
+                "cluster_center": "(567, 493)",
                 "cluster_id": 3,
                 "generated": true
             }
@@ -463,11 +463,11 @@
         {
             "id": "DO15",
             "type": "DROPOFF",
-            "x": 930,
-            "y": 54,
+            "x": 572,
+            "y": 506,
             "active": true,
             "metadata": {
-                "cluster_center": "(925, 75)",
+                "cluster_center": "(567, 493)",
                 "cluster_id": 3,
                 "generated": true
             }

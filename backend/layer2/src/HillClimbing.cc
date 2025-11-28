@@ -1,6 +1,9 @@
 /**
  * @file HillClimbing.cc
  * @brief Implementation of Hill Climbing VRP solver
+ * 
+ * OPTIMIZED for speed - Hill Climbing is a simple local search that
+ * will quickly find a local optimum. No need for expensive operations.
  */
 
 #include "../include/HillClimbing.hh"
@@ -9,6 +12,7 @@
 #include <chrono>
 #include <limits>
 #include <algorithm>
+#include <cmath>
 
 namespace Backend {
 namespace Layer2 {
@@ -34,8 +38,6 @@ VRPResult HillClimbing::Solve(
         result.isFeasible = true;
         result.makespan = 0.0;
         result.computationTimeMs = 0.0;
-        
-        // Create empty itineraries for all robots
         for (const auto& robot : robots) {
             result.robotItineraries[robot.GetRobotId()] = {};
         }
@@ -50,47 +52,72 @@ VRPResult HillClimbing::Solve(
         return result;
     }
     
-    std::cout << "[HillClimbing] Solving VRP: " << tasks.size() 
-              << " tasks, " << robots.size() << " robots\n";
+    int numTasks = static_cast<int>(tasks.size());
+    int numRobots = static_cast<int>(robots.size());
     
-    // Phase 1: Generate initial greedy solution
+    std::cout << "[HillClimbing] Solving VRP: " << numTasks 
+              << " tasks, " << numRobots << " robots\n";
+    
+    // Estimate time: O(tasks * robots) for greedy + O(restarts * iterations * robots)
+    int estimatedOps = numTasks * numRobots + maxRestarts_ * maxIterations_ * numRobots;
+    double estimatedMs = estimatedOps * 0.001; // rough estimate
+    std::cout << "[HillClimbing] ETA: ~" << std::fixed << std::setprecision(0) 
+              << std::max(1.0, estimatedMs) << " ms\n";
+    
+    // Phase 1: Generate initial greedy solution (fast O(n*k))
     Assignment bestAssignment = GenerateGreedySolution(tasks, robots, costs);
-    double bestMakespan = CalculateMakespan(bestAssignment, robots, costs);
+    
+    // Pre-compute robot times to avoid recalculating
+    std::vector<double> robotTimes(numRobots);
+    double bestMakespan = 0.0;
+    for (int r = 0; r < numRobots; ++r) {
+        robotTimes[r] = CalculateRobotTime(r, bestAssignment[r], robots[r], costs);
+        bestMakespan = std::max(bestMakespan, robotTimes[r]);
+    }
     
     std::cout << "[HillClimbing] Initial greedy makespan: " 
-              << std::fixed << std::setprecision(2) << bestMakespan << "\n";
+              << std::fixed << std::setprecision(2) << bestMakespan << " px\n";
     
-    // Phase 2: Hill climbing with restarts
+    // Phase 2: Fast local search (no restarts for speed, just improve greedy)
+    Assignment currentAssignment = bestAssignment;
+    std::vector<double> currentTimes = robotTimes;
+    double currentMakespan = bestMakespan;
+    
+    int totalIterations = 0;
+    int improvements = 0;
+    
+    // Simple hill climbing: try to improve until stuck
     for (int restart = 0; restart < maxRestarts_; ++restart) {
-        Assignment currentAssignment;
-        double currentMakespan;
-        
-        if (restart == 0) {
-            // First iteration uses greedy solution
-            currentAssignment = bestAssignment;
-            currentMakespan = bestMakespan;
-        } else {
-            // Random restart
-            currentAssignment = GenerateRandomSolution(tasks, robots.size());
-            currentMakespan = CalculateMakespan(currentAssignment, robots, costs);
+        if (restart > 0) {
+            // Random restart: shuffle current solution
+            currentAssignment = GenerateRandomSolution(tasks, numRobots);
+            currentMakespan = 0.0;
+            for (int r = 0; r < numRobots; ++r) {
+                currentTimes[r] = CalculateRobotTime(r, currentAssignment[r], robots[r], costs);
+                currentMakespan = std::max(currentMakespan, currentTimes[r]);
+            }
         }
         
-        // Local search
-        int iterationsWithoutImprovement = 0;
+        int noImprovement = 0;
         
-        while (iterationsWithoutImprovement < maxIterations_) {
-            bool improved = TryImprovement(currentAssignment, robots, costs, currentMakespan);
+        while (noImprovement < maxIterations_) {
+            totalIterations++;
+            
+            // Fast improvement: only try moving from bottleneck robot
+            bool improved = TryFastImprovement(currentAssignment, currentTimes, 
+                                                currentMakespan, robots, costs);
             
             if (improved) {
-                iterationsWithoutImprovement = 0;
+                improvements++;
+                noImprovement = 0;
                 
-                // Update best if this is better
+                // Update best
                 if (currentMakespan < bestMakespan) {
                     bestAssignment = currentAssignment;
                     bestMakespan = currentMakespan;
                 }
             } else {
-                iterationsWithoutImprovement++;
+                noImprovement++;
             }
         }
     }
@@ -99,8 +126,10 @@ VRPResult HillClimbing::Solve(
     auto endTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration = endTime - startTime;
     
+    std::cout << "[HillClimbing] Completed: " << totalIterations << " iterations, " 
+              << improvements << " improvements\n";
     std::cout << "[HillClimbing] Final makespan: " 
-              << std::fixed << std::setprecision(2) << bestMakespan << "\n";
+              << std::fixed << std::setprecision(2) << bestMakespan << " px\n";
     std::cout << "[HillClimbing] Computation time: " 
               << std::fixed << std::setprecision(2) << duration.count() << " ms\n";
     
@@ -112,7 +141,7 @@ VRPResult HillClimbing::Solve(
     
     // Calculate total distance
     result.totalDistance = 0.0;
-    for (size_t i = 0; i < robots.size(); ++i) {
+    for (int i = 0; i < numRobots; ++i) {
         result.totalDistance += CalculateRobotTime(i, bestAssignment[i], robots[i], costs);
     }
     
@@ -152,7 +181,7 @@ HillClimbing::Assignment HillClimbing::GenerateGreedySolution(
     // For each task, find the best robot to assign it to
     for (const auto& task : tasks) {
         int bestRobot = 0;
-        double bestAddedCost = std::numeric_limits<double>::max();
+        double bestFinishTime = std::numeric_limits<double>::max();
         
         for (int r = 0; r < numRobots; ++r) {
             // Cost to pick up the task from current position
@@ -160,14 +189,11 @@ HillClimbing::Assignment HillClimbing::GenerateGreedySolution(
             // Cost to deliver the task
             float deliveryCost = costs.GetCost(task.sourceNode, task.destinationNode);
             
-            double addedCost = pickupCost + deliveryCost;
+            // When would this robot finish if we assigned this task?
+            double finishTime = currentTime[r] + pickupCost + deliveryCost;
             
-            // Prefer robots with lower current load (balance)
-            double loadPenalty = assignment[r].size() * 0.1;
-            addedCost += loadPenalty;
-            
-            if (addedCost < bestAddedCost) {
-                bestAddedCost = addedCost;
+            if (finishTime < bestFinishTime) {
+                bestFinishTime = finishTime;
                 bestRobot = r;
             }
         }
@@ -175,7 +201,10 @@ HillClimbing::Assignment HillClimbing::GenerateGreedySolution(
         // Assign task to best robot
         assignment[bestRobot].push_back(task);
         
-        // Update robot's end position
+        // Update robot's state
+        float pickupCost = costs.GetCost(currentEndNode[bestRobot], task.sourceNode);
+        float deliveryCost = costs.GetCost(task.sourceNode, task.destinationNode);
+        currentTime[bestRobot] += pickupCost + deliveryCost;
         currentEndNode[bestRobot] = task.destinationNode;
     }
     
@@ -244,7 +273,224 @@ double HillClimbing::CalculateRobotTime(
 }
 
 // =============================================================================
-// LOCAL SEARCH MOVES
+// FAST LOCAL SEARCH
+// =============================================================================
+
+bool HillClimbing::TryFastImprovement(
+    Assignment& assignment,
+    std::vector<double>& robotTimes,
+    double& currentMakespan,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs
+) const {
+    int numRobots = static_cast<int>(robots.size());
+    
+    // Find the bottleneck robot (highest completion time)
+    int bottleneck = 0;
+    for (int r = 1; r < numRobots; ++r) {
+        if (robotTimes[r] > robotTimes[bottleneck]) {
+            bottleneck = r;
+        }
+    }
+    
+    // If bottleneck has only 1 or 0 tasks, try random swap
+    if (assignment[bottleneck].size() <= 1) {
+        return TryRandomSwap(assignment, robotTimes, currentMakespan, robots, costs);
+    }
+    
+    // Try moving the LAST task from bottleneck (most impactful, O(1) removal)
+    Task lastTask = assignment[bottleneck].back();
+    
+    // Find best target robot for this task
+    int bestTarget = -1;
+    double bestNewMakespan = currentMakespan;
+    
+    for (int target = 0; target < numRobots; ++target) {
+        if (target == bottleneck) continue;
+        
+        // Calculate new times if we move the task
+        double bottleneckNewTime = CalculateRobotTimeWithout(
+            bottleneck, assignment[bottleneck], assignment[bottleneck].size() - 1, 
+            robots[bottleneck], costs);
+        double targetNewTime = CalculateRobotTimeWithExtra(
+            target, assignment[target], lastTask, robots[target], costs);
+        
+        // New makespan = max of all robot times
+        double newMakespan = 0.0;
+        for (int r = 0; r < numRobots; ++r) {
+            if (r == bottleneck) newMakespan = std::max(newMakespan, bottleneckNewTime);
+            else if (r == target) newMakespan = std::max(newMakespan, targetNewTime);
+            else newMakespan = std::max(newMakespan, robotTimes[r]);
+        }
+        
+        if (newMakespan < bestNewMakespan) {
+            bestNewMakespan = newMakespan;
+            bestTarget = target;
+        }
+    }
+    
+    if (bestTarget >= 0) {
+        // Apply the move
+        assignment[bottleneck].pop_back();
+        assignment[bestTarget].push_back(lastTask);
+        
+        // Update times
+        robotTimes[bottleneck] = CalculateRobotTime(bottleneck, assignment[bottleneck], 
+                                                     robots[bottleneck], costs);
+        robotTimes[bestTarget] = CalculateRobotTime(bestTarget, assignment[bestTarget], 
+                                                     robots[bestTarget], costs);
+        currentMakespan = bestNewMakespan;
+        return true;
+    }
+    
+    // If moving last task doesn't help, try a random 2-opt on bottleneck
+    return TrySimple2Opt(assignment, robotTimes, currentMakespan, bottleneck, robots, costs);
+}
+
+bool HillClimbing::TryRandomSwap(
+    Assignment& assignment,
+    std::vector<double>& robotTimes,
+    double& currentMakespan,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs
+) const {
+    int numRobots = static_cast<int>(robots.size());
+    
+    // Pick two random robots with tasks
+    std::vector<int> candidates;
+    for (int r = 0; r < numRobots; ++r) {
+        if (!assignment[r].empty()) candidates.push_back(r);
+    }
+    
+    if (candidates.size() < 2) return false;
+    
+    std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
+    size_t idx1 = dist(rng_);
+    size_t idx2 = dist(rng_);
+    while (idx2 == idx1) idx2 = dist(rng_);
+    
+    int r1 = candidates[idx1];
+    int r2 = candidates[idx2];
+    
+    // Swap last tasks
+    std::swap(assignment[r1].back(), assignment[r2].back());
+    
+    // Recalculate
+    double newTime1 = CalculateRobotTime(r1, assignment[r1], robots[r1], costs);
+    double newTime2 = CalculateRobotTime(r2, assignment[r2], robots[r2], costs);
+    
+    double newMakespan = 0.0;
+    for (int r = 0; r < numRobots; ++r) {
+        if (r == r1) newMakespan = std::max(newMakespan, newTime1);
+        else if (r == r2) newMakespan = std::max(newMakespan, newTime2);
+        else newMakespan = std::max(newMakespan, robotTimes[r]);
+    }
+    
+    if (newMakespan < currentMakespan) {
+        robotTimes[r1] = newTime1;
+        robotTimes[r2] = newTime2;
+        currentMakespan = newMakespan;
+        return true;
+    } else {
+        // Revert
+        std::swap(assignment[r1].back(), assignment[r2].back());
+        return false;
+    }
+}
+
+bool HillClimbing::TrySimple2Opt(
+    Assignment& assignment,
+    std::vector<double>& robotTimes,
+    double& currentMakespan,
+    int robotIdx,
+    const std::vector<RobotAgent>& robots,
+    const CostMatrixProvider& costs
+) const {
+    auto& tasks = assignment[robotIdx];
+    if (tasks.size() < 2) return false;
+    
+    // Just try swapping adjacent pairs (O(n) instead of O(n²))
+    for (size_t i = 0; i < tasks.size() - 1; ++i) {
+        std::swap(tasks[i], tasks[i + 1]);
+        
+        double newTime = CalculateRobotTime(robotIdx, tasks, robots[robotIdx], costs);
+        
+        if (newTime < robotTimes[robotIdx]) {
+            double oldRobotTime = robotTimes[robotIdx];
+            robotTimes[robotIdx] = newTime;
+            
+            // Recalculate makespan only if this was the bottleneck
+            if (oldRobotTime >= currentMakespan - 0.001) {
+                double newMakespan = 0.0;
+                for (size_t r = 0; r < robots.size(); ++r) {
+                    newMakespan = std::max(newMakespan, robotTimes[r]);
+                }
+                if (newMakespan < currentMakespan) {
+                    currentMakespan = newMakespan;
+                    return true;
+                }
+            }
+            return true;
+        } else {
+            // Revert
+            std::swap(tasks[i], tasks[i + 1]);
+        }
+    }
+    
+    return false;
+}
+
+double HillClimbing::CalculateRobotTimeWithout(
+    int robotIdx,
+    const std::vector<Task>& robotTasks,
+    size_t excludeIdx,
+    const RobotAgent& robot,
+    const CostMatrixProvider& costs
+) const {
+    (void)robotIdx;
+    
+    double totalTime = 0.0;
+    int currentNode = robot.GetCurrentNodeId();
+    
+    for (size_t i = 0; i < robotTasks.size(); ++i) {
+        if (i == excludeIdx) continue;
+        
+        const auto& task = robotTasks[i];
+        totalTime += costs.GetCost(currentNode, task.sourceNode);
+        totalTime += costs.GetCost(task.sourceNode, task.destinationNode);
+        currentNode = task.destinationNode;
+    }
+    
+    return totalTime;
+}
+
+double HillClimbing::CalculateRobotTimeWithExtra(
+    int robotIdx,
+    const std::vector<Task>& robotTasks,
+    const Task& extraTask,
+    const RobotAgent& robot,
+    const CostMatrixProvider& costs
+) const {
+    (void)robotIdx;
+    
+    double totalTime = 0.0;
+    int currentNode = robot.GetCurrentNodeId();
+    
+    for (const auto& task : robotTasks) {
+        totalTime += costs.GetCost(currentNode, task.sourceNode);
+        totalTime += costs.GetCost(task.sourceNode, task.destinationNode);
+        currentNode = task.destinationNode;
+    }
+    
+    // Add extra task at end
+    totalTime += costs.GetCost(currentNode, extraTask.sourceNode);
+    totalTime += costs.GetCost(extraTask.sourceNode, extraTask.destinationNode);
+    
+    return totalTime;
+}
+
+// =============================================================================
+// LEGACY LOCAL SEARCH (kept for compatibility but not used)
 // =============================================================================
 
 bool HillClimbing::TryImprovement(
@@ -253,24 +499,14 @@ bool HillClimbing::TryImprovement(
     const CostMatrixProvider& costs,
     double& currentMakespan
 ) const {
-    // Try different improvement strategies
-    
-    // Strategy 1: Inter-robot move (move a task from one robot to another)
-    if (TryInterRobotMove(assignment, robots, costs, currentMakespan)) {
-        return true;
+    int numRobots = static_cast<int>(robots.size());
+    std::vector<double> robotTimes(numRobots);
+    for (int r = 0; r < numRobots; ++r) {
+        robotTimes[r] = CalculateRobotTime(r, assignment[r], robots[r], costs);
     }
     
-    // Strategy 2: Inter-robot swap (exchange tasks between two robots)
-    if (TryInterRobotSwap(assignment, robots, costs, currentMakespan)) {
-        return true;
-    }
-    
-    // Strategy 3: Intra-robot reorder (change order of tasks within a robot)
-    if (TryIntraRobotReorder(assignment, robots, costs, currentMakespan)) {
-        return true;
-    }
-    
-    return false;
+    return TryFastImprovement(const_cast<Assignment&>(assignment), robotTimes, 
+                               currentMakespan, robots, costs);
 }
 
 bool HillClimbing::TryInterRobotMove(
@@ -279,53 +515,14 @@ bool HillClimbing::TryInterRobotMove(
     const CostMatrixProvider& costs,
     double& currentMakespan
 ) const {
+    // Delegate to fast version
     int numRobots = static_cast<int>(robots.size());
-    
-    // Find the bottleneck robot (highest completion time)
-    int bottleneck = 0;
-    double maxTime = 0.0;
     std::vector<double> robotTimes(numRobots);
-    
     for (int r = 0; r < numRobots; ++r) {
         robotTimes[r] = CalculateRobotTime(r, assignment[r], robots[r], costs);
-        if (robotTimes[r] > maxTime) {
-            maxTime = robotTimes[r];
-            bottleneck = r;
-        }
     }
-    
-    // If bottleneck has only 1 or 0 tasks, can't move
-    if (assignment[bottleneck].size() <= 1) {
-        return false;
-    }
-    
-    // Try moving each task from bottleneck to another robot
-    for (size_t taskIdx = 0; taskIdx < assignment[bottleneck].size(); ++taskIdx) {
-        Task task = assignment[bottleneck][taskIdx];
-        
-        for (int targetRobot = 0; targetRobot < numRobots; ++targetRobot) {
-            if (targetRobot == bottleneck) continue;
-            
-            // Temporarily move task
-            assignment[bottleneck].erase(assignment[bottleneck].begin() + taskIdx);
-            assignment[targetRobot].push_back(task);
-            
-            // Calculate new makespan
-            double newMakespan = CalculateMakespan(assignment, robots, costs);
-            
-            if (newMakespan < currentMakespan) {
-                // Keep the improvement
-                currentMakespan = newMakespan;
-                return true;
-            } else {
-                // Revert
-                assignment[targetRobot].pop_back();
-                assignment[bottleneck].insert(assignment[bottleneck].begin() + taskIdx, task);
-            }
-        }
-    }
-    
-    return false;
+    return TryFastImprovement(const_cast<Assignment&>(assignment), robotTimes, 
+                               currentMakespan, robots, costs);
 }
 
 bool HillClimbing::TryInterRobotSwap(
@@ -335,41 +532,12 @@ bool HillClimbing::TryInterRobotSwap(
     double& currentMakespan
 ) const {
     int numRobots = static_cast<int>(robots.size());
-    
-    // Try swapping tasks between random pairs of robots
-    std::uniform_int_distribution<int> robotDist(0, numRobots - 1);
-    
-    for (int attempts = 0; attempts < 10; ++attempts) {
-        int r1 = robotDist(rng_);
-        int r2 = robotDist(rng_);
-        
-        if (r1 == r2 || assignment[r1].empty() || assignment[r2].empty()) {
-            continue;
-        }
-        
-        // Pick random tasks from each robot
-        std::uniform_int_distribution<size_t> task1Dist(0, assignment[r1].size() - 1);
-        std::uniform_int_distribution<size_t> task2Dist(0, assignment[r2].size() - 1);
-        
-        size_t idx1 = task1Dist(rng_);
-        size_t idx2 = task2Dist(rng_);
-        
-        // Swap tasks
-        std::swap(assignment[r1][idx1], assignment[r2][idx2]);
-        
-        // Calculate new makespan
-        double newMakespan = CalculateMakespan(assignment, robots, costs);
-        
-        if (newMakespan < currentMakespan) {
-            currentMakespan = newMakespan;
-            return true;
-        } else {
-            // Revert
-            std::swap(assignment[r1][idx1], assignment[r2][idx2]);
-        }
+    std::vector<double> robotTimes(numRobots);
+    for (int r = 0; r < numRobots; ++r) {
+        robotTimes[r] = CalculateRobotTime(r, assignment[r], robots[r], costs);
     }
-    
-    return false;
+    return TryRandomSwap(const_cast<Assignment&>(assignment), robotTimes, 
+                          currentMakespan, robots, costs);
 }
 
 bool HillClimbing::TryIntraRobotReorder(
@@ -379,46 +547,18 @@ bool HillClimbing::TryIntraRobotReorder(
     double& currentMakespan
 ) const {
     int numRobots = static_cast<int>(robots.size());
-    
-    // Find the bottleneck robot
-    int bottleneck = 0;
+    std::vector<double> robotTimes(numRobots);
     double maxTime = 0.0;
-    
+    int bottleneck = 0;
     for (int r = 0; r < numRobots; ++r) {
-        double robotTime = CalculateRobotTime(r, assignment[r], robots[r], costs);
-        if (robotTime > maxTime) {
-            maxTime = robotTime;
+        robotTimes[r] = CalculateRobotTime(r, assignment[r], robots[r], costs);
+        if (robotTimes[r] > maxTime) {
+            maxTime = robotTimes[r];
             bottleneck = r;
         }
     }
-    
-    // Need at least 2 tasks to reorder
-    if (assignment[bottleneck].size() < 2) {
-        return false;
-    }
-    
-    // Try 2-opt style swap: reverse a segment of the task list
-    std::vector<Task>& tasks = assignment[bottleneck];
-    size_t n = tasks.size();
-    
-    for (size_t i = 0; i < n - 1; ++i) {
-        for (size_t j = i + 1; j < n; ++j) {
-            // Reverse segment [i, j]
-            std::reverse(tasks.begin() + i, tasks.begin() + j + 1);
-            
-            double newMakespan = CalculateMakespan(assignment, robots, costs);
-            
-            if (newMakespan < currentMakespan) {
-                currentMakespan = newMakespan;
-                return true;
-            } else {
-                // Revert
-                std::reverse(tasks.begin() + i, tasks.begin() + j + 1);
-            }
-        }
-    }
-    
-    return false;
+    return TrySimple2Opt(const_cast<Assignment&>(assignment), robotTimes, 
+                          currentMakespan, bottleneck, robots, costs);
 }
 
 // =============================================================================

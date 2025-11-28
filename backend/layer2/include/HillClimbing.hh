@@ -52,7 +52,7 @@ public:
      * @param maxRestarts Max random restarts when stuck
      * @param seed Random seed (0 = use time)
      */
-    explicit HillClimbing(int maxIterations = 100, int maxRestarts = 5, unsigned int seed = 0)
+    explicit HillClimbing(int maxIterations = 1000, int maxRestarts = 10, unsigned int seed = 0)
         : maxIterations_(maxIterations)
         , maxRestarts_(maxRestarts)
         , seed_(seed)
@@ -211,6 +211,66 @@ private:
         const std::vector<RobotAgent>& robots,
         const CostMatrixProvider& costs,
         double& currentMakespan
+    ) const;
+
+    // =========================================================================
+    // FAST LOCAL SEARCH (OPTIMIZED)
+    // =========================================================================
+    
+    /**
+     * @brief Fast improvement focusing on bottleneck robot.
+     */
+    bool TryFastImprovement(
+        Assignment& assignment,
+        std::vector<double>& robotTimes,
+        double& currentMakespan,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs
+    ) const;
+
+    /**
+     * @brief Try random swap between robots.
+     */
+    bool TryRandomSwap(
+        Assignment& assignment,
+        std::vector<double>& robotTimes,
+        double& currentMakespan,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs
+    ) const;
+
+    /**
+     * @brief Simple 2-opt on a single robot (adjacent swaps only).
+     */
+    bool TrySimple2Opt(
+        Assignment& assignment,
+        std::vector<double>& robotTimes,
+        double& currentMakespan,
+        int robotIdx,
+        const std::vector<RobotAgent>& robots,
+        const CostMatrixProvider& costs
+    ) const;
+
+    /**
+     * @brief Calculate robot time without a specific task.
+     */
+    double CalculateRobotTimeWithout(
+        int robotIdx,
+        const std::vector<Task>& robotTasks,
+        size_t excludeIdx,
+        const RobotAgent& robot,
+        const CostMatrixProvider& costs
+    ) const;
+
+    /**
+     * @brief Calculate robot time with an extra task appended.
+     */
+    double CalculateRobotTimeWithExtra(
+        int robotIdx,
+        const std::vector<Task>& robotTasks,
+        const Task& extraTask,
+        const RobotAgent& robot,
+        const CostMatrixProvider& costs
     ) const;
 
     // =========================================================================
