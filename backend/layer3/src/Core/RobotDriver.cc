@@ -40,7 +40,7 @@ RobotDriver::RobotDriver(
     , currentVelocity_()
     , currentSpeed_(0.0)
     , pathIndex_(0)
-    , currentGoalNodeId_(-1)
+    , currentGoalNodeId_(-1)  // Will be set by SetStartNode() after construction
     , navMesh_(&navMesh) {}
 
 // =============================================================================
@@ -57,6 +57,9 @@ bool RobotDriver::SetGoal(int nodeId) {
     const auto& nodes = navMesh_->GetAllNodes();
     
     if (nodeId >= 0 && static_cast<size_t>(nodeId) < nodes.size()) {
+        // Set the goal node ID BEFORE computing path (fixes targetNodeId = -1 bug)
+        currentGoalNodeId_ = nodeId;
+        
         // Get coordinates from the node (coords field contains x,y)
         Backend::Common::Coordinates target = nodes[nodeId].coords;
         return SetGoalPosition(target);

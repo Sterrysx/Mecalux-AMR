@@ -169,8 +169,16 @@ public:
     
     /**
      * @brief Get current goal node ID.
+     * Returns the start node if IDLE with no goal, or the active goal node.
      */
     int GetGoalNodeId() const { return currentGoalNodeId_; }
+    
+    /**
+     * @brief Set the current node (for initialization).
+     * Sets the internal goal node ID to the spawn location so 
+     * the API reports valid data immediately.
+     */
+    void SetCurrentNodeId(int nodeId) { currentGoalNodeId_ = nodeId; }
 
     // =========================================================================
     // UPDATE LOOP
