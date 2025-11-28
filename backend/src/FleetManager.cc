@@ -289,9 +289,11 @@ bool FleetManager::initializeLayer2() {
             }
         }
         
-        // Create VRP solver (TabuSearch is the best performer)
-        std::cout << "[Layer 2] Creating VRP solver (TabuSearch)...\n";
-        vrpSolver_ = std::make_unique<Layer2::TabuSearch>(100, 10, 20, 42);
+        // Create VRP solver (ALNS - Adaptive Large Neighborhood Search)
+        // ALNS uses "Destroy and Repair" with Regret-2 insertion
+        // Parameters: iterations=100, destruction=25%, seed=42
+        std::cout << "[Layer 2] Creating VRP solver (ALNS)...\n";
+        vrpSolver_ = std::make_unique<Layer2::ALNS>(100, 0.25, 42);
         
         return true;
         
@@ -594,6 +596,16 @@ const Layer3::Core::RobotDriver* FleetManager::GetRobotDriver(int robotId) const
         }
     }
     return nullptr;
+}
+
+std::vector<int> FleetManager::GetPickupNodes() const {
+    if (!poiRegistry_) return {};
+    return poiRegistry_->GetNodesByType(Layer1::POIType::PICKUP);
+}
+
+std::vector<int> FleetManager::GetDropoffNodes() const {
+    if (!poiRegistry_) return {};
+    return poiRegistry_->GetNodesByType(Layer1::POIType::DROPOFF);
 }
 
 // =============================================================================
@@ -990,29 +1002,43 @@ void FleetManager::processInjectedTasks() {
         std::cout << "[MainLoop] " << newTasks.size() << " tasks > threshold (" 
                   << config_.batchThreshold << "), launching background solver\n";
         
-        // Collect all unfinished work for re-planning
-        std::vector<Layer2::Task> allTasks = newTasks;
+        // STEP 1: Assign "starter" tasks immediately so robots don't stay idle
+        // Each robot gets a few tasks to work on while the solver optimizes
+        std::vector<Layer2::Task> starterTasks;
+        std::vector<Layer2::Task> tasksForSolver;
         
-        // Add tasks from robots' current itineraries (not yet started)
-        {
-            std::lock_guard<std::mutex> lock(fleetMutex_);
-            int taskId = nextTaskId_.load();
-            
-            for (const auto& [id, agent] : fleetRegistry_) {
-                const auto& itinerary = agent.GetItinerary();
-                // Convert itinerary waypoints back to tasks (pairs of pickup/dropoff)
-                for (size_t i = 0; i + 1 < itinerary.size(); i += 2) {
-                    Layer2::Task t;
-                    t.taskId = taskId++;
-                    t.sourceNode = itinerary[i];
-                    t.destinationNode = itinerary[i + 1];
-                    allTasks.push_back(t);
-                }
+        int numRobots = static_cast<int>(fleetRegistry_.size());
+        int totalStarterTasks = numRobots * config_.starterTasksPerRobot;
+        
+        // Split: first N tasks go to starters, rest go to solver
+        for (size_t i = 0; i < newTasks.size(); ++i) {
+            if (static_cast<int>(i) < totalStarterTasks) {
+                starterTasks.push_back(newTasks[i]);
+            } else {
+                tasksForSolver.push_back(newTasks[i]);
             }
-            nextTaskId_.store(taskId);
         }
         
-        launchBackgroundReplan(allTasks);
+        std::cout << "[MainLoop] Splitting " << newTasks.size() << " tasks:\n";
+        std::cout << "           - Starter tasks (immediate): " << starterTasks.size() 
+                  << " (" << config_.starterTasksPerRobot << " per robot)\n";
+        std::cout << "           - For background solver: " << tasksForSolver.size() << "\n";
+        
+        // Assign starter tasks using cheap insertion (immediate, no waiting)
+        if (!starterTasks.empty()) {
+            std::cout << "[MainLoop] Assigning starter tasks to keep robots busy...\n";
+            runCheapInsertion(starterTasks);
+        }
+        
+        // STEP 2: Collect remaining work for the background solver
+        // Only if there are tasks left to optimize
+        if (!tasksForSolver.empty()) {
+            // Launch background re-plan for the remaining tasks only
+            // (Starter tasks are already assigned and won't be re-optimized)
+            launchBackgroundReplan(tasksForSolver);
+        } else {
+            std::cout << "[MainLoop] All tasks assigned as starters, no background solve needed\n";
+        }
     }
 }
 
@@ -1133,17 +1159,27 @@ void FleetManager::checkBackgroundReplan() {
         } else {
             result.Print();
             
-            // ATOMIC SWAP: Replace all robot itineraries with new optimized ones
+            // APPEND MODE: Add optimized tasks to existing itineraries
+            // (Starter tasks are already assigned and being worked on)
             {
                 std::lock_guard<std::mutex> lock(fleetMutex_);
                 
-                for (const auto& [robotId, itinerary] : result.robotItineraries) {
+                for (const auto& [robotId, newItinerary] : result.robotItineraries) {
                     auto it = fleetRegistry_.find(robotId);
                     if (it != fleetRegistry_.end()) {
-                        // Replace entire itinerary
-                        it->second.AssignItinerary(itinerary);
-                        std::cout << "[Replan] Robot " << robotId << " re-assigned " 
-                                  << itinerary.size() << " waypoints\n";
+                        // Get current itinerary (includes starter tasks)
+                        auto& state = it->second.GetMutableState();
+                        size_t existingSize = state.currentItinerary.size();
+                        
+                        // Append new optimized waypoints to the end
+                        for (int waypoint : newItinerary) {
+                            state.currentItinerary.push_back(waypoint);
+                        }
+                        
+                        std::cout << "[Replan] Robot " << robotId << ": appended " 
+                                  << newItinerary.size() << " waypoints (had " 
+                                  << existingSize << ", now " 
+                                  << state.currentItinerary.size() << ")\n";
                     }
                 }
             }
@@ -1151,7 +1187,7 @@ void FleetManager::checkBackgroundReplan() {
             // Clear waiting robots list
             robotsWaitingForReplan_.clear();
             
-            std::cout << "[Replan] All itineraries updated. Robots will pick up new paths.\n";
+            std::cout << "[Replan] Optimized tasks appended to all robot itineraries.\n";
         }
     } catch (const std::exception& e) {
         std::cerr << "[Replan] ERROR: Background solver threw exception: " << e.what() << "\n";

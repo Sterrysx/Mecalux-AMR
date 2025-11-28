@@ -15,6 +15,7 @@
 #include <thread>
 #include <chrono>
 #include <random>
+#include <sstream>
 
 // Global flag for signal handling
 std::atomic<bool> g_running(true);
@@ -34,12 +35,14 @@ void printUsage(const char* programName) {
     std::cout << "  --duration S Run for S seconds then exit (default: run until Enter)\n";
     std::cout << "  --batch      Batch mode: no sleep, max speed, auto-terminate when done\n";
     std::cout << "  --demo       Run dynamic task injection demo (Scenarios A, B, C)\n";
+    std::cout << "  --cli        Interactive CLI mode for live task injection\n";
     std::cout << "\nExamples:\n";
     std::cout << "  " << programName << "\n";
     std::cout << "  " << programName << " --tasks custom_tasks.json --robots 5\n";
     std::cout << "  " << programName << " --duration 60\n";
     std::cout << "  " << programName << " --batch  (runs all tasks as fast as possible)\n";
     std::cout << "  " << programName << " --demo   (demonstrates dynamic task injection)\n";
+    std::cout << "  " << programName << " --cli   (interactive command line interface)\n";
     std::cout << "\n";
 }
 
@@ -79,6 +82,7 @@ int main(int argc, char* argv[]) {
     int duration = -1;  // -1 means run until Enter pressed
     bool batchMode = false;
     bool demoMode = false;
+    bool cliMode = false;
     
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -101,6 +105,9 @@ int main(int argc, char* argv[]) {
         }
         else if (arg == "--demo") {
             demoMode = true;
+        }
+        else if (arg == "--cli") {
+            cliMode = true;
         }
         else {
             std::cerr << "Unknown option: " << arg << "\n";
@@ -257,6 +264,117 @@ int main(int argc, char* argv[]) {
         std::cout << "[Demo] Demo ran for " << std::fixed << std::setprecision(1) 
                   << totalTime << " seconds\n";
         std::cout << "[Demo] Injected " << (taskIdCounter - 1000) << " additional tasks\n";
+        
+    } else if (cliMode) {
+        // CLI MODE: Interactive command line interface for live task injection
+        std::cout << "\n[CLI] ═══════════════ INTERACTIVE CLI MODE ═══════════════\n";
+        std::cout << "[CLI] Available commands:\n";
+        std::cout << "       inject <N>  - Inject N random tasks (≤5 = Cheap Insertion, >5 = Background Re-plan)\n";
+        std::cout << "       status      - Show robot states and queue info\n";
+        std::cout << "       stats       - Show system statistics\n";
+        std::cout << "       help        - Show this help message\n";
+        std::cout << "       quit        - Stop the system and exit\n";
+        std::cout << "\n[CLI] Threshold: ≤5 tasks triggers Cheap Insertion, >5 triggers Background Re-plan\n";
+        std::cout << "\n";
+        
+        // Get POI nodes from FleetManager
+        std::vector<int> pickupNodes = manager.GetPickupNodes();
+        std::vector<int> dropoffNodes = manager.GetDropoffNodes();
+        
+        // Check if we have valid POI nodes
+        if (pickupNodes.empty() || dropoffNodes.empty()) {
+            std::cout << "[CLI] Warning: No POI nodes found, using fallback node ranges\n";
+            pickupNodes = {20, 25, 30, 35, 40, 45, 50, 55};
+            dropoffNodes = {60, 65, 70, 75, 80, 85, 90, 95};
+        } else {
+            std::cout << "[CLI] Found " << pickupNodes.size() << " pickup nodes, "
+                      << dropoffNodes.size() << " dropoff nodes\n";
+        }
+        
+        int taskIdCounter = 1000;
+        std::string line;
+        
+        std::cout << "\n[CLI] Ready. Type 'help' for commands.\n";
+        std::cout << "amr> " << std::flush;
+        
+        while (g_running.load() && std::getline(std::cin, line)) {
+            // Trim whitespace
+            size_t start = line.find_first_not_of(" \t");
+            if (start == std::string::npos) {
+                std::cout << "amr> " << std::flush;
+                continue;
+            }
+            size_t end = line.find_last_not_of(" \t");
+            line = line.substr(start, end - start + 1);
+            
+            // Parse command
+            std::istringstream iss(line);
+            std::string cmd;
+            iss >> cmd;
+            
+            if (cmd == "quit" || cmd == "exit" || cmd == "q") {
+                std::cout << "[CLI] Shutting down...\n";
+                break;
+                
+            } else if (cmd == "help" || cmd == "h" || cmd == "?") {
+                std::cout << "\n[CLI] Available commands:\n";
+                std::cout << "       inject <N>  - Inject N random tasks\n";
+                std::cout << "                     (≤5 = Cheap Insertion, >5 = Background Re-plan)\n";
+                std::cout << "       status      - Show robot states and queue info\n";
+                std::cout << "       stats       - Show system statistics\n";
+                std::cout << "       help        - Show this help message\n";
+                std::cout << "       quit        - Stop the system and exit\n\n";
+                
+            } else if (cmd == "inject") {
+                int count = 0;
+                if (iss >> count && count > 0) {
+                    std::cout << "\n[CLI] Injecting " << count << " random tasks...\n";
+                    
+                    // Announce which strategy will be used
+                    if (count <= 5) {
+                        std::cout << "[CLI] Strategy: CHEAP INSERTION (≤5 tasks)\n";
+                    } else {
+                        std::cout << "[CLI] Strategy: BACKGROUND RE-PLAN (>5 tasks)\n";
+                    }
+                    
+                    auto tasks = createRandomTasks(count, taskIdCounter, pickupNodes, dropoffNodes);
+                    taskIdCounter += count;
+                    
+                    // Print task details
+                    std::cout << "[CLI] Generated tasks:\n";
+                    for (const auto& t : tasks) {
+                        std::cout << "       Task " << t.taskId << ": pickup=" << t.sourceNode 
+                                  << " -> dropoff=" << t.destinationNode << "\n";
+                    }
+                    
+                    manager.InjectTasks(tasks);
+                    std::cout << "[CLI] Tasks injected successfully!\n\n";
+                    
+                } else {
+                    std::cout << "[CLI] Usage: inject <N> where N is a positive integer\n";
+                }
+                
+            } else if (cmd == "status") {
+                std::cout << "\n";
+                manager.PrintRobotStates();
+                std::cout << "\n";
+                
+            } else if (cmd == "stats") {
+                auto stats = manager.GetStats();
+                std::cout << "\n[CLI] ═══════════════ STATISTICS ═══════════════\n";
+                std::cout << "[CLI] Simulation time: " << std::fixed << std::setprecision(2) 
+                          << stats.simulationTime << "s\n";
+                std::cout << "[CLI] Fleet loop count: " << stats.fleetLoopCount << "\n";
+                std::cout << "[CLI] Tasks completed: " << stats.completedTasks 
+                          << " / " << stats.totalTasks << "\n";
+                std::cout << "[CLI] Dynamic tasks injected: " << (taskIdCounter - 1000) << "\n\n";
+                
+            } else if (!cmd.empty()) {
+                std::cout << "[CLI] Unknown command: '" << cmd << "'. Type 'help' for commands.\n";
+            }
+            
+            std::cout << "amr> " << std::flush;
+        }
         
     } else if (duration > 0) {
         // Run for specified duration

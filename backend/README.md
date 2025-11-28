@@ -148,17 +148,24 @@ float cost = costs.GetCost(nodeA, nodeB);
 
 #### 2. VRP Solvers (Strategy Pattern)
 
-Three metaheuristic algorithms available:
+Four metaheuristic algorithms available:
 
-| Algorithm | Best For | Time Complexity |
-|-----------|----------|-----------------|
-| **Tabu Search** | Large instances (100+ tasks) | O(iterations × R × T) |
-| **Simulated Annealing** | Escaping local optima | O(iterations × R × T) |
-| **Hill Climbing** | Fast, simple cases | O(iterations × R × T) |
+| Algorithm | Best For | Description | Typical Time |
+|-----------|----------|-------------|--------------|
+| **ALNS** | Best quality | Destroy & Repair with Regret-2 | ~1-2s |
+| **Tabu Search** | Balanced | Memory-based local search | ~200ms |
+| **Simulated Annealing** | Escaping local optima | Temperature-based acceptance | ~100ms |
+| **Hill Climbing** | Fast, simple cases | Greedy local search | ~20ms |
+
+**ALNS (Adaptive Large Neighborhood Search)** - The default solver:
+- Uses "Destroy and Repair" philosophy
+- **Worst Removal**: Removes the most expensive tasks
+- **Regret-2 Insertion**: Inserts tasks where deferring has highest penalty
+- Produces 10-20% better solutions than local search methods
 
 ```cpp
 // Strategy pattern - swap algorithms easily
-std::unique_ptr<IVRPSolver> solver = std::make_unique<TabuSearch>();
+std::unique_ptr<IVRPSolver> solver = std::make_unique<ALNS>(100, 0.25, 42);
 VRPResult result = solver->Solve(tasks, robots, costMatrix);
 ```
 
@@ -364,21 +371,57 @@ cost = distance(robot_last_node → pickup) + distance(pickup → dropoff)
 
 **When:** > 5 new tasks arrive at once
 
+**Key Feature: Starter Tasks** - Robots don't stay idle while solver runs!
+
 ```
-Large Batch Arrives (e.g., 10 tasks)
+Large Batch Arrives (e.g., 20 tasks)
               ↓
-    [BACKGROUND REPLAN] - std::async
+    ┌─────────────────────────────────────┐
+    │   SPLIT TASKS                       │
+    │   • Starter: 2 × 6 robots = 12      │
+    │   • Solver: remaining 8             │
+    └─────────────────────────────────────┘
               ↓
-    VRP solver runs in separate thread
+    ┌─────────────────────────────────────┐
+    │  STARTER TASKS (immediate)          │
+    │  • Cheap insertion to all robots    │
+    │  • Robots start working right away  │
+    └─────────────────────────────────────┘
               ↓
-    Robots continue current tasks
+    ┌─────────────────────────────────────┐
+    │  BACKGROUND REPLAN (async)          │
+    │  • VRP solver in separate thread    │
+    │  • Only optimizes remaining tasks   │
+    │  • Robots stay busy during solve    │
+    └─────────────────────────────────────┘
               ↓
-    When complete: atomic swap of itineraries
+    ┌─────────────────────────────────────┐
+    │  APPEND RESULTS                     │
+    │  • Optimized tasks appended to      │
+    │    existing robot itineraries       │
+    │  • No work is lost or restarted     │
+    └─────────────────────────────────────┘
 ```
 
-**Smart Wait Logic:**
-- If robot finishes during replan and `next_task_duration < replan_time`: **WAIT**
-- If robot finishes during replan and `next_task_duration > replan_time`: **PROCEED**
+**Configuration:**
+```cpp
+config.starterTasksPerRobot = 2;  // 2 tasks per robot assigned immediately
+config.batchThreshold = 5;        // Trigger Scenario C when > 5 tasks arrive
+```
+
+**Example Output:**
+```
+[MainLoop] Splitting 20 tasks:
+           - Starter tasks (immediate): 12 (2 per robot)
+           - For background solver: 8
+[Insertion] Task 1000 assigned to Robot 3 (extra cost: 2390.0 px)
+...
+[Replan] Launching VRP solver in background thread...
+[Replan] Tasks: 8, Robots: 6
+...
+[Replan] Robot 0: appended 4 waypoints (had 51, now 55)
+[Replan] Optimized tasks appended to all robot itineraries.
+```
 
 ---
 
@@ -409,6 +452,9 @@ make -j4
 # Demo mode (demonstrates all scheduling scenarios)
 ./build/fleet_manager --demo
 
+# CLI mode (interactive task injection)
+./build/fleet_manager --cli
+
 # Custom options
 ./build/fleet_manager --tasks ../api/custom_tasks.json --robots 8 --duration 60
 ```
@@ -422,7 +468,51 @@ make -j4
 | `--duration S` | Run for S seconds | Until Enter |
 | `--batch` | Batch mode (no sleep, auto-stop) | Off |
 | `--demo` | Demo scheduling scenarios | Off |
+| `--cli` | Interactive CLI for live task injection | Off |
 | `--help` | Show help message | - |
+
+### Interactive CLI Mode
+
+The `--cli` mode provides a real-time command interface for testing dynamic scheduling:
+
+```
+$ ./build/fleet_manager --cli
+...
+[CLI] Ready. Type 'help' for commands.
+amr> help
+[CLI] Available commands:
+       inject <N>  - Inject N random tasks (≤5 = Cheap Insertion, >5 = Background Re-plan)
+       status      - Show robot states and queue info
+       stats       - Show system statistics
+       help        - Show this help message
+       quit        - Stop the system and exit
+
+amr> inject 3
+[CLI] Injecting 3 random tasks...
+[CLI] Strategy: CHEAP INSERTION (≤5 tasks)
+[FleetManager] Injected 3 new tasks (queue size: 3)
+[MainLoop] ══════════ SCENARIO B: Cheap Insertion ══════════
+
+amr> inject 10
+[CLI] Injecting 10 random tasks...
+[CLI] Strategy: BACKGROUND RE-PLAN (>5 tasks)
+[FleetManager] Injected 10 new tasks (queue size: 10)
+[MainLoop] ══════════ SCENARIO C: Background Re-plan ══════════
+```
+
+**CLI Commands:**
+
+| Command | Description |
+|---------|-------------|
+| `inject <N>` | Generate and inject N random tasks |
+| `status` | Display current robot states |
+| `stats` | Show simulation statistics |
+| `help` | List available commands |
+| `quit` | Stop system and exit |
+
+**Strategy Selection:**
+- **≤5 tasks**: Triggers **Cheap Insertion** (Scenario B) - instant assignment
+- **>5 tasks**: Triggers **Background Re-plan** (Scenario C) - async VRP solve
 
 ---
 
@@ -502,6 +592,7 @@ backend/
 ├── layer2/                     # Planning layer
 │   ├── include/
 │   │   ├── IVRPSolver.hh       # Solver interface
+│   │   ├── ALNS.hh             # ALNS solver (default)
 │   │   ├── TabuSearch.hh       # Tabu search solver
 │   │   ├── SimulatedAnnealing.hh
 │   │   ├── HillClimbing.hh

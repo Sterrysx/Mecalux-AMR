@@ -74,7 +74,8 @@ COMMON_OBJECTS := $(LAYER1_BUILD)/common_Coordinates.o \
 
 # Layer 2 objects (explicitly listed to avoid wildcard timing issues)
 LAYER2_BUILD := $(LAYER2_DIR)/build
-LAYER2_OBJECTS := $(LAYER2_BUILD)/CostMatrixProvider.o \
+LAYER2_OBJECTS := $(LAYER2_BUILD)/ALNS.o \
+                  $(LAYER2_BUILD)/CostMatrixProvider.o \
                   $(LAYER2_BUILD)/HillClimbing.o \
                   $(LAYER2_BUILD)/IVRPSolver.o \
                   $(LAYER2_BUILD)/SimulatedAnnealing.o \

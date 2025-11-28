@@ -48,6 +48,7 @@
 #include "TabuSearch.hh"
 #include "SimulatedAnnealing.hh"
 #include "HillClimbing.hh"
+#include "ALNS.hh"
 
 // Layer 3 includes
 #include "Core/RobotDriver.hh"
@@ -90,6 +91,7 @@ struct SystemConfig {
     // Dynamic Scheduling Configuration
     int batchThreshold = 5;              ///< If > threshold tasks arrive, trigger full re-plan
     int estimatedReplanTimeMs = 100;     ///< Estimated VRP solver time in ms
+    int starterTasksPerRobot = 2;        ///< Tasks to assign immediately in Scenario C (keeps robots busy)
     
     /**
      * @brief Load configuration from JSON file.
@@ -358,6 +360,24 @@ public:
      * @brief Get robot driver by ID.
      */
     const Layer3::Core::RobotDriver* GetRobotDriver(int robotId) const;
+    
+    /**
+     * @brief Get all pickup node IDs.
+     * @return Vector of NavMesh node IDs that are pickup points
+     */
+    std::vector<int> GetPickupNodes() const;
+    
+    /**
+     * @brief Get all dropoff node IDs.
+     * @return Vector of NavMesh node IDs that are dropoff points
+     */
+    std::vector<int> GetDropoffNodes() const;
+    
+    /**
+     * @brief Get the batch threshold for scheduling decisions.
+     * @return Threshold value (tasks <= threshold use cheap insertion)
+     */
+    int GetBatchThreshold() const { return config_.batchThreshold; }
     
     // =========================================================================
     // CALLBACKS
