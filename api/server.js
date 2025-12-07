@@ -377,6 +377,52 @@ app.post('/api/planner', async (req, res) => {
         comparison
       });
       
+    } else if (algorithmId === -1) {
+      // Run heuristics only (Greedy and Hill Climbing)
+      const algorithms = [
+        { id: 2, name: 'Greedy' },
+        { id: 3, name: 'Hill Climbing' }
+      ];
+      
+      const results = [];
+      
+      for (const alg of algorithms) {
+        const command = buildPlannerCommand(alg.id, graphId, numTasks, numRobots);
+        console.log(`Running command: ${command}`);
+        
+        await new Promise((resolve, reject) => {
+          exec(command, { timeout: 300000 }, (error, stdout, stderr) => {
+            if (error) {
+              console.error(`Error running ${alg.name}:`, error);
+              results.push(parseOutput('', alg.name));
+            } else {
+              console.log(`${alg.name} output:`, stdout);
+              results.push(parseOutput(stdout, alg.name));
+            }
+            resolve();
+          });
+        });
+      }
+
+      // Calculate improvements relative to Greedy
+      const baseline = results[0];
+      const comparison = results.map((result, idx) => ({
+        algorithm: result.algorithm,
+        makespan: result.makespan,
+        computationTime: result.computationTime,
+        improvement: idx === 0 ? null : ((baseline.makespan - result.makespan) / baseline.makespan * 100)
+      }));
+
+      // Find best result (lowest makespan)
+      const bestResult = results.reduce((best, current) =>
+        current.makespan < best.makespan ? current : best
+      );
+
+      res.json({
+        ...bestResult,
+        comparison
+      });
+      
     } else {
       // Run single algorithm
       const command = buildPlannerCommand(algorithmId, graphId, numTasks, numRobots);

@@ -309,7 +309,7 @@ export default function TaskPlanner() {
       // Add mode for comparison
       const requestParams = {
         ...params,
-        mode: params.algorithmId === 0 ? 'comparison' : undefined
+        mode: (params.algorithmId === 0 || params.algorithmId === -1) ? 'comparison' : undefined
       };
       
       console.log('Making API call with params:', requestParams);
@@ -365,10 +365,11 @@ export default function TaskPlanner() {
                   darkMode ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white border-slate-300 text-slate-900'
                 }`}
               >
-                <option value={0}>0 - Comparison Mode</option>
-                <option value={1}>1 - Brute Force</option>
-                <option value={2}>2 - Greedy</option>
-                <option value={3}>3 - Hill Climbing</option>
+                <option value={-1}>-1 - Heuristics Only (Greedy + Hill Climbing)</option>
+                <option value={0}>0 - Comparison Mode (All Algorithms)</option>
+                <option value={1}>1 - Brute Force (Optimal)</option>
+                <option value={2}>2 - Greedy (Fast)</option>
+                <option value={3}>3 - Hill Climbing (Improved Greedy)</option>
               </select>
             </div>
             
@@ -454,6 +455,16 @@ export default function TaskPlanner() {
                   : 'bg-yellow-100 border-yellow-400 text-yellow-700'
               }`}>
                 ⚠️ Brute force with {params.numTasks} tasks may take very long. Consider using Greedy or Hill Climbing.
+              </div>
+            )}
+            
+            {params.algorithmId === 0 && params.numTasks > 8 && (
+              <div className={`border px-3 py-2 rounded text-sm ${
+                darkMode 
+                  ? 'bg-yellow-900 border-yellow-700 text-yellow-300' 
+                  : 'bg-yellow-100 border-yellow-400 text-yellow-700'
+              }`}>
+                ⚠️ Comparison Mode includes Brute Force. With {params.numTasks} tasks, this may take a while.
               </div>
             )}
           </div>
