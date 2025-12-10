@@ -9,11 +9,13 @@ FORMS += MyForm.ui
 HEADERS += SimuladorGLWidget.h \
            MyForm.h \
            AfegirRobotButton.h \
-           CustomComboBox.h
+           CustomComboBox.h \
+           WarehouseLoader.h
 
 SOURCES += main.cpp \
         ./Model/model.cpp \
         SimuladorGLWidget.cpp \
         MyForm.cpp \
         AfegirRobotButton.cpp \
-        CustomComboBox.cpp
+        CustomComboBox.cpp \
+        WarehouseLoader.cpp

@@ -10,9 +10,10 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 #include "model.h"
+#include "WarehouseLoader.h"
 
 // definim el numero total de models a carregar
-#define NUM_MODELS 4
+#define NUM_MODELS 5
 
 // definim el numero màxim de blocs a afegir
 #define NUM_BRICKS 50
@@ -25,6 +26,10 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
   public:
     SimuladorGLWidget (QWidget *parent=0);
     ~SimuladorGLWidget ();
+    
+    // Load warehouse layout from JSON file
+    void loadWarehouse(const QString& filename);
+    
   public slots:
     void afegirRobot(int x, int y);
     void eliminarRobot(int robotID);
@@ -76,6 +81,13 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
 
     // creaBuffersTerra - crea els buffers per al terra
     void creaBuffersTerra ();
+    
+    // updateFloorSize - updates the floor size and recreates the floor buffers
+    void updateFloorSize(float width, float depth);
+    
+    // paintStaticObjects - paints static warehouse objects (only when needed)
+    void paintStaticObjects();
+    
     void modelTransforRobot (int id, float x, float y,float angle);
     /***********************************************/
     // Models, VAOS, capses contenidores i escales
@@ -85,7 +97,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     typedef enum {GROUND_BRICKS = 0, BRICK_1x2 = 1, BRICK_2x2 = 2, BRICK_4x2 = 3} ModelType;    
     
     // Array amb els noms dels fitxers .obj a carregar ordenats com en el enum ModelType	
-    std::string objNames[NUM_MODELS] = {"Lego_Ground.obj","Robot.obj", "Lego_Brick_2x2.obj", "Lego_Brick_4x2.obj"};	    
+    std::string objNames[NUM_MODELS] = {"cinta.obj","Robot.obj", "RobotCaixa.obj", "noguer_caixes.obj","noguer.obj"};	    
 
     // Array de models carregats
     Model models[NUM_MODELS];
@@ -113,6 +125,11 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     /***************************************************/
     std::map<int,std::tuple<float,float,float>> robots;  // map that stores robots (id, (x,y,angle))
     int nextRobotID = 1; // ID que s'assignarà al següent robot afegit
+    
+    // Warehouse loader
+    WarehouseLoader warehouseLoader;
+    bool staticObjectsDirty;  // Flag to indicate if static objects need to be redrawn
+    
     // Objectes guardats    
     bool pintarBricks[NUM_BRICKS]; // Array que indica si l'objecte (el bloc de Lego) s'ha de pintar perque ja ha sigut editat i guardat
     int brickModelIndex[NUM_BRICKS]; // Array que indica de quin model són els objectes (quin bloc de LEGO) si s'han de pintar
@@ -157,6 +174,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     glm::vec3 centreEsc; // centre de l'escena
     float radiEsc, ra, fov, zn, zf; // radi de l'escena, relació d'aspecte, field of view, znear i zfar
     float zoomFactor; // zoom factor for all cameras (1.0 = no zoom)
+    glm::vec3 floorScale; // scale factor for the floor (x, y, z)
 
     float angleX, angleY; // angles d'Euler per construir la view matrix
 

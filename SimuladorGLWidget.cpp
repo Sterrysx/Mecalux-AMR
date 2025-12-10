@@ -11,6 +11,7 @@ SimuladorGLWidget::SimuladorGLWidget (QWidget* parent) : QOpenGLWidget(parent)
   connect(animationTimer, &QTimer::timeout, this, &SimuladorGLWidget::updateAnimation);
   //animationTimer->start(16);
   robotCamera = false;  // Initialize to false - start with normal camera
+  staticObjectsDirty = true;  // Initially need to draw static objects
 }
 
 SimuladorGLWidget::~SimuladorGLWidget ()
@@ -36,6 +37,9 @@ void SimuladorGLWidget::initializeGL ()
   carregaShaders();
   iniEscena ();
   iniCamera ();
+  
+  // Load warehouse layout
+  loadWarehouse("warehouse_layout.json");
 }
 
 void SimuladorGLWidget::modifyselectedRobotID(QString robotID){
@@ -94,9 +98,38 @@ void SimuladorGLWidget::iniCamera ()
   zn = 0.1f;  // Use smaller near plane
   zf = 3*radiEsc;
   zoomFactor = 1.0f;  // Initialize zoom to 1.0 (no zoom)
+  floorScale = glm::vec3(1.0f, 1.0f, 1.0f);  // Initialize floor scale to 1.0 (no scaling)
   orto = false;
   projectTransform();
   viewTransform();
+}
+
+void SimuladorGLWidget::loadWarehouse(const QString& filename) {
+    makeCurrent();
+    if (warehouseLoader.loadFromJSON(filename)) {
+        // Merge warehouse robots with current robots (warehouse robots take priority)
+        const auto& warehouseRobots = warehouseLoader.getRobots();
+        for (const auto& robot : warehouseRobots) {
+            robots[robot.first] = robot.second;
+            if (robot.first >= nextRobotID) {
+                nextRobotID = robot.first + 1;
+            }
+        }
+        
+        // Update floor size
+        glm::vec2 floorSize = warehouseLoader.getFloorSize();
+        updateFloorSize(floorSize.x, floorSize.y);
+        
+        // Mark static objects as dirty (need to be redrawn)
+        staticObjectsDirty = true;
+        
+        std::cout << "Warehouse loaded successfully with " 
+                  << warehouseLoader.getObjects().size() << " objects and "
+                  << warehouseRobots.size() << " robots\n";
+        update();
+    } else {
+        qWarning() << "Failed to load warehouse from" << filename;
+    }
 }
 
 void SimuladorGLWidget::afegirRobot(int x, int y) {
@@ -140,14 +173,8 @@ void SimuladorGLWidget::paintGL ()
   // Esborrem el frame-buffer i el depth-buffer
   glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  // Draw ground first
-  glUniform3fv(colorLoc, 1, &white[0]);
-  
-  glStencilMask(0x00); // Don't write to stencil buffer
-  glBindVertexArray(VAO_Terra);
-  modelTransformGround();
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
+  // Draw static objects (floor and warehouse objects) only when necessary
+  paintStaticObjects();
 
   // First pass: Draw all non-selected robots normally
   glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -250,6 +277,44 @@ void SimuladorGLWidget::paintGL ()
   glBindVertexArray(0);
 }
 
+void SimuladorGLWidget::paintStaticObjects()
+{
+    
+    // Draw ground
+    glUniform3fv(colorLoc, 1, &white[0]);
+    glStencilMask(0x00);
+    glBindVertexArray(VAO_Terra);
+    modelTransformGround();
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    
+    // Draw warehouse static objects from JSON
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0x00);
+    glUniform3fv(colorLoc, 1, &white[0]);
+    
+    const std::vector<WarehouseObject>& warehouseObjects = warehouseLoader.getObjects();
+    for (const auto& obj : warehouseObjects) {
+        if (obj.modelIndex < 0 || obj.modelIndex >= NUM_MODELS) {
+            continue; // Skip invalid model indices
+        }
+        
+        glm::mat4 TG(1.0f);
+        
+        // Apply transformations: translate to center, rotate, then adjust for model center
+        TG = glm::translate(TG, obj.center);
+        TG = glm::rotate(TG, glm::radians(obj.rotation), glm::vec3(0, 1, 0));
+        
+        // Center the model at origin
+        TG = glm::translate(TG, glm::vec3(-centreCapsaModels[obj.modelIndex].x, 
+                                          -minY[obj.modelIndex], 
+                                          -centreCapsaModels[obj.modelIndex].z));
+        
+        glUniformMatrix4fv(transLoc, 1, GL_FALSE, &TG[0][0]);
+        glBindVertexArray(VAO_models[obj.modelIndex]);
+        glDrawArrays(GL_TRIANGLES, 0, models[obj.modelIndex].faces().size() * 3);
+    }
+}
+
 void SimuladorGLWidget::resizeGL (int w, int h) 
 {
 #ifdef __APPLE__
@@ -272,6 +337,7 @@ void SimuladorGLWidget::resizeGL (int w, int h)
 void SimuladorGLWidget::modelTransformGround()
 {
   glm::mat4 TG(1.f);
+  TG = glm::scale(TG, floorScale);
   glUniformMatrix4fv (transLoc, 1, GL_FALSE, &TG[0][0]);
 }
 
@@ -392,6 +458,7 @@ void SimuladorGLWidget::keyPressEvent(QKeyEvent* event)
       orto = !orto;
       robotCamera = false;
       zoomFactor = 1.0f;  // Reset zoom when changing camera mode
+      staticObjectsDirty = true;  // Mark static objects to be redrawn
       viewTransform();
       projectTransform();
       update();
@@ -403,6 +470,7 @@ void SimuladorGLWidget::keyPressEvent(QKeyEvent* event)
             robotCamera = !robotCamera;
             orto = false;
             zoomFactor = 1.0f;  // Reset zoom when changing camera mode
+            staticObjectsDirty = true;  // Mark static objects to be redrawn
             viewTransform();
             projectTransform();
             update();
@@ -697,6 +765,23 @@ void SimuladorGLWidget::creaBuffersTerra ()
   glEnableVertexAttribArray(matshinLoc);
 
   glBindVertexArray(0);
+}
+
+void SimuladorGLWidget::updateFloorSize(float width, float depth) {
+  // The default floor is 31x31 units (from -1 to 30 in both X and Z)
+  // Calculate scale factors based on desired size
+  float defaultWidth = 31.0f;
+  float defaultDepth = 31.0f;
+  
+  floorScale.x = width / defaultWidth;
+  floorScale.z = depth / defaultDepth;
+  floorScale.y = 1.0f;  // Keep Y scale at 1.0 (don't scale vertically)
+  
+  // Mark static objects as dirty (floor changed)
+  staticObjectsDirty = true;
+  
+  std::cout << "Floor size updated to: " << width << " x " << depth 
+            << " (scale: " << floorScale.x << ", " << floorScale.z << ")" << std::endl;
 }
 
 
