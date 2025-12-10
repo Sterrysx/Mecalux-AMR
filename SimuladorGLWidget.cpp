@@ -242,40 +242,6 @@ void SimuladorGLWidget::paintGL ()
             glUniform3fv(colorLoc, 1, &white[0]);
         }
     }
-
-    // Draw camera position marker (if in third person and a robot is selected)
-    if (selectedRObotID != -1 && !robotCamera) {
-        auto it = robots.find(selectedRObotID);
-        if (it != robots.end()) {
-            const float x = std::get<0>(it->second);
-            const float y = std::get<1>(it->second);
-            const float angle = std::get<2>(it->second);
-
-            // Calculate camera position
-            float transDesp = centreCapsaModels[1].y - minY[1];
-            float t2 = centreCapsaModels[1].x - minX[1];
-            float robotDepth = centreCapsaModels[1].z - minZ[1];
-            glm::vec3 robotPos(x, transDesp, y+robotDepth);
-
-            // Draw small cube at camera position
-            glm::mat4 TG(1.0f);
-            TG = glm::translate(TG, robotPos);
-            float angleRad = glm::radians(angle);
-            TG = glm::rotate(TG, angleRad, glm::vec3(0,1,0));
-            TG = glm::scale(TG, glm::vec3(0.2f)); // Small cube
-            
-            glUniformMatrix4fv(transLoc, 1, GL_FALSE, &TG[0][0]);
-            glm::vec3 debugColor(0.0f, 1.0f, 0.0f); // Green color for visibility
-            glUniform3fv(colorLoc, 1, &debugColor[0]);
-            
-            // Use the first model (cube) to represent camera position
-            glBindVertexArray(VAO_models[1]);
-            glDrawArrays(GL_TRIANGLES, 0, models[1].faces().size() * 3);
-            
-            // Restore white color
-            glUniform3fv(colorLoc, 1, &white[0]);
-        }
-    }
     
   glBindVertexArray(0);
 }
