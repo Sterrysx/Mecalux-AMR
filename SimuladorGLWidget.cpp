@@ -107,10 +107,13 @@ void SimuladorGLWidget::iniCamera ()
 void SimuladorGLWidget::loadWarehouse(const QString& filename) {
     makeCurrent();
     if (warehouseLoader.loadFromJSON(filename)) {
-        // Merge warehouse robots with current robots (warehouse robots take priority)
-        const auto& warehouseRobots = warehouseLoader.getRobots();
-        for (const auto& robot : warehouseRobots) {
-            robots[robot.first] = robot.second;
+        // Load robots from warehouse (replace existing robots)
+        robots = warehouseLoader.getRobots();
+        
+        // Update nextRobotID based on highest ID in loaded robots
+        nextRobotID = 1;
+        for (const auto& robot : robots) {
+            emit robotAfegit(robot.first );
             if (robot.first >= nextRobotID) {
                 nextRobotID = robot.first + 1;
             }
@@ -125,7 +128,7 @@ void SimuladorGLWidget::loadWarehouse(const QString& filename) {
         
         std::cout << "Warehouse loaded successfully with " 
                   << warehouseLoader.getObjects().size() << " objects and "
-                  << warehouseRobots.size() << " robots\n";
+                  << robots.size() << " robots\n";
         update();
     } else {
         qWarning() << "Failed to load warehouse from" << filename;
