@@ -1,4 +1,4 @@
-# Blender 4.5.4 LTS MTL File: 'noguer_caixes.blend'
+# Blender 4.5.4 LTS MTL File: 'noguer.blend'
 # www.blender.org
 
 newmtl Material
@@ -12,16 +12,6 @@ d 1.000000
 illum 3
 
 newmtl Material.001
-Ns 307.520660
-Ka 1.000000 1.000000 1.000000
-Kd 0.432484 0.432484 0.432484
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.500000
-d 1.000000
-illum 3
-
-newmtl Material.003
 Ns 761.652893
 Ka 0.290909 0.290909 0.290909
 Kd 0.000000 0.132868 0.603827
@@ -31,7 +21,7 @@ Ni 1.500000
 d 1.000000
 illum 3
 
-newmtl Material.004
+newmtl Material.002
 Ns 254.566101
 Ka 1.000000 1.000000 1.000000
 Kd 1.000000 0.132868 0.000000
@@ -41,12 +31,12 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.005
-Ns 36.446281
+newmtl Material.003
+Ns 307.520660
 Ka 1.000000 1.000000 1.000000
-Kd 0.527112 0.323144 0.155927
+Kd 0.500000 0.500000 0.500000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
-illum 2
+illum 3
