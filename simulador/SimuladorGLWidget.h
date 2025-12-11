@@ -13,7 +13,7 @@
 #include "WarehouseLoader.h"
 
 // definim el numero total de models a carregar
-#define NUM_MODELS 5
+#define NUM_MODELS 6
 
 // definim el numero màxim de blocs a afegir
 #define NUM_BRICKS 50
@@ -97,7 +97,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     typedef enum {GROUND_BRICKS = 0, BRICK_1x2 = 1, BRICK_2x2 = 2, BRICK_4x2 = 3} ModelType;    
     
     // Array amb els noms dels fitxers .obj a carregar ordenats com en el enum ModelType	
-    std::string objNames[NUM_MODELS] = {"cinta.obj","Robot.obj", "RobotCaixa.obj", "noguer_caixes.obj","noguer.obj"};	    
+    std::string objNames[NUM_MODELS] = {"cinta.obj","Robot.obj", "RobotCaixa.obj", "noguer_caixes.obj","noguer.obj","chargingStation.obj"};	    
 
     // Array de models carregats
     Model models[NUM_MODELS];

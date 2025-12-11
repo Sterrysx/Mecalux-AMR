@@ -18,6 +18,50 @@
       "center": [20.0, 0.0, 10.0],
       "dimensions": [1.0, 3.0, 1.0],
       "rotation": 90.0
+    },
+    {
+      "modelIndex": 5,
+      "center": [20.0, 0.0, 20.0],
+      "dimensions": [1.0, 3.0, 1.0],
+      "rotation": 90.0
+    }
+  ],
+  "prohibitedZones": [
+    {
+      "id": "zone_1",
+      "type": "obstacle_buffer",
+      "center": [10.0, 10.0],
+      "shape": "rectangle",
+      "dimensions": [2.5, 1.5],
+      "rotation": 0.0,
+      "description": "Safety zone around conveyor belt"
+    },
+    {
+      "id": "zone_2",
+      "type": "obstacle_buffer",
+      "center": [15.0, 10.0],
+      "shape": "rectangle",
+      "dimensions": [3.5, 2.5],
+      "rotation": 45.0,
+      "description": "Safety zone around shelf with boxes"
+    },
+    {
+      "id": "zone_3",
+      "type": "obstacle_buffer",
+      "center": [20.0, 10.0],
+      "shape": "rectangle",
+      "dimensions": [1.5, 3.5],
+      "rotation": 90.0,
+      "description": "Safety zone around shelf without boxes"
+    },
+    {
+      "id": "zone_4",
+      "type": "obstacle_buffer",
+      "center": [20.0, 20.0],
+      "shape": "rectangle",
+      "dimensions": [1.5, 3.5],
+      "rotation": 90.0,
+      "description": "Safety zone around charging station"
     }
   ],
   "robots": [

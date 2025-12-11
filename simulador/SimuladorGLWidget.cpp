@@ -39,7 +39,7 @@ void SimuladorGLWidget::initializeGL ()
   iniCamera ();
   
   // Load warehouse layout
-  loadWarehouse("warehouse_layout.json");
+  loadWarehouse("warehouse_layout_realistic.json");
 }
 
 void SimuladorGLWidget::modifyselectedRobotID(QString robotID){
