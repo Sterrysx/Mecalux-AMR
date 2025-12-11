@@ -5,11 +5,15 @@ const path = require('path');
 const os = require('os');
 const http = require('http');
 const WebSocket = require('ws');
+const fs = require('fs').promises;
 
 const app = express();
 const PORT = 3001;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+
+// Output directory for fleet data
+const OUTPUT_DIR = path.resolve(__dirname, './output');
 
 // OS Detection and Path Configuration
 const isWindows = os.platform() === 'win32';
@@ -529,6 +533,37 @@ app.get('/api/health', (req, res) => {
 
 // WebSocket handler for real-time simulator
 let simulatorProcess = null;
+let currentRobotData = { robots: [], lastUpdate: Date.now() };
+
+// Parse robot state from backend output
+function parseRobotState(output) {
+  const lines = output.split('\n');
+  const robots = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    // Look for robot state lines like: "0  | BUSY   | 9206    | (1467, 207) | COLLISION_WAIT | 83 |"
+    const match = line.match(/^(\d+)\s*\|\s*(\w+)\s*\|\s*(\d+)\s*\|\s*\((\d+),\s*(\d+)\)\s*\|\s*(\w+)\s*\|\s*(\d+)\s*\|/);
+    if (match) {
+      const [_, id, status, node, x, y, l3state, itinerary] = match;
+      robots.push({
+        id: parseInt(id),
+        x: parseInt(x),
+        y: parseInt(y),
+        vx: 0, // velocity not in status output
+        vy: 0,
+        state: l3state,
+        goal: `Node ${node}`,
+        itinerary: parseInt(itinerary),
+        batteryLevel: 100 // battery not in status output, default to full
+      });
+    }
+  }
+  
+  if (robots.length > 0) {
+    currentRobotData = { robots, lastUpdate: Date.now() };
+  }
+}
 
 wss.on('connection', (ws) => {
   console.log('WebSocket client connected');
@@ -538,22 +573,22 @@ wss.on('connection', (ws) => {
       const data = JSON.parse(message);
       
       if (data.type === 'start_simulator') {
-        // Start the real-time simulator
+        // Start the fleet manager
         const { graphId, numRobots } = data;
-        console.log(`Starting real-time simulator: Graph ${graphId}, ${numRobots} robots`);
+        console.log(`Starting Fleet Manager: ${numRobots} robots`);
         
-        const SIMULATOR_DIR = path.resolve(__dirname, '../optimality/real_time_simulator');
+        const SIMULATOR_DIR = path.resolve(__dirname, '../backend');
         let command;
         
         if (isWindows) {
           const wslSimulatorPath = SIMULATOR_DIR.replace(/\\/g, '/').replace(/^([A-Z]):/, (match, drive) => `/mnt/${drive.toLowerCase()}`);
           command = `wsl`;
-          // Run from the real_time_simulator directory (not build/) so relative paths work
-          const args = ['-e', 'bash', '-c', `cd ${wslSimulatorPath} && ./build/simulator ${graphId} ${numRobots}`];
+          // Run fleet_manager with --cli flag for interactive mode
+          const args = ['-e', 'bash', '-c', `cd ${wslSimulatorPath} && ./build/fleet_manager --cli --robots ${numRobots}`];
           simulatorProcess = spawn(command, args);
         } else {
-          // Run from the real_time_simulator directory (not build/) so relative paths work
-          simulatorProcess = spawn('./build/simulator', [graphId.toString(), numRobots.toString()], {
+          // Run fleet_manager with --cli flag for interactive mode
+          simulatorProcess = spawn('./build/fleet_manager', ['--cli', '--robots', numRobots.toString()], {
             cwd: SIMULATOR_DIR
           });
         }
@@ -562,6 +597,10 @@ wss.on('connection', (ws) => {
         simulatorProcess.stdout.on('data', (data) => {
           const output = data.toString();
           console.log('Simulator output:', output);
+          
+          // Parse robot state from output
+          parseRobotState(output);
+          
           ws.send(JSON.stringify({
             type: 'simulator_output',
             data: output
@@ -635,8 +674,167 @@ wss.on('connection', (ws) => {
   });
 });
 
+// ==================== FLEET MANAGEMENT API ====================
+
+// Get current robot data
+app.get('/api/fleet/robots', (req, res) => {
+  res.json(currentRobotData);
+});
+
+// Serve static JSON files from output directory
+app.use('/api/output', express.static(OUTPUT_DIR));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: Date.now() });
+});
+
+// Get POIs configuration
+app.get('/api/pois.json', async (req, res) => {
+  try {
+    const poiConfigPath = path.resolve(__dirname, '../backend/layer1/assets/poi_config.json');
+    const data = await fs.readFile(poiConfigPath, 'utf8');
+    const config = JSON.parse(data);
+    
+    // Transform to frontend format
+    const pois = config.pois.map(poi => ({
+      id: poi.id,
+      type: poi.type,
+      x: poi.x,
+      y: poi.y,
+      nodeId: poi.nodeId || 0
+    }));
+    
+    res.json(pois);
+  } catch (error) {
+    console.error('Error loading POIs:', error);
+    res.status(500).json({ error: 'Failed to load POIs' });
+  }
+});
+
+// Inject new tasks
+app.post('/api/fleet/inject-tasks', async (req, res) => {
+  try {
+    const { tasks } = req.body;
+    
+    if (!Array.isArray(tasks)) {
+      return res.status(400).json({ error: 'Tasks must be an array' });
+    }
+    
+    // Determine scenario based on task count
+    const scenario = tasks.length <= 5 ? 'B' : 'C';
+    
+    console.log(`[Fleet API] Injecting ${tasks.length} tasks (Scenario ${scenario})`);
+    
+    // TODO: Send to backend C++ fleet manager via IPC or file
+    // For now, return success with scenario info
+    
+    res.json({
+      success: true,
+      tasksInjected: tasks.length,
+      scenario: scenario,
+      message: scenario === 'B' 
+        ? 'Cheap Insertion (≤5 tasks)' 
+        : 'Background Re-plan (>5 tasks with starter tasks)'
+    });
+  } catch (error) {
+    console.error('Error injecting tasks:', error);
+    res.status(500).json({ error: 'Failed to inject tasks' });
+  }
+});
+
+// Send robot to charging station
+app.post('/api/fleet/robot/:robotId/charge', async (req, res) => {
+  try {
+    const { robotId } = req.params;
+    const { chargingStationId } = req.body;
+    
+    console.log(`[Fleet API] Sending robot ${robotId} to charging station ${chargingStationId}`);
+    
+    // TODO: Send command to backend
+    
+    res.json({ 
+      success: true, 
+      robotId: parseInt(robotId), 
+      chargingStationId 
+    });
+  } catch (error) {
+    console.error('Error sending robot to charge:', error);
+    res.status(500).json({ error: 'Failed to send robot to charge' });
+  }
+});
+
+// Get system statistics
+app.get('/api/fleet/stats', async (req, res) => {
+  try {
+    // TODO: Read actual stats from backend
+    // For now, return mock data
+    
+    res.json({
+      currentScenario: 'B',
+      vrpSolverActive: false,
+      lastVRPSolveTime: 124,
+      avgPathQueryTime: 48,
+      physicsLoopHz: 20,
+      throughput: 23
+    });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// Initialize output directory with mock data
+async function initializeMockData() {
+  try {
+    await fs.mkdir(OUTPUT_DIR, { recursive: true });
+    
+    // Create mock robots.json
+    const robotsData = {
+      robots: [
+        { id: 0, x: 1467, y: 207, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 95 },
+        { id: 1, x: 1467, y: 257, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 88 },
+        { id: 2, x: 1467, y: 307, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 92 },
+        { id: 3, x: 1467, y: 357, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 76 }
+      ],
+      timestamp: Date.now()
+    };
+    
+    // Create mock tasks.json
+    const tasksData = {
+      tasks: [],
+      timestamp: Date.now()
+    };
+    
+    // Create mock map.json
+    const mapData = {
+      obstacles: [],
+      timestamp: Date.now()
+    };
+    
+    await fs.writeFile(path.join(OUTPUT_DIR, 'robots.json'), JSON.stringify(robotsData, null, 2));
+    await fs.writeFile(path.join(OUTPUT_DIR, 'tasks.json'), JSON.stringify(tasksData, null, 2));
+    await fs.writeFile(path.join(OUTPUT_DIR, 'map.json'), JSON.stringify(mapData, null, 2));
+    
+    console.log('✅ Initialized mock fleet data in', OUTPUT_DIR);
+  } catch (error) {
+    console.error('Error initializing mock data:', error);
+  }
+}
+
+// Initialize on startup
+initializeMockData();
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Planner API server running on http://localhost:${PORT}`);
   console.log(`🔗 Use this server with your React frontend`);
   console.log(`📡 Server listening on all interfaces: 0.0.0.0:${PORT}`);
+  console.log(`📊 Fleet API endpoints:`);
+  console.log(`   GET  /health - Health check`);
+  console.log(`   GET  /api/output/robots.json - Robot positions (20 Hz)`);
+  console.log(`   GET  /api/output/tasks.json - Task statuses (1 Hz)`);
+  console.log(`   GET  /api/output/map.json - Dynamic obstacles (1 Hz)`);
+  console.log(`   GET  /api/pois.json - POI configuration`);
+  console.log(`   POST /api/fleet/inject-tasks - Inject new tasks`);
+  console.log(`   GET  /api/fleet/stats - System statistics`);
 });

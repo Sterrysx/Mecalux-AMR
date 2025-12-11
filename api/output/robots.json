@@ -1,0 +1,49 @@
+{
+  "robots": [
+    {
+      "id": 0,
+      "x": 1467,
+      "y": 207,
+      "vx": 0,
+      "vy": 0,
+      "state": "IDLE",
+      "goal": null,
+      "itinerary": [],
+      "batteryLevel": 95
+    },
+    {
+      "id": 1,
+      "x": 1467,
+      "y": 257,
+      "vx": 0,
+      "vy": 0,
+      "state": "IDLE",
+      "goal": null,
+      "itinerary": [],
+      "batteryLevel": 88
+    },
+    {
+      "id": 2,
+      "x": 1467,
+      "y": 307,
+      "vx": 0,
+      "vy": 0,
+      "state": "IDLE",
+      "goal": null,
+      "itinerary": [],
+      "batteryLevel": 92
+    },
+    {
+      "id": 3,
+      "x": 1467,
+      "y": 357,
+      "vx": 0,
+      "vy": 0,
+      "state": "IDLE",
+      "goal": null,
+      "itinerary": [],
+      "batteryLevel": 76
+    }
+  ],
+  "timestamp": 1765320593636
+}
