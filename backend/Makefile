@@ -179,6 +179,10 @@ clean:
 	$(MAKE) -C $(LAYER1_DIR) clean
 	$(MAKE) -C $(LAYER2_DIR) clean
 	$(MAKE) -C $(LAYER3_DIR) clean
+	@echo "Cleaning generated JSON files from API directories..."
+	@rm -f ../api/orca/orca_tick_*.json 2>/dev/null || true
+	@rm -f ../api/fleet/fleet_tick_*.json 2>/dev/null || true
+	@rm -f ../api/paths/paths_tick_*.json 2>/dev/null || true
 	@echo "Clean complete."
 
 # Clean only root build
