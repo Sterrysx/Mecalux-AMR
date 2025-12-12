@@ -31,5 +31,35 @@
       "startPosition": [5.0, 0.0, 5.0],
       "startOrientation": 0.0
     }
+  ],
+  "pickingZones": [
+    {
+      "type": "PICKUP",
+      "center": [10.0, 0.0, 3.0],
+      "dimensions": [2.0, 0.0, 2.0],
+      "rotation": 0.0,
+      "description": "Conveyor belt pickup area"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [15.0, 0.0, 10.0],
+      "dimensions": [2.0, 0.0, 3.0],
+      "rotation": 45.0,
+      "description": "Shelf dropoff zone"
+    },
+    {
+      "type": "PICKUP",
+      "center": [8.0, 0.0, 20.0],
+      "dimensions": [3.0, 0.0, 2.0],
+      "rotation": 0.0,
+      "description": "Secondary pickup station"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [22.0, 0.0, 25.0],
+      "dimensions": [2.5, 0.0, 2.5],
+      "rotation": 0.0,
+      "description": "Final delivery zone"
+    }
   ]
 }
