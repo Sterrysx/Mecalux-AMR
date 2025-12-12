@@ -37,7 +37,7 @@ public:
     const std::vector<WarehouseObject>& getObjects() const { return objects; }
     
     // Get all dynamic robots in the warehouse
-    const std::map<int, std::tuple<float, float, float>>& getRobots() const { return robots; }
+    const std::map<int, std::tuple<float, float, float, bool>>& getRobots() const { return robots; }
     
     // Get floor dimensions
     glm::vec2 getFloorSize() const { return floorSize; }
@@ -47,7 +47,7 @@ public:
     
 private:
     std::vector<WarehouseObject> objects;  // Static warehouse objects
-    std::map<int, std::tuple<float, float, float>> robots;  // Dynamic robots (id -> (x, y, angle))
+    std::map<int, std::tuple<float, float, float, bool>> robots;  // Dynamic robots (id -> (x, y, angle, hasBox))
     glm::vec2 floorSize;  // Floor dimensions (width, depth)
     int nextRobotID;
 };

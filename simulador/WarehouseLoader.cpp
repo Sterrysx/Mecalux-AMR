@@ -114,9 +114,10 @@ bool WarehouseLoader::loadFromJSON(const QString& filename) {
             float x = robot["x"].toDouble(0.0);
             float y = robot["y"].toDouble(0.0);
             float angle = robot["angle"].toDouble(0.0);
+            bool hasBox = robot["hasBox"].toBool(false);  // Load hasBox state, default to false
             
             if (id != -1) {
-                robots[id] = std::make_tuple(x, y, angle);
+                robots[id] = std::make_tuple(x, y, angle, hasBox);
                 if (id >= nextRobotID) {
                     nextRobotID = id + 1;
                 }
