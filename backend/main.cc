@@ -29,13 +29,14 @@ void printUsage(const char* programName) {
     std::cout << "\n";
     std::cout << "Usage: " << programName << " [options]\n";
     std::cout << "\nOptions:\n";
-    std::cout << "  --help       Show this help message\n";
-    std::cout << "  --tasks FILE Path to tasks JSON file (default: ../api/set_of_tasks.json)\n";
-    std::cout << "  --robots N   Number of robots (0 = auto from charging stations, default: 0)\n";
-    std::cout << "  --duration S Run for S seconds then exit (default: run until Enter)\n";
-    std::cout << "  --batch      Batch mode: no sleep, max speed, auto-terminate when done\n";
-    std::cout << "  --demo       Run dynamic task injection demo (Scenarios A, B, C)\n";
-    std::cout << "  --cli        Interactive CLI mode for live task injection\n";
+    std::cout << "  --help        Show this help message\n";
+    std::cout << "  --tasks FILE  Path to tasks JSON file (default: ../api/set_of_tasks.json)\n";
+    std::cout << "  --robots N    Number of robots (0 = auto from charging stations, default: 0)\n";
+    std::cout << "  --duration S  Run for S seconds then exit (default: run until Enter)\n";
+    std::cout << "  --batch       Batch mode: no sleep, max speed, auto-terminate when done\n";
+    std::cout << "  --demo        Run dynamic task injection demo (Scenarios A, B, C)\n";
+    std::cout << "  --cli         Interactive CLI mode for live task injection\n";
+    std::cout << "  --from-json   Indicate data was imported from JSON (display info)\n";
     std::cout << "\nExamples:\n";
     std::cout << "  " << programName << "\n";
     std::cout << "  " << programName << " --tasks custom_tasks.json --robots 5\n";
@@ -43,6 +44,7 @@ void printUsage(const char* programName) {
     std::cout << "  " << programName << " --batch  (runs all tasks as fast as possible)\n";
     std::cout << "  " << programName << " --demo   (demonstrates dynamic task injection)\n";
     std::cout << "  " << programName << " --cli   (interactive command line interface)\n";
+    std::cout << "  " << programName << " --from-json  (use data generated from JSON warehouse)\n";
     std::cout << "\n";
 }
 
@@ -83,6 +85,7 @@ int main(int argc, char* argv[]) {
     bool batchMode = false;
     bool demoMode = false;
     bool cliMode = false;
+    bool fromJson = false;
     
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -108,6 +111,9 @@ int main(int argc, char* argv[]) {
         }
         else if (arg == "--cli") {
             cliMode = true;
+        }
+        else if (arg == "--from-json") {
+            fromJson = true;
         }
         else {
             std::cerr << "Unknown option: " << arg << "\n";
@@ -145,8 +151,27 @@ int main(int argc, char* argv[]) {
     config.warehouseTickMs = 1000.0f;  // 1 Hz strategic
     config.batchMode = batchMode;
     
+    // If using JSON-imported data, ensure we use the generated files
+    if (fromJson) {
+        config.mapPath = "layer1/assets/map_layout.txt";
+        config.poiConfigPath = "layer1/assets/poi_config.json";
+    }
+    
     if (batchMode) {
         std::cout << "[Main] BATCH MODE: Running at maximum speed, will auto-terminate\n";
+    }
+    
+    // If using JSON-imported data, show info banner
+    if (fromJson) {
+        std::cout << "\n";
+        std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗\n";
+        std::cout << "║                   RUNNING WITH JSON-IMPORTED DATA                         ║\n";
+        std::cout << "╠═══════════════════════════════════════════════════════════════════════════╣\n";
+        std::cout << "║  Map:  layer1/assets/map_layout.txt (generated from JSON)                ║\n";
+        std::cout << "║  POIs: layer1/assets/poi_config.json (extracted from JSON)               ║\n";
+        std::cout << "║  Tasks: " << taskPath << std::string(51 - taskPath.length(), ' ') << "║\n";
+        std::cout << "╚═══════════════════════════════════════════════════════════════════════════╝\n";
+        std::cout << "\n";
     }
     
     // Create FleetManager

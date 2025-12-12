@@ -126,13 +126,13 @@ bool TaskLoader::GenerateSampleTasksJSON(const std::string& filepath,
     file << "  \"tasks\": [\n";
     
     for (int i = 0; i < numTasks; ++i) {
-        int source = pickupNodes[pickupDist(gen)];
-        int dest = dropoffNodes[dropoffDist(gen)];
+        int pickup = pickupNodes[pickupDist(gen)];
+        int dropoff = dropoffNodes[dropoffDist(gen)];
         
         file << "    {\n";
         file << "      \"id\": " << (i + 1) << ",\n";
-        file << "      \"source\": " << source << ",\n";
-        file << "      \"destination\": " << dest << "\n";
+        file << "      \"pickup\": " << pickup << ",\n";
+        file << "      \"dropoff\": " << dropoff << "\n";
         file << "    }";
         
         if (i < numTasks - 1) file << ",";
@@ -294,8 +294,11 @@ std::vector<Task> TaskLoader::ParseJSONWithPOI(const std::string& content,
             }
         }
         
-        // Parse "source" (string POI ID)
-        size_t sourcePos = obj.find("\"source\"");
+        // Parse "pickup" or "source" (string POI ID) - support both field names
+        size_t sourcePos = obj.find("\"pickup\"");
+        if (sourcePos == std::string::npos) {
+            sourcePos = obj.find("\"source\"");  // Fallback to old format
+        }
         if (sourcePos != std::string::npos) {
             size_t colonPos = obj.find(':', sourcePos);
             if (colonPos != std::string::npos) {
@@ -310,8 +313,11 @@ std::vector<Task> TaskLoader::ParseJSONWithPOI(const std::string& content,
             }
         }
         
-        // Parse "destination" (string POI ID)
-        size_t destPos = obj.find("\"destination\"");
+        // Parse "dropoff" or "destination" (string POI ID) - support both field names
+        size_t destPos = obj.find("\"dropoff\"");
+        if (destPos == std::string::npos) {
+            destPos = obj.find("\"destination\"");  // Fallback to old format
+        }
         if (destPos != std::string::npos) {
             size_t colonPos = obj.find(':', destPos);
             if (colonPos != std::string::npos) {

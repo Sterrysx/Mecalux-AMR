@@ -373,7 +373,7 @@ class ProhibitedZoneGenerator:
         try:
             with open(output_path, 'w') as f:
                 # Write header with dimensions
-                f.write(f"{self.grid_width} {self.grid_height}\n")
+                #f.write(f"{self.grid_width} {self.grid_height}\n")
                 
                 # Write grid data
                 for row in self.grid:
