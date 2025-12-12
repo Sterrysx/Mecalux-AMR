@@ -56,6 +56,15 @@ class ProhibitedZone:
                 f"center={self.center}, "
                 f"shape={self.shape})")
 
+@dataclass
+class PickingZone:
+    """Represents a picking zone for POI generation."""
+    poi_type: str  # "PICKUP" or "DROPOFF"
+    center: Tuple[float, float, float]  # Center position (x, y, z) in meters
+    dimensions: Tuple[float, float, float]  # Width, height, depth in meters
+    rotation: float  # Rotation in degrees
+    poi_spacing: float  # Distance between POIs in meters (default 2.0)
+    description: str = ""
 
 @dataclass
 class Robot:
@@ -75,6 +84,7 @@ class WarehouseLayout:
     floor_size: Tuple[float, float]  # (width, height) in meters
     objects: List[Object]
     prohibited_zones: List[ProhibitedZone] = field(default_factory=list)
+    picking_zones: List[PickingZone] = field(default_factory=list)
     robots: List[Robot] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
     
@@ -82,6 +92,7 @@ class WarehouseLayout:
         return (f"WarehouseLayout(floor={self.floor_size}m, "
                 f"objects={len(self.objects)}, "
                 f"zones={len(self.prohibited_zones)}, "
+                f"picking_zones={len(self.picking_zones)}, "
                 f"robots={len(self.robots)})")
 
 
@@ -156,6 +167,11 @@ class WarehouseLayoutLoader:
         if "prohibitedZones" in data:
             prohibited_zones = self._parse_prohibited_zones(data["prohibitedZones"])
         
+        # Extract picking zones (optional)
+        picking_zones = []
+        if "pickingZones" in data:
+            picking_zones = self._parse_picking_zones(data["pickingZones"])
+        
         # Extract robots (optional)
         robots = []
         if "robots" in data:
@@ -169,6 +185,7 @@ class WarehouseLayoutLoader:
             floor_size=floor_size,
             objects=objects,
             prohibited_zones=prohibited_zones,
+            picking_zones=picking_zones,
             robots=robots,
             metadata=metadata
         )
@@ -382,6 +399,96 @@ class WarehouseLayoutLoader:
             metadata=metadata
         )
     
+    def _parse_picking_zones(self, zones_data: Any) -> List[PickingZone]:
+        """
+        Parse picking zones array from JSON.
+        
+        Args:
+            zones_data: Array of picking zone dictionaries
+            
+        Returns:
+            List of PickingZone instances
+        """
+        zones = []
+        
+        if not isinstance(zones_data, list):
+            self.warnings.append("'pickingZones' must be an array, skipping")
+            return zones
+        
+        for i, zone_data in enumerate(zones_data):
+            try:
+                zone = self._parse_single_picking_zone(zone_data, i)
+                zones.append(zone)
+            except ValueError as e:
+                self.warnings.append(f"Warning parsing picking zone {i}: {e}")
+                continue
+        
+        return zones
+    
+    def _parse_single_picking_zone(self, zone_data: Dict, index: int) -> PickingZone:
+        """
+        Parse a single picking zone from JSON.
+        
+        Args:
+            zone_data: Picking zone dictionary
+            index: Index in array
+            
+        Returns:
+            PickingZone instance
+        """
+        # Parse POI type (PICKUP or DROPOFF)
+        poi_type = str(zone_data.get("type", "PICKUP")).upper()
+        if poi_type not in ["PICKUP", "DROPOFF"]:
+            raise ValueError(f"'type' must be 'PICKUP' or 'DROPOFF', got '{poi_type}'")
+        
+        # Parse center coordinates (3D)
+        if "center" not in zone_data:
+            raise ValueError(f"Missing 'center'")
+        
+        center_data = zone_data["center"]
+        if not isinstance(center_data, list) or len(center_data) != 3:
+            raise ValueError(f"'center' must be [x, y, z] (3D)")
+        
+        try:
+            center = (float(center_data[0]), float(center_data[1]), float(center_data[2]))
+        except (TypeError, ValueError):
+            raise ValueError(f"'center' values must be numeric")
+        
+        # Parse dimensions (3D)
+        if "dimensions" not in zone_data:
+            raise ValueError(f"Missing 'dimensions'")
+        
+        dims_data = zone_data["dimensions"]
+        if not isinstance(dims_data, list) or len(dims_data) != 3:
+            raise ValueError(f"'dimensions' must be [width, height, depth] (3D)")
+        
+        try:
+            dimensions = (float(dims_data[0]), float(dims_data[1]), float(dims_data[2]))
+            if dimensions[0] <= 0 or dimensions[2] <= 0:  # Width and depth must be positive
+                raise ValueError("Width and depth dimensions must be positive")
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"'dimensions' error: {e}")
+        
+        # Parse rotation (optional)
+        rotation = float(zone_data.get("rotation", 0.0))
+        
+        # Parse POI spacing (optional, default 2.0 meters)
+        poi_spacing = float(zone_data.get("poiSpacing", 2.0))
+        if poi_spacing <= 0:
+            raise ValueError("'poiSpacing' must be positive")
+        
+        # Parse description (optional)
+        description = str(zone_data.get("description", ""))
+        
+        return PickingZone(
+            poi_type=poi_type,
+            center=center,
+            dimensions=dimensions,
+            rotation=rotation,
+            poi_spacing=poi_spacing,
+            description=description
+        )
+    
     def _parse_robots(self, robots_data: Any) -> List[Robot]:
         """
         Parse robots array from JSON.
@@ -512,6 +619,12 @@ class WarehouseLayoutLoader:
             raise RuntimeError("Layout not loaded")
         return self.layout.prohibited_zones
     
+    def get_picking_zones(self) -> List[PickingZone]:
+        """Get list of picking zones."""
+        if self.layout is None:
+            raise RuntimeError("Layout not loaded")
+        return self.layout.picking_zones
+    
     def get_robots(self) -> List[Robot]:
         """Get list of robot initial positions."""
         if self.layout is None:
@@ -557,6 +670,14 @@ class WarehouseLayoutLoader:
             for zone in self.layout.prohibited_zones:
                 print(f"  - {zone.zone_id} ({zone.zone_type}): "
                       f"center={zone.center}, {zone.shape}")
+        
+        if self.layout.picking_zones:
+            print(f"\nPicking Zones ({len(self.layout.picking_zones)}):")
+            for zone in self.layout.picking_zones:
+                print(f"  - {zone.poi_type}: center={zone.center}, "
+                      f"dims={zone.dimensions}, spacing={zone.poi_spacing}m")
+                if zone.description:
+                    print(f"    Description: {zone.description}")
         
         if self.layout.robots:
             print(f"\nRobots ({len(self.layout.robots)}):")

@@ -433,6 +433,7 @@ def setup_warehouse_from_json(
         print(f"[LayoutLoader] Floor size: {layout.floor_size[0]}m x {layout.floor_size[1]}m")
         print(f"[LayoutLoader] Objects: {len(layout.objects)}")
         print(f"[LayoutLoader] Prohibited zones: {len(layout.prohibited_zones)}")
+        print(f"[LayoutLoader] Picking zones: {len(layout.picking_zones)}")
         print(f"[LayoutLoader] Robots: {len(layout.robots)}")
         
         if loader.errors:

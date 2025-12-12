@@ -297,7 +297,7 @@ void SimuladorGLWidget::paintStaticObjects()
         TG = glm::translate(TG, obj.center);
         
         // 2. Rotate around Y axis
-        TG = glm::rotate(TG, glm::radians(obj.rotation), glm::vec3(0, 1, 0));
+        TG = glm::rotate(TG, glm::radians(-obj.rotation), glm::vec3(0, 1, 0));
         
         // 3. Scale model to match JSON dimensions
         // obj.dimensions contains [width, height, depth] from JSON
