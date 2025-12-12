@@ -31,6 +31,15 @@ except ImportError:
     HAS_PIL = False
     print("[WARNING] PIL/Pillow not installed. Install with: pip install Pillow")
 
+# Import JSON warehouse loaders
+try:
+    from warehouse_layout_loader import WarehouseLayoutLoader
+    from prohibited_zone_generator import ProhibitedZoneGenerator
+    HAS_JSON_SUPPORT = True
+except ImportError:
+    HAS_JSON_SUPPORT = False
+    print("[WARNING] JSON loaders not found. JSON support disabled.")
+
 
 @dataclass
 class WarehouseConfig:
@@ -371,6 +380,139 @@ def update_layer2_robots(config: WarehouseConfig, poi_config: Dict, layer2_main_
         print(f"[WARNING] Could not update Layer 2 main.cc: {e}")
 
 
+def setup_warehouse_from_json(
+    json_path: str,
+    config: WarehouseConfig,
+    assets_dir: Path,
+    script_dir: Path
+) -> int:
+    """
+    Setup warehouse from JSON layout file.
+    
+    This function:
+    1. Loads warehouse layout from JSON using WarehouseLayoutLoader
+    2. Generates binary obstacle map using ProhibitedZoneGenerator
+    
+    Args:
+        json_path: Path to JSON warehouse layout file
+        config: WarehouseConfig with resolution and robot radius
+        assets_dir: Directory to save generated files
+        script_dir: Script directory for relative path resolution
+        
+    Returns:
+        0 on success, non-zero on error
+    """
+    if not HAS_JSON_SUPPORT:
+        print("\n[ERROR] JSON support not available. Ensure warehouse_layout_loader.py")
+        print("        and prohibited_zone_generator.py are in the same directory.")
+        return 1
+    
+    json_path = Path(json_path)
+    if not json_path.is_absolute():
+        # First try relative to current working directory
+        if Path(json_path).exists():
+            json_path = Path(json_path).resolve()
+        else:
+            # Then try relative to script directory
+            json_path = script_dir / json_path
+    
+    if not json_path.exists():
+        print(f"\n[ERROR] JSON file not found: {json_path}")
+        return 1
+    
+    print("\n" + "-" * 70)
+    print("  PROCESSING JSON WAREHOUSE LAYOUT...")
+    print("-" * 70)
+    
+    # Step 1: Load warehouse layout
+    print(f"\n[Step 1/2] Loading warehouse layout from JSON...")
+    try:
+        loader = WarehouseLayoutLoader(str(json_path))
+        layout = loader.get_layout()
+        
+        print(f"[LayoutLoader] Floor size: {layout.floor_size[0]}m x {layout.floor_size[1]}m")
+        print(f"[LayoutLoader] Objects: {len(layout.objects)}")
+        print(f"[LayoutLoader] Prohibited zones: {len(layout.prohibited_zones)}")
+        print(f"[LayoutLoader] Robots: {len(layout.robots)}")
+        
+        if loader.errors:
+            print(f"[ERROR] {len(loader.errors)} errors found:")
+            for error in loader.errors:
+                print(f"  - {error}")
+            return 1
+        
+        if loader.warnings:
+            print(f"[WARNING] {len(loader.warnings)} warnings:")
+            for warning in loader.warnings:
+                print(f"  - {warning}")
+    
+    except Exception as e:
+        print(f"[ERROR] Failed to load JSON: {e}")
+        return 1
+    
+    # Step 2: Generate binary obstacle map
+    print(f"\n[Step 2/2] Generating binary obstacle map...")
+    try:
+        resolution_factor = get_resolution_factor(config.resolution)
+        
+        generator = ProhibitedZoneGenerator(
+            loader=loader,
+            resolution_m_per_px=resolution_factor,
+            robot_radius_m=config.robot_radius_m
+        )
+        
+        # Generate and export grid
+        grid = generator.generate_grid()
+        
+        map_output_path = assets_dir / "map_layout.txt"
+        generator.export_to_bitmap_file(str(map_output_path))
+        
+        total_cells = generator.grid_width * generator.grid_height
+        obstacle_pct = 100 * generator.obstacle_cells / total_cells if total_cells > 0 else 0
+        walkable_pct = 100 * generator.walkable_cells / total_cells if total_cells > 0 else 0
+        
+        print(f"[GridGenerator] Grid: {generator.grid_width}x{generator.grid_height}")
+        print(f"[GridGenerator] Obstacles: {generator.obstacle_cells} ({obstacle_pct:.1f}%)")
+        print(f"[GridGenerator] Walkable: {generator.walkable_cells} ({walkable_pct:.1f}%)")
+        print(f"[GridGenerator] Saved to: {map_output_path}")
+        
+        # Also export PNG for visualization
+        try:
+            png_output_path = assets_dir / "map_layout.png"
+            generator.export_to_png(str(png_output_path))
+            print(f"[GridGenerator] Visualization: {png_output_path}")
+        except Exception as e:
+            print(f"[WARNING] Could not generate PNG: {e}")
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to generate grid: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+    
+    binary_map = grid
+    # Final summary
+    print("\n" + "=" * 70)
+    print("                    BITMAP GENERATION COMPLETE!")
+    print("=" * 70)
+    print(f"\n  Source JSON:  {json_path}")
+    print(f"\n  Generated files:")
+    print(f"    Map:      {map_output_path}")
+    try:
+        print(f"    PNG:      {png_output_path}")
+    except:
+        pass
+    print(f"\n  Warehouse:")
+    print(f"    Floor:    {layout.floor_size[0]}m x {layout.floor_size[1]}m")
+    print(f"    Grid:     {generator.grid_width} x {generator.grid_height} pixels")
+    print(f"    Resolution: {resolution_factor}m/pixel ({config.resolution})")
+    print(f"    Objects:  {len(layout.objects)}")
+    print(f"    Zones:    {len(layout.prohibited_zones)}")
+    print("=" * 70 + "\n")
+    
+    return 0
+
+
 def interactive_setup() -> WarehouseConfig:
     """Interactive configuration wizard."""
     config = WarehouseConfig()
@@ -479,6 +621,8 @@ def print_summary(config: WarehouseConfig):
 
 def main():
     parser = argparse.ArgumentParser(description='Warehouse Setup Wizard')
+    parser.add_argument('--use-json', type=str, metavar='JSON_FILE',
+                       help='Use JSON warehouse layout instead of image')
     parser.add_argument('--image', type=str, help='Warehouse image file')
     parser.add_argument('--width', type=float, help='Width in meters')
     parser.add_argument('--height', type=float, help='Height in meters')
@@ -499,6 +643,24 @@ def main():
     script_dir = Path(__file__).parent
     assets_dir = script_dir / ".." / "assets"
     
+    # Check if using JSON mode
+    if args.use_json:
+        # JSON mode - only generates bitmap, no POI/task generation
+        config = WarehouseConfig()
+        config.resolution = args.resolution if args.resolution else "DECIMETERS"
+        config.robot_radius_m = 0.3  # Default robot radius for inflation
+        
+        print("\n" + "=" * 70)
+        print("          MECALUX AMR - WAREHOUSE BITMAP GENERATOR (JSON MODE)")
+        print("=" * 70)
+        print(f"  JSON Layout:     {args.use_json}")
+        print(f"  Resolution:      {config.resolution}")
+        print(f"  Robot Radius:    {config.robot_radius_m}m")
+        print("=" * 70)
+        
+        return setup_warehouse_from_json(args.use_json, config, assets_dir, script_dir)
+    
+    # Original image-based mode
     # Interactive or command-line configuration
     if args.non_interactive:
         config = WarehouseConfig()

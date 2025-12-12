@@ -117,6 +117,10 @@ class ProhibitedZoneGenerator:
         
         Converts 3D object (x, y, z, w, h, d) to 2D grid cells.
         
+        Special handling:
+        - modelIndex=5 (charging stations): NOT marked as obstacles (robots need to access them)
+        - All other objects: Marked as obstacles
+        
         JSON coordinate system:
         - center[0] = x (left-right in meters)
         - center[1] = y (up-down, typically 0 for floor level)
@@ -129,6 +133,10 @@ class ProhibitedZoneGenerator:
         Args:
             obj: Object from warehouse layout (dimensions in meters)
         """
+        # Skip charging stations - robots need to access them
+        if obj.model_index == 5:
+            return
+        
         # Extract 2D position from 3D center
         # Use x and z from JSON (z becomes y in 2D grid)
         center_x = obj.center[0]  # meters
