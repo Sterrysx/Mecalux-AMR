@@ -23,8 +23,8 @@ SimuladorGLWidget::~SimuladorGLWidget ()
 
 void SimuladorGLWidget::initializeGL ()
 {
-  // Initialize robots map with tuple (x, y, direction)
-  robots = std::map<int,std::tuple<float,float,float>>();
+  // Initialize robots map with tuple (x, y, direction, hasBox)
+  robots = std::map<int,std::tuple<float,float,float,bool>>();
   
   // Cal inicialitzar l'ús de les funcions d'OpenGL
   initializeOpenGLFunctions();  
@@ -138,12 +138,27 @@ void SimuladorGLWidget::loadWarehouse(const QString& filename) {
 void SimuladorGLWidget::afegirRobot(int x, int y) {
     makeCurrent();
     std::cout << "Afegir robot a la posició: (" << x << ", " << y << ")\n";
-    robots[nextRobotID] = std::make_tuple(float(x), float(y), 0.f);  // Start facing right
+    robots[nextRobotID] = std::make_tuple(float(x), float(y), 0.f, false);  // Start without box
     emit robotAfegit(nextRobotID);
+    setRobotBoxState(nextRobotID, true);  // Initialize hasBox to false
     nextRobotID++;
     update();
 }
 
+void SimuladorGLWidget::setRobotBoxState(int robotID, bool hasBox) {
+    makeCurrent();
+    auto it = robots.find(robotID);
+    if (it != robots.end()) {
+        float x = std::get<0>(it->second);
+        float y = std::get<1>(it->second);
+        float angle = std::get<2>(it->second);
+        robots[robotID] = std::make_tuple(x, y, angle, hasBox);
+        std::cout << "Robot " << robotID << " box state set to: " << (hasBox ? "true" : "false") << "\n";
+        update();
+    } else {
+        std::cerr << "Robot " << robotID << " not found\n";
+    }
+}
 
 void SimuladorGLWidget::eliminarRobot(int robotID){
   makeCurrent();
@@ -160,13 +175,15 @@ void SimuladorGLWidget::modelTransforRobot (int id, float x, float y,float angle
     // Rotation based on direction
     float angleRad = glm::radians(angle); // 90 degrees per direction
     TG = glm::rotate(TG, angleRad, glm::vec3(0, 1, 0));
-  
-    
+    //glm::vec3 escalaModel = glm::vec3(1);
+    //TG= glm::scale(TG, escalaModel);  // Scale down robot size
     // Model adjustments
     TG = glm::translate(TG, glm::vec3(-centreCapsaModels[1].x, -minY[1], -centreCapsaModels[1].z));
     
     glUniformMatrix4fv(transLoc, 1, GL_FALSE, &TG[0][0]);
 }
+
+
 void SimuladorGLWidget::paintGL ()
 {
 // En cas de voler canviar els paràmetres del viewport, descomenteu la crida següent i
@@ -188,10 +205,14 @@ void SimuladorGLWidget::paintGL ()
         const float x = std::get<0>(robot.second);
         const float y = std::get<1>(robot.second);
         const int dir = std::get<2>(robot.second);
+        const bool hasBox = std::get<3>(robot.second);
+
+        // Select model based on whether robot is carrying a box
+        const int modelIndex = hasBox ? 2 : 1;  // Model 2 = with box, Model 1 = without box
 
         modelTransforRobot(robot.first, x, y, dir);
-        glBindVertexArray(VAO_models[1]);
-        glDrawArrays(GL_TRIANGLES, 0, models[1].faces().size() * 3);
+        glBindVertexArray(VAO_models[modelIndex]);
+        glDrawArrays(GL_TRIANGLES, 0, models[modelIndex].faces().size() * 3);
     }
 
     // If we have a selected robot, draw it with outline
@@ -201,8 +222,10 @@ void SimuladorGLWidget::paintGL ()
             const float x = std::get<0>(it->second);
             const float y = std::get<1>(it->second);
             const float angle = std::get<2>(it->second);
+            const bool hasBox = std::get<3>(it->second);
 
-
+            // Select model based on whether robot is carrying a box
+            const int modelIndex = hasBox ? 2 : 1;  // Model 2 = with box, Model 1 = without box
 
             // First render: Write to stencil buffer
             glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -210,8 +233,8 @@ void SimuladorGLWidget::paintGL ()
             glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
             
             modelTransforRobot(selectedRObotID, x, y, angle);
-            glBindVertexArray(VAO_models[1]);
-            glDrawArrays(GL_TRIANGLES, 0, models[1].faces().size() * 3);
+            glBindVertexArray(VAO_models[modelIndex]);
+            glDrawArrays(GL_TRIANGLES, 0, models[modelIndex].faces().size() * 3);
 
             // Second render: Draw slightly scaled outline
             if(!robotCamera){
@@ -219,21 +242,21 @@ void SimuladorGLWidget::paintGL ()
               glStencilMask(0x00);
               glDisable(GL_DEPTH_TEST);
 
-              // Create scaled transform for outline
-              glm::vec3 transDesp = glm::vec3(0, centreCapsaModels[1].y - minY[1], 0);
+              // Create scaled transform for outline (use the same model index)
+              glm::vec3 transDesp = glm::vec3(0, centreCapsaModels[modelIndex].y - minY[modelIndex], 0);
               glm::mat4 TG(1.0f);
               TG = glm::translate(TG, glm::vec3(x, 0.f, y));
               float angleRad = glm::radians(angle);
               TG = glm::rotate(TG, angleRad, glm::vec3(0,1,0));
               TG = glm::translate(TG, transDesp);
               TG = glm::scale(TG, glm::vec3(1.1f)); // Scale up for outline
-              TG = glm::translate(TG, glm::vec3(-centreCapsaModels[1].x, -centreCapsaModels[1].y, -centreCapsaModels[1].z));
+              TG = glm::translate(TG, glm::vec3(-centreCapsaModels[modelIndex].x, -centreCapsaModels[modelIndex].y, -centreCapsaModels[modelIndex].z));
               
               // Draw outline in red
               glm::vec3 outlineColor(1.0f, 0.0f, 0.0f); // Red outline
               glUniform3fv(colorLoc, 1, &outlineColor[0]);
               glUniformMatrix4fv(transLoc, 1, GL_FALSE, &TG[0][0]);
-              glDrawArrays(GL_TRIANGLES, 0, models[1].faces().size() * 3);
+              glDrawArrays(GL_TRIANGLES, 0, models[modelIndex].faces().size() * 3);
             }
             // Restore states
             glEnable(GL_DEPTH_TEST);
@@ -267,13 +290,21 @@ void SimuladorGLWidget::paintStaticObjects()
             continue; // Skip invalid model indices
         }
         
+        // Create transformation matrix with JSON dimensions for scaling
         glm::mat4 TG(1.0f);
         
-        // Apply transformations: translate to center, rotate, then adjust for model center
+        // 1. Translate to object center position
         TG = glm::translate(TG, obj.center);
-        TG = glm::rotate(TG, glm::radians(obj.rotation), glm::vec3(0, 1, 0));
         
-        // Center the model at origin
+        // 2. Rotate around Y axis
+        TG = glm::rotate(TG, glm::radians(-obj.rotation), glm::vec3(0, 1, 0));
+        
+        // 3. Scale model to match JSON dimensions
+        // obj.dimensions contains [width, height, depth] from JSON
+        glm::vec3 scaleFactors = obj.dimensions / dimensions[obj.modelIndex];
+        TG = glm::scale(TG, scaleFactors);
+        
+        // 4. Center the model at origin (after scaling)
         TG = glm::translate(TG, glm::vec3(-centreCapsaModels[obj.modelIndex].x, 
                                           -minY[obj.modelIndex], 
                                           -centreCapsaModels[obj.modelIndex].z));
@@ -281,6 +312,35 @@ void SimuladorGLWidget::paintStaticObjects()
         glUniformMatrix4fv(transLoc, 1, GL_FALSE, &TG[0][0]);
         glBindVertexArray(VAO_models[obj.modelIndex]);
         glDrawArrays(GL_TRIANGLES, 0, models[obj.modelIndex].faces().size() * 3);
+    }
+    
+    // Debug: Draw picking zones as black points on the ground
+    const std::vector<PickingZone>& zones = warehouseLoader.getPickingZones();
+    if (!zones.empty()) {
+        glm::vec3 blackColor(0.0f, 0.0f, 0.0f); // Black color for debug points
+        glUniform3fv(colorLoc, 1, &blackColor[0]);
+        
+        for (const auto& zone : zones) {
+            glm::mat4 TG(1.0f);
+            
+            // Position at zone center (slightly above ground to avoid z-fighting)
+            glm::vec3 position = zone.center;
+            position.y = 0.05f; // Slightly above ground
+            TG = glm::translate(TG, position);
+            
+            // Small scale for debug point (0.3 units diameter)
+            TG = glm::scale(TG, glm::vec3(0.3f, 0.3f, 0.3f));
+            
+            // Use model 1 (robot model) as debug marker
+            int debugModelIndex = 1;
+            TG = glm::translate(TG, glm::vec3(-centreCapsaModels[debugModelIndex].x, 
+                                              -minY[debugModelIndex], 
+                                              -centreCapsaModels[debugModelIndex].z));
+            
+            glUniformMatrix4fv(transLoc, 1, GL_FALSE, &TG[0][0]);
+            glBindVertexArray(VAO_models[debugModelIndex]);
+            glDrawArrays(GL_TRIANGLES, 0, models[debugModelIndex].faces().size() * 3);
+        }
     }
 }
 
@@ -461,14 +521,15 @@ void SimuladorGLWidget::keyPressEvent(QKeyEvent* event)
                 float x = std::get<0>(r->second);
                 float y = std::get<1>(r->second);
                 float angle = std::get<2>(r->second);
+                bool hasBox = std::get<3>(r->second);
                 
                 // Move robot forward by 0.5 units in its facing direction
 
                 if(angle==0.0f){
                     angle=90.0f;
                 }else angle=0.0f;
-                // Update robot position
-                robots[selectedRObotID] = std::make_tuple(x, y, angle);
+                // Update robot position (preserve hasBox state)
+                robots[selectedRObotID] = std::make_tuple(x, y, angle, hasBox);
             }
             viewTransform();
             projectTransform();
@@ -547,7 +608,7 @@ void SimuladorGLWidget::wheelEvent(QWheelEvent *event)
   update();
 }
 
-void SimuladorGLWidget::calculaCapsaModel (Model &p, float &escala, float ampladaDesitjada, glm::vec3 &centreCapsa,float &minY,float &minX,float &minZ)
+void SimuladorGLWidget::calculaCapsaModel (Model &p, float &escala, float ampladaDesitjada, glm::vec3 &centreCapsa,float &minY,float &minX,float &minZ,glm::vec3 &dimensions)
 {
   // Càlcul capsa contenidora i valors transformacions inicials
   float minx, miny, minz, maxx, maxy, maxz;
@@ -575,6 +636,7 @@ void SimuladorGLWidget::calculaCapsaModel (Model &p, float &escala, float amplad
   minY=miny;
   minX=minx;
   minZ=minz;
+  dimensions = glm::vec3(maxx-minx, maxy-miny, maxz-minz);
 }
 
 void SimuladorGLWidget::creaBuffersModels ()
@@ -589,7 +651,8 @@ void SimuladorGLWidget::creaBuffersModels ()
   	  models[i].load("./models/"+objNames[i]);
   
 	  // Calculem la capsa contenidora del model
-	  calculaCapsaModel (models[i], escalaModels[i], ampladesDesitjades[i], centreCapsaModels[i],minY[i],minX[i],minZ[i]);
+    std::cout<< "Calculant capsa model " << objNames[i] << std::endl;
+    calculaCapsaModel (models[i], escalaModels[i], ampladesDesitjades[i], centreCapsaModels[i],minY[i],minX[i],minZ[i], dimensions[i]);
   
 	  glBindVertexArray(VAO_models[i]);
 

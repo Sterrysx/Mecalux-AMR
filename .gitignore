@@ -41,3 +41,8 @@ lerna-debug.log*
 
 # Test coverage
 coverage
+
+# Generated API JSON files (fleet manager output)
+api/orca/orca_tick_*.json
+api/fleet/fleet_tick_*.json
+api/paths/paths_tick_*.json

@@ -1,476 +1,55 @@
 {
-    "description": "Auto-generated POI configuration for warehouse2.PNG",
+    "description": "Extracted from JSON warehouse layout (one POI per zone)",
     "version": "3.1",
-    "coordinate_system": "pixels (0.1m/pixel, DECIMETERS)",
+    "coordinate_system": "pixels (0.1m/pixel)",
     "physical_dimensions": {
-        "width_m": 160.0,
-        "height_m": 60.0
+        "width_m": 30.0,
+        "height_m": 30.0
     },
     "generation_config": {
-        "robot_radius_m": 0.3,
-        "seed": null
+        "from_json": true,
+        "one_poi_per_zone": true
     },
     "poi_types": {
-        "CHARGING": "Battery charging stations (IDs: C0, C1, C2...)",
-        "PICKUP": "Locations where robot picks up packages (PU0, PU1...)",
-        "DROPOFF": "Locations where robot drops off packages (DO0, DO1...)"
+        "CHARGING": "Battery charging stations (auto-detected from modelIndex=5)",
+        "PICKUP": "Package pickup locations (from pickingZones)",
+        "DROPOFF": "Package dropoff locations (from pickingZones)"
     },
     "poi": [
         {
             "id": "C0",
             "type": "CHARGING",
-            "x": 1466,
-            "y": 205,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1474, 199)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "C1",
-            "type": "CHARGING",
-            "x": 1487,
-            "y": 194,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1474, 199)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "C2",
-            "type": "CHARGING",
-            "x": 1467,
-            "y": 216,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1474, 199)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "C3",
-            "type": "CHARGING",
-            "x": 1397,
-            "y": 43,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1403, 21)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "C4",
-            "type": "CHARGING",
-            "x": 1400,
-            "y": 8,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1403, 21)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "C5",
-            "type": "CHARGING",
-            "x": 1417,
-            "y": 32,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1403, 21)",
-                "cluster_id": 1,
-                "generated": true
-            }
+            "x": 250,
+            "y": 150,
+            "active": true
         },
         {
             "id": "PU0",
             "type": "PICKUP",
-            "x": 520,
-            "y": 482,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(525, 490)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU1",
-            "type": "PICKUP",
-            "x": 533,
-            "y": 513,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(525, 490)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU2",
-            "type": "PICKUP",
-            "x": 543,
-            "y": 496,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(525, 490)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU3",
-            "type": "PICKUP",
-            "x": 524,
-            "y": 513,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(525, 490)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU4",
-            "type": "PICKUP",
-            "x": 207,
-            "y": 432,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(199, 417)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU5",
-            "type": "PICKUP",
-            "x": 211,
-            "y": 402,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(199, 417)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU6",
-            "type": "PICKUP",
-            "x": 214,
-            "y": 419,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(199, 417)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU7",
-            "type": "PICKUP",
-            "x": 185,
-            "y": 440,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(199, 417)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU8",
-            "type": "PICKUP",
-            "x": 93,
-            "y": 72,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(87, 85)",
-                "cluster_id": 2,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU9",
-            "type": "PICKUP",
-            "x": 78,
-            "y": 69,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(87, 85)",
-                "cluster_id": 2,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU10",
-            "type": "PICKUP",
-            "x": 65,
-            "y": 76,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(87, 85)",
-                "cluster_id": 2,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU11",
-            "type": "PICKUP",
-            "x": 80,
-            "y": 83,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(87, 85)",
-                "cluster_id": 2,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU12",
-            "type": "PICKUP",
-            "x": 580,
-            "y": 332,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(561, 344)",
-                "cluster_id": 3,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU13",
-            "type": "PICKUP",
-            "x": 542,
-            "y": 358,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(561, 344)",
-                "cluster_id": 3,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU14",
-            "type": "PICKUP",
-            "x": 559,
-            "y": 318,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(561, 344)",
-                "cluster_id": 3,
-                "generated": true
-            }
-        },
-        {
-            "id": "PU15",
-            "type": "PICKUP",
-            "x": 549,
-            "y": 340,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(561, 344)",
-                "cluster_id": 3,
-                "generated": true
-            }
+            "x": 100,
+            "y": 30,
+            "active": true
         },
         {
             "id": "DO0",
             "type": "DROPOFF",
-            "x": 1047,
-            "y": 284,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1055, 299)",
-                "cluster_id": 0,
-                "generated": true
-            }
+            "x": 150,
+            "y": 100,
+            "active": true
+        },
+        {
+            "id": "PU1",
+            "type": "PICKUP",
+            "x": 80,
+            "y": 200,
+            "active": true
         },
         {
             "id": "DO1",
             "type": "DROPOFF",
-            "x": 1048,
-            "y": 302,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1055, 299)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO2",
-            "type": "DROPOFF",
-            "x": 1048,
-            "y": 292,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1055, 299)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO3",
-            "type": "DROPOFF",
-            "x": 1045,
-            "y": 310,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(1055, 299)",
-                "cluster_id": 0,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO4",
-            "type": "DROPOFF",
-            "x": 219,
-            "y": 123,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(194, 114)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO5",
-            "type": "DROPOFF",
-            "x": 204,
-            "y": 93,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(194, 114)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO6",
-            "type": "DROPOFF",
-            "x": 193,
-            "y": 97,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(194, 114)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO7",
-            "type": "DROPOFF",
-            "x": 183,
-            "y": 112,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(194, 114)",
-                "cluster_id": 1,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO8",
-            "type": "DROPOFF",
-            "x": 974,
-            "y": 154,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(967, 156)",
-                "cluster_id": 2,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO9",
-            "type": "DROPOFF",
-            "x": 971,
-            "y": 172,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(967, 156)",
-                "cluster_id": 2,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO10",
-            "type": "DROPOFF",
-            "x": 985,
-            "y": 174,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(967, 156)",
-                "cluster_id": 2,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO11",
-            "type": "DROPOFF",
-            "x": 964,
-            "y": 178,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(967, 156)",
-                "cluster_id": 2,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO12",
-            "type": "DROPOFF",
-            "x": 565,
-            "y": 480,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(567, 493)",
-                "cluster_id": 3,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO13",
-            "type": "DROPOFF",
-            "x": 578,
-            "y": 515,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(567, 493)",
-                "cluster_id": 3,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO14",
-            "type": "DROPOFF",
-            "x": 547,
-            "y": 479,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(567, 493)",
-                "cluster_id": 3,
-                "generated": true
-            }
-        },
-        {
-            "id": "DO15",
-            "type": "DROPOFF",
-            "x": 572,
-            "y": 506,
-            "active": true,
-            "metadata": {
-                "cluster_center": "(567, 493)",
-                "cluster_id": 3,
-                "generated": true
-            }
+            "x": 220,
+            "y": 250,
+            "active": true
         }
     ]
 }

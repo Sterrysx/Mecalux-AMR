@@ -13,7 +13,7 @@
 #include "WarehouseLoader.h"
 
 // definim el numero total de models a carregar
-#define NUM_MODELS 5
+#define NUM_MODELS 6
 
 // definim el numero màxim de blocs a afegir
 #define NUM_BRICKS 50
@@ -34,6 +34,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     void afegirRobot(int x, int y);
     void eliminarRobot(int robotID);
     void modifyselectedRobotID(QString robotID);
+    void setRobotBoxState(int robotID, bool hasBox);  // Set whether robot is carrying a box
   signals:
     void robotAfegit(int id);
   private:
@@ -75,7 +76,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     // creaBuffersModels - Aquí carreguem els fitxers obj i fem la inicialització dels diferents VAOS i VBOs
     void creaBuffersModels ();    
     // calculaCapsaModel - Calcula la capsa contenidora d'un Model p retornant el centre absolut de la seva capsa contenidora a centreCapsa, i el factor d'escala necessari per a que la seva amplada sigui ampladaDesitjada (dimensió en X desitjada).
-    void calculaCapsaModel (Model &p, float &escala, float ampladaDesitjada, glm::vec3 &centreCapsa, float &minY, float &minX, float &minZ);
+    void calculaCapsaModel (Model &p, float &escala, float ampladaDesitjada, glm::vec3 &centreCapsa, float &minY, float &minX, float &minZ, glm::vec3 &dimensions);
 
     void iniMaterialTerra ();
 
@@ -97,7 +98,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     typedef enum {GROUND_BRICKS = 0, BRICK_1x2 = 1, BRICK_2x2 = 2, BRICK_4x2 = 3} ModelType;    
     
     // Array amb els noms dels fitxers .obj a carregar ordenats com en el enum ModelType	
-    std::string objNames[NUM_MODELS] = {"cinta.obj","Robot.obj", "RobotCaixa.obj", "noguer_caixes.obj","noguer.obj"};	    
+    std::string objNames[NUM_MODELS] = {"cinta.obj","Robot.obj", "RobotCaixa.obj", "noguer_caixes.obj","noguer.obj","chargingStation.obj"};	    
 
     // Array de models carregats
     Model models[NUM_MODELS];
@@ -123,7 +124,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     /***************************************************/
     // Objectes (blocs de LEGO) --> instàncies de model        
     /***************************************************/
-    std::map<int,std::tuple<float,float,float>> robots;  // map that stores robots (id, (x,y,angle))
+    std::map<int,std::tuple<float,float,float,bool>> robots;  // map that stores robots (id, (x,y,angle,hasBox))
     int nextRobotID = 1; // ID que s'assignarà al següent robot afegit
     
     // Warehouse loader
@@ -175,7 +176,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     float radiEsc, ra, fov, zn, zf; // radi de l'escena, relació d'aspecte, field of view, znear i zfar
     float zoomFactor; // zoom factor for all cameras (1.0 = no zoom)
     glm::vec3 floorScale; // scale factor for the floor (x, y, z)
-
+    glm::vec3 dimensions[NUM_MODELS]; // dimensions of each model
     float angleX, angleY; // angles d'Euler per construir la view matrix
 
     typedef  enum {NONE, ROTATE} InteractiveAction; // enum per diferenciar si estem rotant o no la càmera

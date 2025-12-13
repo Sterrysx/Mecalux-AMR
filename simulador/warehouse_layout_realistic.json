@@ -1,0 +1,178 @@
+{
+  "floorSize": [50.0, 40.0],
+  "objects": [
+    {
+      "modelIndex": 0,
+      "center": [2.0, 0.0, 5.0],
+      "dimensions": [3.0, 0.8, 20.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 0,
+      "center": [2.0, 0.0, 30.0],
+      "dimensions": [3.0, 0.8, 8.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [10.0, 0.0, 5.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [10.0, 0.0, 12.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [10.0, 0.0, 19.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [10.0, 0.0, 26.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 4,
+      "center": [20.0, 0.0, 5.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 4,
+      "center": [20.0, 0.0, 12.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 4,
+      "center": [20.0, 0.0, 19.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 4,
+      "center": [20.0, 0.0, 26.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [30.0, 0.0, 5.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [30.0, 0.0, 12.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [30.0, 0.0, 19.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [30.0, 0.0, 26.0],
+      "dimensions": [8.0, 2.5, 1.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 5,
+      "center": [8.0, 0.0, 35.0],
+      "dimensions": [2.0, 0.8, 2.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 5,
+      "center": [16.0, 0.0, 35.0],
+      "dimensions": [2.0, 0.8, 2.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 5,
+      "center": [24.0, 0.0, 35.0],
+      "dimensions": [2.0, 0.8, 2.0],
+      "rotation": 0.0
+    },
+    {
+      "modelIndex": 5,
+      "center": [32.0, 0.0, 35.0],
+      "dimensions": [2.0, 0.8, 2.0],
+      "rotation": 0.0
+    }
+  ],
+  "prohibitedZones": [
+    {
+      "id": "conveyor_1_buffer",
+      "type": "obstacle_buffer",
+      "center": [2.0, 5.0],
+      "shape": "rectangle",
+      "dimensions": [3.5, 20.5],
+      "rotation": 0.0,
+      "description": "Safety buffer around conveyor belt 1"
+    },
+    {
+      "id": "conveyor_2_buffer",
+      "type": "obstacle_buffer",
+      "center": [2.0, 30.0],
+      "shape": "rectangle",
+      "dimensions": [3.5, 8.5],
+      "rotation": 90.0,
+      "description": "Safety buffer around conveyor belt 2"
+    },
+    {
+      "id": "shelf_cluster_1",
+      "type": "obstacle_buffer",
+      "center": [10.0, 13.0],
+      "shape": "rectangle",
+      "dimensions": [9.0, 22.0],
+      "rotation": 0.0,
+      "description": "Combined buffer around shelf cluster 1 (4 shelves)"
+    },
+    {
+      "id": "shelf_cluster_2",
+      "type": "obstacle_buffer",
+      "center": [20.0, 13.0],
+      "shape": "rectangle",
+      "dimensions": [9.0, 22.0],
+      "rotation": 0.0,
+      "description": "Combined buffer around shelf cluster 2 (4 shelves)"
+    },
+    {
+      "id": "shelf_cluster_3",
+      "type": "obstacle_buffer",
+      "center": [30.0, 13.0],
+      "shape": "rectangle",
+      "dimensions": [9.0, 22.0],
+      "rotation": 0.0,
+      "description": "Combined buffer around shelf cluster 3 (4 shelves)"
+    },
+    {
+      "id": "charging_stations_buffer",
+      "type": "obstacle_buffer",
+      "center": [20.0, 35.0],
+      "shape": "rectangle",
+      "dimensions": [25.0, 2.5],
+      "rotation": 0.0,
+      "description": "Combined buffer around all charging stations"
+    },
+    {
+      "id": "entrance_restricted",
+      "type": "restricted_area",
+      "center": [0.5, 2.0],
+      "shape": "rectangle",
+      "dimensions": [1.0, 4.0],
+      "rotation": 0.0,
+      "description": "Entrance area - may be restricted"
+    }
+  ]
+}

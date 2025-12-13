@@ -17,7 +17,7 @@ CXX           = g++
 DEFINES       = -DQT_NO_DEBUG -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -O2 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -O2 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -I/usr/include/glm -IModel -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
+INCPATH       = -I. -I/usr/include/glm -I./Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
 QMAKE         = /usr/lib/qt5/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -37,7 +37,7 @@ MOVE          = mv -f
 TAR           = tar -cf
 COMPRESS      = gzip -9f
 DISTNAME      = examen1.0.0
-DISTDIR = /home/arnau/Escritorio/simulador/.tmp/examen1.0.0
+DISTDIR = /home/arnau/Mecalux-AMR/simulador/.tmp/examen1.0.0
 LINK          = g++
 LFLAGS        = -Wl,-O1
 LIBS          = $(SUBLIBS) /usr/lib/x86_64-linux-gnu/libQt5OpenGL.so /usr/lib/x86_64-linux-gnu/libQt5Widgets.so /usr/lib/x86_64-linux-gnu/libQt5Gui.so /usr/lib/x86_64-linux-gnu/libQt5Core.so -lGL -lpthread   
@@ -53,7 +53,7 @@ OBJECTS_DIR   = ./
 ####### Files
 
 SOURCES       = main.cpp \
-		Model/model.cpp \
+		./Model/model.cpp \
 		SimuladorGLWidget.cpp \
 		MyForm.cpp \
 		AfegirRobotButton.cpp \
@@ -155,7 +155,7 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		AfegirRobotButton.h \
 		CustomComboBox.h \
 		WarehouseLoader.h main.cpp \
-		Model/model.cpp \
+		./Model/model.cpp \
 		SimuladorGLWidget.cpp \
 		MyForm.cpp \
 		AfegirRobotButton.cpp \
@@ -345,7 +345,7 @@ distdir: FORCE
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents SimuladorGLWidget.h MyForm.h AfegirRobotButton.h CustomComboBox.h WarehouseLoader.h $(DISTDIR)/
-	$(COPY_FILE) --parents main.cpp Model/model.cpp SimuladorGLWidget.cpp MyForm.cpp AfegirRobotButton.cpp CustomComboBox.cpp WarehouseLoader.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents main.cpp ./Model/model.cpp SimuladorGLWidget.cpp MyForm.cpp AfegirRobotButton.cpp CustomComboBox.cpp WarehouseLoader.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents MyForm.ui $(DISTDIR)/
 
 
@@ -382,27 +382,26 @@ compiler_moc_header_make_all: moc_SimuladorGLWidget.cpp moc_MyForm.cpp moc_Afegi
 compiler_moc_header_clean:
 	-$(DEL_FILE) moc_SimuladorGLWidget.cpp moc_MyForm.cpp moc_AfegirRobotButton.cpp moc_CustomComboBox.cpp
 moc_SimuladorGLWidget.cpp: SimuladorGLWidget.h \
-		Model/model.h \
 		WarehouseLoader.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
-	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Escritorio/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Escritorio/simulador -I/usr/include/glm -I/home/arnau/Escritorio/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include SimuladorGLWidget.h -o moc_SimuladorGLWidget.cpp
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include SimuladorGLWidget.h -o moc_SimuladorGLWidget.cpp
 
 moc_MyForm.cpp: MyForm.h \
 		ui_MyForm.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
-	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Escritorio/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Escritorio/simulador -I/usr/include/glm -I/home/arnau/Escritorio/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include MyForm.h -o moc_MyForm.cpp
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include MyForm.h -o moc_MyForm.cpp
 
 moc_AfegirRobotButton.cpp: AfegirRobotButton.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
-	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Escritorio/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Escritorio/simulador -I/usr/include/glm -I/home/arnau/Escritorio/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include AfegirRobotButton.h -o moc_AfegirRobotButton.cpp
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include AfegirRobotButton.h -o moc_AfegirRobotButton.cpp
 
 moc_CustomComboBox.cpp: CustomComboBox.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
-	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Escritorio/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Escritorio/simulador -I/usr/include/glm -I/home/arnau/Escritorio/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include CustomComboBox.h -o moc_CustomComboBox.cpp
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include CustomComboBox.h -o moc_CustomComboBox.cpp
 
 compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
@@ -416,7 +415,6 @@ ui_MyForm.h: MyForm.ui \
 		SimuladorGLWidget.h \
 		AfegirRobotButton.h \
 		CustomComboBox.h \
-		Model/model.h \
 		WarehouseLoader.h
 	/usr/lib/qt5/bin/uic MyForm.ui -o ui_MyForm.h
 
@@ -434,11 +432,10 @@ main.o: main.cpp MyForm.h \
 		ui_MyForm.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
-model.o: Model/model.cpp Model/model.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o model.o Model/model.cpp
+model.o: ./Model/model.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o model.o ./Model/model.cpp
 
 SimuladorGLWidget.o: SimuladorGLWidget.cpp SimuladorGLWidget.h \
-		Model/model.h \
 		WarehouseLoader.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o SimuladorGLWidget.o SimuladorGLWidget.cpp
 

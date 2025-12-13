@@ -114,9 +114,10 @@ bool WarehouseLoader::loadFromJSON(const QString& filename) {
             float x = robot["x"].toDouble(0.0);
             float y = robot["y"].toDouble(0.0);
             float angle = robot["angle"].toDouble(0.0);
+            bool hasBox = robot["hasBox"].toBool(false);  // Load hasBox state, default to false
             
             if (id != -1) {
-                robots[id] = std::make_tuple(x, y, angle);
+                robots[id] = std::make_tuple(x, y, angle, hasBox);
                 if (id >= nextRobotID) {
                     nextRobotID = id + 1;
                 }
@@ -126,6 +127,60 @@ bool WarehouseLoader::loadFromJSON(const QString& filename) {
         qDebug() << "Loaded" << robots.size() << "robots";
     }
     
+    // Parse pickingZones array
+    if (root.contains("pickingZones") && root["pickingZones"].isArray()) {
+        QJsonArray zonesArray = root["pickingZones"].toArray();
+        
+        for (const QJsonValue& zoneValue : zonesArray) {
+            if (!zoneValue.isObject()) continue;
+            
+            QJsonObject zone = zoneValue.toObject();
+            PickingZone pz;
+            
+            // Parse type
+            if (zone.contains("type")) {
+                pz.type = zone["type"].toString("PICKUP").toStdString();
+            }
+            
+            // Parse center position
+            if (zone.contains("center") && zone["center"].isArray()) {
+                QJsonArray centerArray = zone["center"].toArray();
+                if (centerArray.size() >= 3) {
+                    pz.center.x = centerArray[0].toDouble(0.0);
+                    pz.center.y = centerArray[1].toDouble(0.0);
+                    pz.center.z = centerArray[2].toDouble(0.0);
+                }
+            }
+            
+            // Parse dimensions
+            if (zone.contains("dimensions") && zone["dimensions"].isArray()) {
+                QJsonArray dimArray = zone["dimensions"].toArray();
+                if (dimArray.size() >= 3) {
+                    pz.dimensions.x = dimArray[0].toDouble(1.0);
+                    pz.dimensions.y = dimArray[1].toDouble(1.0);
+                    pz.dimensions.z = dimArray[2].toDouble(1.0);
+                }
+            }
+            
+            // Parse rotation
+            if (zone.contains("rotation")) {
+                pz.rotation = zone["rotation"].toDouble(0.0);
+            }
+            
+            // Parse description
+            if (zone.contains("description")) {
+                pz.description = zone["description"].toString("").toStdString();
+            }
+            
+            pickingZones.push_back(pz);
+            qDebug() << "  Zone:" << QString::fromStdString(pz.type) 
+                     << "at (" << pz.center.x << "," << pz.center.y << "," << pz.center.z << ")"
+                     << "- " << QString::fromStdString(pz.description);
+        }
+        
+        qDebug() << "Loaded" << pickingZones.size() << "picking zones";
+    }
+    
     qDebug() << "Successfully loaded warehouse from" << filename;
     return true;
 }
@@ -133,6 +188,7 @@ bool WarehouseLoader::loadFromJSON(const QString& filename) {
 void WarehouseLoader::clear() {
     objects.clear();
     robots.clear();
+    pickingZones.clear();
     nextRobotID = 1;
     floorSize = glm::vec2(30.0f, 30.0f);
 }

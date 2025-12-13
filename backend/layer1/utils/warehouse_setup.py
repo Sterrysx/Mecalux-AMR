@@ -31,6 +31,15 @@ except ImportError:
     HAS_PIL = False
     print("[WARNING] PIL/Pillow not installed. Install with: pip install Pillow")
 
+# Import JSON warehouse loaders
+try:
+    from warehouse_layout_loader import WarehouseLayoutLoader
+    from prohibited_zone_generator import ProhibitedZoneGenerator
+    HAS_JSON_SUPPORT = True
+except ImportError:
+    HAS_JSON_SUPPORT = False
+    print("[WARNING] JSON loaders not found. JSON support disabled.")
+
 
 @dataclass
 class WarehouseConfig:
@@ -334,8 +343,8 @@ def generate_tasks(poi_config: Dict, num_tasks: int, seed: int = None) -> Dict:
     for i in range(1, num_tasks + 1):
         tasks.append({
             "id": i,
-            "source": random.choice(pickup_ids),
-            "destination": random.choice(dropoff_ids)
+            "pickup": random.choice(pickup_ids),
+            "dropoff": random.choice(dropoff_ids)
         })
     
     print(f"[TaskGenerator] Generated {len(tasks)} tasks")
@@ -371,6 +380,293 @@ def update_layer2_robots(config: WarehouseConfig, poi_config: Dict, layer2_main_
         print(f"[WARNING] Could not update Layer 2 main.cc: {e}")
 
 
+def extract_pois_from_json(
+    layout,
+    resolution_factor: float,
+    poi_spacing: float = 2.0
+) -> Dict:
+    """
+    Extract POI configuration from JSON warehouse layout.
+    
+    This function:
+    1. Auto-detects CHARGING POIs from objects with modelIndex=5
+    2. Extracts PICKUP and DROPOFF POIs from picking zones
+    3. Creates ONE POI at the center of each picking zone
+    
+    Args:
+        layout: WarehouseLayout object with objects and picking_zones
+        resolution_factor: Meters per pixel (e.g., 0.1 for DECIMETERS)
+        poi_spacing: Not used in JSON mode (kept for compatibility)
+        
+    Returns:
+        POI configuration dictionary
+    """
+    pois = []
+    poi_count = {"CHARGING": 0, "PICKUP": 0, "DROPOFF": 0}
+    
+    # Step 1: Auto-detect charging stations (modelIndex = 5)
+    print(f"\n[POIExtractor] Auto-detecting charging stations...")
+    for obj in layout.objects:
+        if obj.model_index == 5:  # Charging station
+            # Convert from meters to pixels
+            x_px = int(obj.center[0] / resolution_factor)
+            y_px = int(obj.center[2] / resolution_factor)  # Use Z as Y in 2D
+            
+            pois.append({
+                "id": f"C{poi_count['CHARGING']}",
+                "type": "CHARGING",
+                "x": x_px,
+                "y": y_px,
+                "active": True
+            })
+            poi_count["CHARGING"] += 1
+    
+    print(f"[POIExtractor] Found {poi_count['CHARGING']} charging stations")
+    
+    # Step 2: Extract ONE POI per picking zone (at zone center)
+    print(f"\n[POIExtractor] Extracting POIs from picking zones...")
+    for zone in layout.picking_zones:
+        poi_type = zone.poi_type
+        
+        # Use zone center directly (no grid generation)
+        poi_x_m = zone.center[0]
+        poi_z_m = zone.center[2]
+        
+        # Convert to pixels
+        poi_x_px = int(poi_x_m / resolution_factor)
+        poi_z_px = int(poi_z_m / resolution_factor)
+        
+        # Create POI ID prefix
+        prefix = "PU" if poi_type == "PICKUP" else "DO"
+        
+        pois.append({
+            "id": f"{prefix}{poi_count[poi_type]}",
+            "type": poi_type,
+            "x": poi_x_px,
+            "y": poi_z_px,
+            "active": True
+        })
+        poi_count[poi_type] += 1
+    
+    print(f"[POIExtractor] Extracted {poi_count['PICKUP']} PICKUP POIs")
+    print(f"[POIExtractor] Extracted {poi_count['DROPOFF']} DROPOFF POIs")
+    
+    # Build final POI config
+    poi_config = {
+        "description": f"Extracted from JSON warehouse layout (one POI per zone)",
+        "version": "3.1",
+        "coordinate_system": f"pixels ({resolution_factor}m/pixel)",
+        "physical_dimensions": {
+            "width_m": layout.floor_size[0],
+            "height_m": layout.floor_size[1]
+        },
+        "generation_config": {
+            "from_json": True,
+            "one_poi_per_zone": True
+        },
+        "poi_types": {
+            "CHARGING": "Battery charging stations (auto-detected from modelIndex=5)",
+            "PICKUP": "Package pickup locations (from pickingZones)",
+            "DROPOFF": "Package dropoff locations (from pickingZones)"
+        },
+        "poi": pois
+    }
+    
+    print(f"\n[POIExtractor] Total POIs: {len(pois)}")
+    print(f"  CHARGING: {poi_count['CHARGING']}")
+    print(f"  PICKUP:   {poi_count['PICKUP']}")
+    print(f"  DROPOFF:  {poi_count['DROPOFF']}")
+    
+    return poi_config
+
+
+def setup_warehouse_from_json(
+    json_path: str,
+    config: WarehouseConfig,
+    assets_dir: Path,
+    script_dir: Path
+) -> int:
+    """
+    Setup warehouse from JSON layout file.
+    
+    This function:
+    1. Loads warehouse layout from JSON using WarehouseLayoutLoader
+    2. Generates binary obstacle map using ProhibitedZoneGenerator
+    
+    Args:
+        json_path: Path to JSON warehouse layout file
+        config: WarehouseConfig with resolution and robot radius
+        assets_dir: Directory to save generated files
+        script_dir: Script directory for relative path resolution
+        
+    Returns:
+        0 on success, non-zero on error
+    """
+    if not HAS_JSON_SUPPORT:
+        print("\n[ERROR] JSON support not available. Ensure warehouse_layout_loader.py")
+        print("        and prohibited_zone_generator.py are in the same directory.")
+        return 1
+    
+    json_path = Path(json_path)
+    if not json_path.is_absolute():
+        # First try relative to current working directory
+        if Path(json_path).exists():
+            json_path = Path(json_path).resolve()
+        else:
+            # Then try relative to script directory
+            json_path = script_dir / json_path
+    
+    if not json_path.exists():
+        print(f"\n[ERROR] JSON file not found: {json_path}")
+        return 1
+    
+    print("\n" + "-" * 70)
+    print("  PROCESSING JSON WAREHOUSE LAYOUT...")
+    print("-" * 70)
+    
+    # Step 1: Load warehouse layout
+    print(f"\n[Step 1/2] Loading warehouse layout from JSON...")
+    try:
+        loader = WarehouseLayoutLoader(str(json_path))
+        layout = loader.get_layout()
+        
+        print(f"[LayoutLoader] Floor size: {layout.floor_size[0]}m x {layout.floor_size[1]}m")
+        print(f"[LayoutLoader] Objects: {len(layout.objects)}")
+        print(f"[LayoutLoader] Prohibited zones: {len(layout.prohibited_zones)}")
+        print(f"[LayoutLoader] Picking zones: {len(layout.picking_zones)}")
+        print(f"[LayoutLoader] Robots: {len(layout.robots)}")
+        
+        if loader.errors:
+            print(f"[ERROR] {len(loader.errors)} errors found:")
+            for error in loader.errors:
+                print(f"  - {error}")
+            return 1
+        
+        if loader.warnings:
+            print(f"[WARNING] {len(loader.warnings)} warnings:")
+            for warning in loader.warnings:
+                print(f"  - {warning}")
+    
+    except Exception as e:
+        print(f"[ERROR] Failed to load JSON: {e}")
+        return 1
+    
+    # Step 2: Generate binary obstacle map
+    print(f"\n[Step 2/2] Generating binary obstacle map...")
+    try:
+        resolution_factor = get_resolution_factor(config.resolution)
+        
+        generator = ProhibitedZoneGenerator(
+            loader=loader,
+            resolution_m_per_px=resolution_factor,
+            robot_radius_m=config.robot_radius_m
+        )
+        
+        # Generate and export grid
+        grid = generator.generate_grid()
+        
+        map_output_path = assets_dir / "map_layout.txt"
+        generator.export_to_bitmap_file(str(map_output_path))
+        
+        total_cells = generator.grid_width * generator.grid_height
+        obstacle_pct = 100 * generator.obstacle_cells / total_cells if total_cells > 0 else 0
+        walkable_pct = 100 * generator.walkable_cells / total_cells if total_cells > 0 else 0
+        
+        print(f"[GridGenerator] Grid: {generator.grid_width}x{generator.grid_height}")
+        print(f"[GridGenerator] Obstacles: {generator.obstacle_cells} ({obstacle_pct:.1f}%)")
+        print(f"[GridGenerator] Walkable: {generator.walkable_cells} ({walkable_pct:.1f}%)")
+        print(f"[GridGenerator] Saved to: {map_output_path}")
+        
+        # Also export PNG for visualization
+        try:
+            png_output_path = assets_dir / "map_layout.png"
+            generator.export_to_png(str(png_output_path))
+            print(f"[GridGenerator] Visualization: {png_output_path}")
+        except Exception as e:
+            print(f"[WARNING] Could not generate PNG: {e}")
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to generate grid: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+    
+    # Step 3: Extract POIs from JSON (charging stations + picking zones)
+    print(f"\n[Step 3/4] Extracting POIs from JSON layout...")
+    try:
+        poi_config = extract_pois_from_json(layout, resolution_factor)
+        
+        poi_output_path = assets_dir / "poi_config.json"
+        with open(poi_output_path, 'w') as f:
+            json.dump(poi_config, f, indent=4)
+        print(f"[POIExtractor] Saved to: {poi_output_path}")
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to extract POIs: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+    
+    # Step 4: Generate sample tasks
+    print(f"\n[Step 4/4] Generating sample tasks...")
+    try:
+        num_tasks = 20  # Default number of tasks
+        seed_tasks = config.seed + 100 if config.seed else None
+        tasks = generate_tasks(poi_config, num_tasks, seed_tasks)
+        
+        tasks_output_path = script_dir / ".." / ".." / ".." / "api" / "set_of_tasks.json"
+        tasks_output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(tasks_output_path, 'w') as f:
+            json.dump(tasks, f, indent=2)
+        print(f"[TaskGenerator] Saved to: {tasks_output_path}")
+        
+    except Exception as e:
+        print(f"[WARNING] Could not generate tasks: {e}")
+    
+    binary_map = grid
+    # Final summary
+    print("\n" + "=" * 70)
+    print("                    WAREHOUSE SETUP COMPLETE!")
+    print("=" * 70)
+    print(f"\n  Source JSON:  {json_path}")
+    print(f"\n  Generated files:")
+    print(f"    Map:      {map_output_path}")
+    try:
+        print(f"    PNG:      {png_output_path}")
+    except:
+        pass
+    print(f"    POIs:     {poi_output_path}")
+    try:
+        print(f"    Tasks:    {tasks_output_path}")
+    except:
+        pass
+    print(f"\n  Warehouse:")
+    print(f"    Floor:    {layout.floor_size[0]}m x {layout.floor_size[1]}m")
+    print(f"    Grid:     {generator.grid_width} x {generator.grid_height} pixels")
+    print(f"    Resolution: {resolution_factor}m/pixel ({config.resolution})")
+    print(f"    Objects:  {len(layout.objects)}")
+    print(f"    Zones:    {len(layout.prohibited_zones)}")
+    print(f"    Picking:  {len(layout.picking_zones)}")
+    
+    print(f"\n  POI Summary:")
+    try:
+        charging = len([p for p in poi_config["poi"] if p["type"] == "CHARGING"])
+        pickup = len([p for p in poi_config["poi"] if p["type"] == "PICKUP"])
+        dropoff = len([p for p in poi_config["poi"] if p["type"] == "DROPOFF"])
+        print(f"    Charging: {charging}")
+        print(f"    Pickup:   {pickup}")
+        print(f"    Dropoff:  {dropoff}")
+        print(f"    Total:    {charging + pickup + dropoff}")
+    except:
+        pass
+    
+    print(f"\n  Next steps:")
+    print(f"    1. cd backend")
+    print(f"    2. make clean && make")
+    print(f"    3. make run")
+    print("=" * 70 + "\n")
+    
+    return 0
 def interactive_setup() -> WarehouseConfig:
     """Interactive configuration wizard."""
     config = WarehouseConfig()
@@ -479,6 +775,8 @@ def print_summary(config: WarehouseConfig):
 
 def main():
     parser = argparse.ArgumentParser(description='Warehouse Setup Wizard')
+    parser.add_argument('--use-json', type=str, metavar='JSON_FILE',
+                       help='Use JSON warehouse layout instead of image')
     parser.add_argument('--image', type=str, help='Warehouse image file')
     parser.add_argument('--width', type=float, help='Width in meters')
     parser.add_argument('--height', type=float, help='Height in meters')
@@ -499,6 +797,24 @@ def main():
     script_dir = Path(__file__).parent
     assets_dir = script_dir / ".." / "assets"
     
+    # Check if using JSON mode
+    if args.use_json:
+        # JSON mode - only generates bitmap, no POI/task generation
+        config = WarehouseConfig()
+        config.resolution = args.resolution if args.resolution else "DECIMETERS"
+        config.robot_radius_m = 0.3  # Default robot radius for inflation
+        
+        print("\n" + "=" * 70)
+        print("          MECALUX AMR - WAREHOUSE BITMAP GENERATOR (JSON MODE)")
+        print("=" * 70)
+        print(f"  JSON Layout:     {args.use_json}")
+        print(f"  Resolution:      {config.resolution}")
+        print(f"  Robot Radius:    {config.robot_radius_m}m")
+        print("=" * 70)
+        
+        return setup_warehouse_from_json(args.use_json, config, assets_dir, script_dir)
+    
+    # Original image-based mode
     # Interactive or command-line configuration
     if args.non_interactive:
         config = WarehouseConfig()
