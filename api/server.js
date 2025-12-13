@@ -534,6 +534,17 @@ app.get('/api/health', (req, res) => {
 // WebSocket handler for real-time simulator
 let simulatorProcess = null;
 let currentRobotData = { robots: [], lastUpdate: Date.now() };
+let connectedClients = new Set();
+
+// Broadcast to all connected WebSocket clients
+function broadcast(message) {
+  const messageStr = JSON.stringify(message);
+  connectedClients.forEach(client => {
+    if (client.readyState === 1) { // WebSocket.OPEN
+      client.send(messageStr);
+    }
+  });
+}
 
 // Parse robot state from backend output
 function parseRobotState(output) {
@@ -567,12 +578,19 @@ function parseRobotState(output) {
 
 wss.on('connection', (ws) => {
   console.log('WebSocket client connected');
+  connectedClients.add(ws);
   
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message);
       
       if (data.type === 'start_simulator') {
+        // Prevent starting multiple instances
+        if (simulatorProcess) {
+          console.log('Simulator already running, ignoring start request');
+          return;
+        }
+        
         // Start the fleet manager
         const { graphId, numRobots } = data;
         console.log(`Starting Fleet Manager: ${numRobots} robots`);
@@ -593,28 +611,29 @@ wss.on('connection', (ws) => {
           });
         }
         
-        // Send stdout to client
+        // Send stdout to ALL clients
         simulatorProcess.stdout.on('data', (data) => {
           const output = data.toString();
           console.log('Simulator output:', output);
+          console.log(`Broadcasting to ${connectedClients.size} clients`);
           
           // Parse robot state from output
           parseRobotState(output);
           
-          ws.send(JSON.stringify({
+          broadcast({
             type: 'simulator_output',
             data: output
-          }));
+          });
         });
         
-        // Send stderr to client
+        // Send stderr to ALL clients
         simulatorProcess.stderr.on('data', (data) => {
           const error = data.toString();
           console.error('Simulator error:', error);
-          ws.send(JSON.stringify({
+          broadcast({
             type: 'simulator_error',
             data: error
-          }));
+          });
         });
         
         // Handle process exit
@@ -665,9 +684,11 @@ wss.on('connection', (ws) => {
   
   ws.on('close', () => {
     console.log('WebSocket client disconnected');
-    // Clean up simulator process if client disconnects
-    if (simulatorProcess) {
-      console.log('Cleaning up simulator process');
+    connectedClients.delete(ws);
+    
+    // Only clean up simulator if NO clients are left
+    if (connectedClients.size === 0 && simulatorProcess) {
+      console.log('No clients left - cleaning up simulator process');
       simulatorProcess.kill();
       simulatorProcess = null;
     }
