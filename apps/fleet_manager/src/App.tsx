@@ -1,4 +1,39 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Component, ReactNode } from 'react';
+import { useFleetStore, useFleetOverview, useTaskStats } from './stores/fleetStore';
+import { fleetAPI } from './services/FleetAPI';
+import ChargingStations from './components/ChargingStations';
+import TaskCompletionChart from './components/TaskCompletionChart';
+import RobotTaskHistory from './components/RobotTaskHistory';
+
+// Error Boundary Component
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-gray-800 border border-red-700 rounded-2xl shadow-lg p-6">
+          <div className="text-center text-red-400">
+            <div className="text-4xl mb-2">⚠️</div>
+            <p>Component failed to load</p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface Robot {
   id: number;
@@ -7,7 +42,7 @@ interface Robot {
   vx: number;
   vy: number;
   state: string;
-  goal: string; // "Node 1234" format from backend
+  goal: string | null; // Node ID from backend
   itinerary: number; // number of waypoints remaining
   batteryLevel: number;
 }
@@ -46,8 +81,32 @@ function App() {
   const [numRobots, setNumRobots] = useState(4);
   const [command, setCommand] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [taskHistory, setTaskHistory] = useState<TaskHistory[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [selectedRobotId, setSelectedRobotId] = useState<number | null>(null);
+  
+  // Zustand store selectors
+  const { 
+    updateRobots, 
+    updateTasks, 
+    updateMap, 
+    setPOIs, 
+    setBackendConnected,
+    startSystem,
+    stopSystem,
+    updateUptime,
+    addTaskHistoryPoint,
+    uptime: systemUptime
+  } = useFleetStore();
+  
+  // Direct selectors to avoid re-render loops
+  const totalRobots = useFleetStore(state => state?.robots?.size || 0);
+  const activeRobots = useFleetStore(state => state?.getActiveRobotCount?.() || 0);
+  const idleRobots = useFleetStore(state => state?.getIdleRobotCount?.() || 0);
+  const avgBattery = useFleetStore(state => state?.getAverageBattery?.() || 100);
+  const taskCompleted = useFleetStore(state => state?.getCompletedTaskCount?.() || 0);
+  const totalTasks = useFleetStore(state => state?.tasks?.size || 0);
+  const inProgressTasks = useFleetStore(state => state?.getInProgressTaskCount?.() || 0);
+  const efficiency = useFleetStore(state => state?.getEfficiency?.() || 0);
   const [state, setState] = useState<SimulatorState>({
     isRunning: false,
     isConnected: false,
@@ -70,6 +129,65 @@ function App() {
   const wsRef = useRef<WebSocket | null>(null);
   const outputEndRef = useRef<HTMLDivElement>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize Fleet API polling on mount - ONLY ONCE
+  useEffect(() => {
+    let mounted = true;
+
+    // Check backend health
+    fleetAPI.healthCheck().then(isHealthy => {
+      if (mounted) {
+        setBackendConnected(isHealthy);
+        if (!isHealthy) {
+          console.warn('Backend is not responding');
+        }
+      }
+    }).catch(() => {
+      if (mounted) setBackendConnected(false);
+    });
+
+    // Load POIs (one-time) - fail silently
+    fleetAPI.fetchPOIs()
+      .then(pois => {
+        if (mounted && pois && pois.length > 0) {
+          setPOIs(pois);
+        }
+      })
+      .catch(error => {
+        // Silently fail - POIs are optional
+        console.warn('POIs not available (optional):', error.message);
+      });
+
+    // Start polling robots, tasks, and map data
+    fleetAPI.startPolling({
+      onRobotsUpdate: updateRobots,
+      onTasksUpdate: updateTasks,
+      onMapUpdate: updateMap,
+      onError: (error) => {
+        // Don't update state on every error to avoid loops
+        if (mounted && Math.random() < 0.1) { // Only 10% of errors
+          console.error('Fleet API error:', error.message);
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      fleetAPI.stopPolling();
+    };
+  }, []); // Empty deps - run ONLY ONCE
+
+  // Update uptime and task history periodically when system is running
+  useEffect(() => {
+    if (state.isRunning) {
+      const interval = setInterval(() => {
+        updateUptime();
+        addTaskHistoryPoint();
+      }, 2000); // Every 2 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [state.isRunning, updateUptime, addTaskHistoryPoint]);
 
   // Update stats whenever robot data changes
   useEffect(() => {
@@ -323,6 +441,9 @@ function App() {
           idleRobots: numRobots
         }
       }));
+      
+      // Initialize Zustand store system tracking
+      startSystem();
     }
   };
 
@@ -332,6 +453,9 @@ function App() {
         type: 'stop_simulator'
       }));
     }
+    
+    // Stop Zustand store system tracking
+    stopSystem();
   };
 
   const sendCommand = (e: React.FormEvent) => {
@@ -375,24 +499,7 @@ function App() {
     }));
   };
 
-  // Track task completion history for charts
-  useEffect(() => {
-    if (state.isRunning) {
-      const interval = setInterval(() => {
-        setTaskHistory(prev => {
-          const newEntry = {
-            timestamp: Date.now(),
-            completed: state.stats.completedTasks
-          };
-          // Keep last 30 data points
-          const updated = [...prev, newEntry].slice(-30);
-          return updated;
-        });
-      }, 2000); // Update every 2 seconds
-
-      return () => clearInterval(interval);
-    }
-  }, [state.isRunning, state.stats.completedTasks]);
+  // Task history is now managed by Zustand store
 
   const getBatteryColor = (level: number) => {
     if (level >= 80) return 'text-green-400';
@@ -431,8 +538,8 @@ function App() {
   return (
     <div className={`min-h-screen flex ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
       {/* Sidebar Navigation */}
-      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-gradient-to-b from-blue-900 to-blue-800 text-white flex-shrink-0 transition-all duration-300 shadow-xl`}>
-        <div className="p-6">
+      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-gradient-to-b from-blue-900 to-blue-800 text-white flex-shrink-0 transition-all duration-300 shadow-xl relative flex flex-col`}>
+        <div className="p-6 flex-1">
           {/* User Profile */}
           <div className={`${sidebarCollapsed ? 'flex justify-center' : ''} mb-8`}>
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center">
@@ -498,13 +605,15 @@ function App() {
           </nav>
         </div>
 
-        {/* Sidebar Toggle */}
-        <button 
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute bottom-6 right-4 bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all"
-        >
-          <span className="text-xl">{sidebarCollapsed ? '→' : '←'}</span>
-        </button>
+        {/* Sidebar Toggle - Fixed at bottom */}
+        <div className="p-6">
+          <button 
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="w-full bg-white/20 hover:bg-white/30 p-3 rounded-lg transition-all flex items-center justify-center"
+          >
+            <span className="text-xl">{sidebarCollapsed ? '→' : '←'}</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -572,12 +681,12 @@ function App() {
                         📊
                       </div>
                       <div className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-bold">
-                        +{state.stats.efficiency.toFixed(1)}/min
+                        +{efficiency.toFixed(1)}/min
                       </div>
                     </div>
                     <p className={`text-sm mb-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Tasks Completed</p>
-                    <p className={`text-3xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{state.stats.completedTasks}</p>
-                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>of {state.stats.totalTasks} total tasks</p>
+                    <p className={`text-3xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>{taskCompleted}</p>
+                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>of {totalTasks} total tasks</p>
                   </div>
 
                   {/* Active Robots */}
@@ -587,12 +696,12 @@ function App() {
                         🤖
                       </div>
                       <div className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm font-bold">
-                        {state.stats.busyRobots} Active
+                        {activeRobots} Active
                       </div>
                     </div>
                     <p className="text-sm text-gray-400 mb-1">Fleet Status</p>
-                    <p className="text-3xl font-bold text-gray-100">{state.stats.totalRobots}</p>
-                    <p className="text-xs text-gray-500 mt-2">{state.stats.idleRobots} idle robots</p>
+                    <p className="text-3xl font-bold text-gray-100">{totalRobots}</p>
+                    <p className="text-xs text-gray-500 mt-2">{idleRobots} idle robots</p>
                   </div>
 
                   {/* Battery Health */}
@@ -601,16 +710,16 @@ function App() {
                       <div className="bg-gradient-to-br from-green-500 to-green-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         🔋
                       </div>
-                      <div className={`${state.stats.avgBattery >= 80 ? 'bg-green-500/20 text-green-400' : state.stats.avgBattery >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'} px-3 py-1 rounded-full text-sm font-bold`}>
-                        {state.stats.avgBattery >= 80 ? '●●●' : state.stats.avgBattery >= 50 ? '●●○' : '●○○'}
+                      <div className={`${avgBattery >= 80 ? 'bg-green-500/20 text-green-400' : avgBattery >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'} px-3 py-1 rounded-full text-sm font-bold`}>
+                        {avgBattery >= 80 ? '●●●' : avgBattery >= 50 ? '●●○' : '●○○'}
                       </div>
                     </div>
                     <p className="text-sm text-gray-400 mb-1">Avg Battery</p>
-                    <p className="text-3xl font-bold text-gray-100">{state.stats.avgBattery}%</p>
+                    <p className="text-3xl font-bold text-gray-100">{avgBattery}%</p>
                     <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
                       <div 
-                        className={`h-2 rounded-full transition-all duration-500 ${getBatteryBgColor(state.stats.avgBattery)}`}
-                        style={{ width: `${state.stats.avgBattery}%` }}
+                        className={`h-2 rounded-full transition-all duration-500 ${getBatteryBgColor(avgBattery)}`}
+                        style={{ width: `${avgBattery}%` }}
                       />
                     </div>
                   </div>
@@ -626,115 +735,23 @@ function App() {
                       </div>
                     </div>
                     <p className="text-sm text-gray-400 mb-1">Efficiency Score</p>
-                    <p className="text-3xl font-bold text-gray-100">{state.stats.efficiency > 0 ? (Math.min(10, state.stats.efficiency) / 10 * 10).toFixed(1) : '0.0'}</p>
-                    <p className="text-xs text-gray-500 mt-2">Uptime: {Math.floor(state.stats.uptime / 60)}m {Math.floor(state.stats.uptime % 60)}s</p>
+                    <p className="text-3xl font-bold text-gray-100">{efficiency > 0 ? efficiency.toFixed(1) : '0.0'}</p>
+                    <p className="text-xs text-gray-500 mt-2">Uptime: {Math.floor((systemUptime || 0) / 60)}m {Math.floor((systemUptime || 0) % 60)}s</p>
                   </div>
                 </div>
 
                 {/* Main Dashboard Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                   {/* Task Completion Chart */}
-                  <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-bold text-gray-100">Task Completion Over Time</h3>
-                      <div className="flex gap-2">
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                          <span className="text-gray-600">Completed</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="w-3 h-3 bg-orange-400 rounded"></div>
-                          <span className="text-gray-600">Active</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Simple Bar Chart */}
-                    <div className="h-64 flex items-end justify-between gap-2">
-                      {taskHistory.length > 0 ? (
-                        taskHistory.slice(-15).map((point, i) => {
-                          const maxValue = Math.max(...taskHistory.map(p => p.completed), 1);
-                          const height = (point.completed / maxValue) * 100;
-                          return (
-                            <div key={i} className="flex-1 flex flex-col items-center">
-                              <div className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all duration-500 hover:from-blue-600 hover:to-blue-500" 
-                                   style={{ height: `${height}%`, minHeight: '8px' }}>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          <div className="text-center">
-                            <div className="text-4xl mb-2">📈</div>
-                            <p>Collecting data...</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex justify-between text-sm text-gray-600">
-                        <span>Real-time Performance</span>
-                        <span className="font-semibold">{state.stats.completedTasks} tasks • {state.stats.efficiency.toFixed(1)}/min</span>
-                      </div>
-                    </div>
+                  <div className="lg:col-span-2">
+                    <TaskCompletionChart />
                   </div>
 
-                  {/* Efficiency Meter */}
-                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
-                    <h3 className="text-lg font-bold text-gray-100 mb-6">System Efficiency</h3>
-                    <div className="flex items-center justify-center mb-6">
-                      <div className="relative w-48 h-48">
-                        {/* Circular Progress */}
-                        <svg className="w-full h-full transform -rotate-90">
-                          <circle
-                            cx="96"
-                            cy="96"
-                            r="85"
-                            stroke="#e5e7eb"
-                            strokeWidth="12"
-                            fill="none"
-                          />
-                          <circle
-                            cx="96"
-                            cy="96"
-                            r="85"
-                            stroke="url(#gradient)"
-                            strokeWidth="12"
-                            fill="none"
-                            strokeDasharray={`${2 * Math.PI * 85}`}
-                            strokeDashoffset={`${2 * Math.PI * 85 * (1 - Math.min(state.stats.avgBattery / 100, 1))}`}
-                            strokeLinecap="round"
-                            className="transition-all duration-1000"
-                          />
-                          <defs>
-                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#3b82f6" />
-                              <stop offset="100%" stopColor="#8b5cf6" />
-                            </linearGradient>
-                          </defs>
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center flex-col">
-                          <span className="text-4xl font-bold text-gray-100">{state.stats.avgBattery}%</span>
-                          <span className="text-sm text-gray-500">Battery</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Active Robots</span>
-                        <span className="font-semibold text-gray-100">{state.stats.busyRobots}/{state.stats.totalRobots}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Tasks/Min</span>
-                        <span className="font-semibold text-gray-100">{state.stats.efficiency.toFixed(1)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Uptime</span>
-                        <span className="font-semibold text-gray-100">{Math.floor(state.stats.uptime / 60)}m {Math.floor(state.stats.uptime % 60)}s</span>
-                      </div>
-                    </div>
+                  {/* Charging Stations */}
+                  <div>
+                    <ErrorBoundary>
+                      <ChargingStations />
+                    </ErrorBoundary>
                   </div>
                 </div>
 
@@ -748,14 +765,14 @@ function App() {
                     <span className="text-sm text-gray-500">Adjust individual robot battery levels</span>
                   </div>
                   
-                  {state.robots.length === 0 ? (
+                  {Array.from(useFleetStore.getState().robots.values()).length === 0 ? (
                     <div className="text-center py-12 text-gray-400">
                       <div className="text-5xl mb-3">⏳</div>
                       <p>Loading robot data...</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {state.robots.map(robot => (
+                      {Array.from(useFleetStore.getState().robots.values()).map(robot => (
                         <div key={robot.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-all">
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
@@ -777,16 +794,16 @@ function App() {
                           <div className="mb-3">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-xs font-medium text-gray-600">Battery Level</span>
-                              <span className={`text-lg font-bold ${getBatteryColor(robot.batteryLevel)}`}>
-                                {robot.batteryLevel}%
+                              <span className={`text-lg font-bold ${getBatteryColor(robot?.batteryLevel || 100)}`}>
+                                {robot?.batteryLevel || 100}%
                               </span>
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
                               <div 
-                                className={`h-full transition-all duration-300 ${getBatteryBgColor(robot.batteryLevel)} flex items-center justify-end pr-1`}
-                                style={{ width: `${robot.batteryLevel}%` }}
+                                className={`h-full transition-all duration-300 ${getBatteryBgColor(robot?.batteryLevel || 100)} flex items-center justify-end pr-1`}
+                                style={{ width: `${robot?.batteryLevel || 100}%` }}
                               >
-                                {robot.batteryLevel > 20 && (
+                                {(robot?.batteryLevel || 100) > 20 && (
                                   <span className="text-xs text-white font-bold">⚡</span>
                                 )}
                               </div>
@@ -799,16 +816,16 @@ function App() {
                               type="range" 
                               min="0" 
                               max="100" 
-                              value={robot.batteryLevel}
-                              onChange={(e) => updateRobotBattery(robot.id, Number(e.target.value))}
+                              value={robot?.batteryLevel || 100}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRobotBattery(robot.id, Number(e.target.value))}
                               className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-500"
                               style={{
                                 background: `linear-gradient(to right, ${
-                                  robot.batteryLevel >= 80 ? '#10b981' :
-                                  robot.batteryLevel >= 50 ? '#eab308' :
-                                  robot.batteryLevel >= 20 ? '#f97316' :
+                                  (robot?.batteryLevel || 100) >= 80 ? '#10b981' :
+                                  (robot?.batteryLevel || 100) >= 50 ? '#eab308' :
+                                  (robot?.batteryLevel || 100) >= 20 ? '#f97316' :
                                   '#ef4444'
-                                } ${robot.batteryLevel}%, #d1d5db ${robot.batteryLevel}%)`
+                                } ${robot?.batteryLevel || 100}%, #d1d5db ${robot?.batteryLevel || 100}%)`
                               }}
                             />
                           </div>
@@ -839,9 +856,9 @@ function App() {
                           <div className="mt-3 pt-3 border-t border-gray-300 text-xs text-gray-600">
                             <div className="flex justify-between mb-1">
                               <span>Position:</span>
-                              <span className="font-mono">({robot.x}, {robot.y})</span>
+                              <span className="font-mono">({robot?.x || 0}, {robot?.y || 0})</span>
                             </div>
-                            {robot.itinerary > 0 && (
+                            {robot?.itinerary && robot.itinerary > 0 && (
                               <div className="flex justify-between">
                                 <span>Tasks:</span>
                                 <span className="font-semibold text-blue-600">{robot.itinerary} queued</span>
@@ -860,15 +877,84 @@ function App() {
         ) : currentPage === 'control' ? (
           // CONTROL PAGE
           <>
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Top Section - Conditional: Setup Form OR Stats Grid */}
+            {!state.isRunning ? (
+              // Fleet Initialization Form
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Fleet Configuration */}
+                <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <span className="text-2xl">⚙️</span>
+                    <h2 className="text-xl font-bold">Fleet Configuration</h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Number of Robots
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={numRobots}
+                        onChange={(e) => setNumRobots(Number(e.target.value))}
+                        className={`w-full px-4 py-3 text-lg rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
+                      />
+                      <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        Configure fleet size before starting (1-20 robots)
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={startFleetManager}
+                      disabled={!state.isConnected}
+                      className="w-full px-6 py-4 text-lg bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
+                    >
+                      <span className="text-2xl">🚀</span>
+                      <span>Start Fleet Manager</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* System Status */}
+                <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <span className="text-2xl">📡</span>
+                    <h2 className="text-xl font-bold">System Status</h2>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-gray-700/50">
+                      <span className="text-sm font-medium">Backend Connection</span>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${state.isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                        <span className="text-sm font-bold">{state.isConnected ? 'Connected' : 'Disconnected'}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-gray-700/50">
+                      <span className="text-sm font-medium">Fleet Status</span>
+                      <span className="text-sm font-bold text-gray-400">Not Started</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-gray-700/50">
+                      <span className="text-sm font-medium">Active Robots</span>
+                      <span className="text-sm font-bold text-gray-400">0 / {numRobots}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Stats Grid (when running)
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Efficiency Card */}
               <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-blue-900/50 to-blue-800/30 border-blue-700/50' : 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-300">Efficiency</p>
                     <p className="text-3xl font-bold text-white mt-2">
-                      {state.stats.efficiency.toFixed(1)}
+                      {efficiency.toFixed(1)}
                     </p>
                     <p className="text-xs text-blue-200 mt-1">tasks/min</p>
                   </div>
@@ -876,7 +962,7 @@ function App() {
                 </div>
                 <div className="mt-4 pt-4 border-t border-blue-700/50">
                   <p className="text-xs text-blue-200">
-                    {state.stats.completedTasks} / {state.stats.totalTasks} tasks completed
+                    {taskCompleted} / {totalTasks} tasks completed
                   </p>
                 </div>
               </div>
@@ -887,7 +973,7 @@ function App() {
                   <div>
                     <p className="text-sm font-medium text-purple-300">Fleet Status</p>
                     <p className="text-3xl font-bold text-white mt-2">
-                      {state.stats.busyRobots}/{state.stats.totalRobots}
+                      {activeRobots}/{totalRobots}
                     </p>
                     <p className="text-xs text-purple-200 mt-1">robots active</p>
                   </div>
@@ -895,7 +981,7 @@ function App() {
                 </div>
                 <div className="mt-4 pt-4 border-t border-purple-700/50">
                   <p className="text-xs text-purple-200">
-                    {state.stats.idleRobots} idle · {state.stats.activeTasks} tasks running
+                    {idleRobots} idle · {inProgressTasks} tasks running
                   </p>
                 </div>
               </div>
@@ -906,7 +992,7 @@ function App() {
                   <div>
                     <p className="text-sm font-medium text-green-300">Avg Battery</p>
                     <p className="text-3xl font-bold text-white mt-2">
-                      {state.stats.avgBattery}%
+                      {avgBattery}%
                     </p>
                     <p className="text-xs text-green-200 mt-1">fleet average</p>
                   </div>
@@ -915,8 +1001,8 @@ function App() {
                 <div className="mt-4 pt-4 border-t border-green-700/50">
                   <div className="w-full bg-gray-700/50 rounded-full h-2">
                     <div 
-                      className={`h-2 rounded-full transition-all ${getBatteryBgColor(state.stats.avgBattery)}`}
-                      style={{ width: `${state.stats.avgBattery}%` }}
+                      className={`h-2 rounded-full transition-all ${getBatteryBgColor(avgBattery)}`}
+                      style={{ width: `${avgBattery}%` }}
                     />
                   </div>
                 </div>
@@ -928,9 +1014,9 @@ function App() {
                   <div>
                     <p className="text-sm font-medium text-orange-300">Uptime</p>
                     <p className="text-3xl font-bold text-white mt-2">
-                      {Math.floor(state.stats.uptime / 60)}m
+                      {Math.floor(systemUptime / 60)}m
                     </p>
-                    <p className="text-xs text-orange-200 mt-1">{Math.floor(state.stats.uptime % 60)}s elapsed</p>
+                    <p className="text-xs text-orange-200 mt-1">{Math.floor(systemUptime % 60)}s elapsed</p>
                   </div>
                   <div className="text-3xl">⏱️</div>
                 </div>
@@ -941,42 +1027,12 @@ function App() {
                 </div>
               </div>
             </div>
+            )}
 
+            {/* Bottom Section - Always visible */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column: Controls */}
               <div className="space-y-6">
-                {/* Fleet Configuration */}
-                {!state.isRunning && (
-                  <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                    <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <span>⚙️</span>
-                      Fleet Configuration
-                    </h2>
-                    <div className="space-y-4">
-                      <div>
-                        <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          Number of Robots
-                        </label>
-                        <input 
-                          type="number" 
-                          min="1" 
-                          max="20" 
-                          value={numRobots} 
-                          onChange={(e) => setNumRobots(Number(e.target.value))}
-                          className={`w-full px-4 py-2 text-lg rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
-                        />
-                        <p className="text-xs text-gray-500 mt-1">Configure fleet size before starting (1-20 robots)</p>
-                      </div>
-                      <button 
-                        onClick={startFleetManager} 
-                        disabled={!state.isConnected}
-                        className="w-full px-6 py-3 text-lg bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-bold transition-colors shadow-lg">
-                        🚀 Start Fleet Manager
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 {/* Quick Actions */}
                 <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                   <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -1116,19 +1172,27 @@ function App() {
             <div className="mb-6">
               <h2 className="text-2xl font-bold">Robot Fleet Monitor</h2>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Real-time status, battery levels, and position tracking
+                Real-time status, battery levels, and position tracking. Click a robot to view task history.
               </p>
             </div>
 
             {!state.isRunning ? (
               <div className={`rounded-xl border p-12 text-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <div className="text-6xl mb-4">🤖</div>
-                <h3 className="text-xl font-semibold mb-2">Fleet Not Running</h3>
-                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
-                  Start the fleet manager from the Dashboard to see live robot data
+                <h3 className="text-xl font-semibold mb-3">No Robots Configured</h3>
+                <p className={`mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  The fleet has not been initialized yet. Start the fleet manager to see robots.
                 </p>
+                <button 
+                  onClick={startFleetManager} 
+                  disabled={!state.isConnected}
+                  className="px-8 py-3 text-lg bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 font-medium inline-flex items-center gap-2 shadow-lg"
+                >
+                  <span>▶</span>
+                  Start Fleet Manager
+                </button>
               </div>
-            ) : state.robots.length === 0 ? (
+            ) : totalRobots === 0 ? (
               <div className={`rounded-xl border p-12 text-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                 <div className="text-6xl mb-4 animate-pulse">⏳</div>
                 <h3 className="text-xl font-semibold mb-2">Loading Robots...</h3>
@@ -1137,81 +1201,89 @@ function App() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {state.robots.map(robot => (
-                  <div key={robot.id} className={`rounded-xl border p-5 hover:shadow-lg transition-shadow ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold">Robot #{robot.id}</h3>
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getStateBadgeColor(robot.state)}`}>
-                        {robot.state}
-                      </span>
-                    </div>
-
-                    {/* Battery */}
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-400">🔋 Battery</span>
-                        <span className={`text-sm font-bold ${
-                          robot.batteryLevel >= 80 ? 'text-green-400' :
-                          robot.batteryLevel >= 50 ? 'text-yellow-400' :
-                          robot.batteryLevel >= 20 ? 'text-orange-400' :
-                          'text-red-400'
-                        }`}>
-                          {robot.batteryLevel}%
-                        </span>
-                      </div>
-                      <div className={`h-2 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} overflow-hidden`}>
-                        <div 
-                          className={`h-full transition-all duration-300 ${
-                            robot.batteryLevel >= 80 ? 'bg-green-500' :
-                            robot.batteryLevel >= 50 ? 'bg-yellow-500' :
-                            robot.batteryLevel >= 20 ? 'bg-orange-500' :
-                            'bg-red-500'
-                          }`}
-                          style={{ width: `${robot.batteryLevel}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Position */}
-                    <div className={`p-2 rounded text-xs mb-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-gray-400">📍 Position:</span>
-                        <span className="font-mono">({robot.x}, {robot.y})</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">⚡ Velocity:</span>
-                        <span className="font-mono">({robot.vx.toFixed(1)}, {robot.vy.toFixed(1)})</span>
-                      </div>
-                    </div>
-
-                    {/* Goal */}
-                    {robot.goal && (
-                      <div className={`p-2 rounded text-xs mb-2 ${darkMode ? 'bg-blue-900/30 border border-blue-700' : 'bg-blue-100 border border-blue-300'}`}>
-                        <div className="text-blue-400 mb-1">🎯 Current Goal</div>
-                        <div className="font-mono">{robot.goal}</div>
-                      </div>
-                    )}
-
-                    {/* Itinerary */}
-                    {robot.itinerary > 0 && (
-                      <div className={`p-2 rounded text-xs ${darkMode ? 'bg-purple-900/30 border border-purple-700' : 'bg-purple-100 border border-purple-300'}`}>
-                        <div className="text-purple-400 mb-1">📋 Task Queue</div>
-                        <div className="font-mono">
-                          {robot.itinerary} waypoint{robot.itinerary > 1 ? 's' : ''} remaining
+              <div className="space-y-2">
+                {Array.from(useFleetStore.getState().robots?.values() || []).map(robot => (
+                  <div 
+                    key={robot?.id || 0} 
+                    className={`rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer hover:border-blue-500 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+                    onClick={() => setSelectedRobotId(robot?.id || 0)}
+                  >
+                    <div className="flex items-center gap-6">
+                      {/* Robot ID and Status */}
+                      <div className="flex items-center gap-3 min-w-[150px]">
+                        <div className="text-2xl">🤖</div>
+                        <div>
+                          <h3 className="text-lg font-bold">Robot #{robot?.id || 0}</h3>
+                          <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${getStateBadgeColor(robot?.state || 'IDLE')}`}>
+                            {robot?.state || 'IDLE'}
+                          </span>
                         </div>
                       </div>
-                    )}
 
-                    {/* Idle indicator */}
-                    {robot.state === 'IDLE' && robot.itinerary === 0 && !robot.goal && (
-                      <div className={`p-2 rounded text-xs text-center ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} text-gray-400`}>
-                        💤 Awaiting tasks
+                      {/* Position */}
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="text-xs text-gray-400 mb-1">📍 Position</div>
+                        <div className="font-mono text-sm">({robot?.x || 0}, {robot?.y || 0})</div>
+                        <div className="text-xs text-gray-500">⚡ Velocity: ({(robot?.vx || 0).toFixed(1)}, {(robot?.vy || 0).toFixed(1)})</div>
                       </div>
-                    )}
+
+                      {/* Battery */}
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-400">🔋 Battery</span>
+                          <span className={`text-lg font-bold ${
+                            (robot?.batteryLevel || 100) >= 80 ? 'text-green-400' :
+                            (robot?.batteryLevel || 100) >= 50 ? 'text-yellow-400' :
+                            (robot?.batteryLevel || 100) >= 20 ? 'text-orange-400' :
+                            'text-red-400'
+                          }`}>
+                            {robot?.batteryLevel || 100}%
+                          </span>
+                        </div>
+                        <div className={`h-2 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} overflow-hidden`}>
+                          <div 
+                            className={`h-full transition-all duration-300 ${
+                              (robot?.batteryLevel || 100) >= 80 ? 'bg-green-500' :
+                              (robot?.batteryLevel || 100) >= 50 ? 'bg-yellow-500' :
+                              (robot?.batteryLevel || 100) >= 20 ? 'bg-orange-500' :
+                              'bg-red-500'
+                            }`}
+                            style={{ width: `${robot?.batteryLevel || 100}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Task Info */}
+                      <div className="flex-1 min-w-[200px]">
+                        {robot?.goal !== null && robot?.goal !== undefined && (
+                          <div className="text-xs">
+                            <span className="text-blue-400">🎯 Goal:</span> {robot.goal}
+                          </div>
+                        )}
+                        {robot?.itinerary && robot.itinerary > 0 && (
+                          <div className="text-xs">
+                            <span className="text-purple-400">📋 Queue:</span> {robot.itinerary} waypoint{robot.itinerary > 1 ? 's' : ''}
+                          </div>
+                        )}
+                        {robot?.state === 'IDLE' && (!robot?.itinerary || robot.itinerary === 0) && (robot?.goal === null || robot?.goal === undefined) && (
+                          <div className="text-xs text-gray-400">💤 Awaiting tasks</div>
+                        )}
+                      </div>
+
+                      {/* Action hint */}
+                      <div className="text-xs text-blue-400">👆 Click for history</div>
+                    </div>
                   </div>
                 ))}
               </div>
+            )}
+
+            {/* Robot Task History Modal */}
+            {selectedRobotId && (
+              <RobotTaskHistory 
+                robotId={selectedRobotId} 
+                onClose={() => setSelectedRobotId(null)}
+              />
             )}
           </div>
         ) : null}
