@@ -802,7 +802,7 @@ def main():
         # JSON mode - only generates bitmap, no POI/task generation
         config = WarehouseConfig()
         config.resolution = args.resolution if args.resolution else "DECIMETERS"
-        config.robot_radius_m = 0.3  # Default robot radius for inflation
+        config.robot_radius_m = 0.8  # Default robot radius for inflation
         
         print("\n" + "=" * 70)
         print("          MECALUX AMR - WAREHOUSE BITMAP GENERATOR (JSON MODE)")

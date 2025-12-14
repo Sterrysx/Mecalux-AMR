@@ -3,8 +3,8 @@
     "warehouse_tick_ms": 100,
     "node_radius_meters": 0.25,
     
-    "robot_physical_width_meters": 0.6,
-    "robot_physical_length_meters": 0.6,
+    "robot_physical_width_meters": 1.5,
+    "robot_physical_length_meters": 1.7,
     "robot_radius_meters": 0.3,
     
     "inflation_margin_meters": 0.05,

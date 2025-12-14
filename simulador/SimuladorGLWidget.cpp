@@ -12,6 +12,12 @@ SimuladorGLWidget::SimuladorGLWidget (QWidget* parent) : QOpenGLWidget(parent)
   //animationTimer->start(16);
   robotCamera = false;  // Initialize to false - start with normal camera
   staticObjectsDirty = true;  // Initially need to draw static objects
+  monitoringBackend_ = false;
+  
+  // Initialize telemetry reader
+  telemetryReader_ = new TelemetryReader(this);
+  connect(telemetryReader_, &TelemetryReader::robotsUpdated, 
+          this, &SimuladorGLWidget::updateRobotsFromBackend);
 }
 
 SimuladorGLWidget::~SimuladorGLWidget ()
@@ -196,6 +202,9 @@ void SimuladorGLWidget::paintGL ()
   // Draw static objects (floor and warehouse objects) only when necessary
   paintStaticObjects();
 
+  // Reset color multiplier to white (neutral) for proper material rendering
+  glUniform3fv(colorLoc, 1, &white[0]);
+
   // First pass: Draw all non-selected robots normally
   glStencilFunc(GL_ALWAYS, 1, 0xFF);
   glStencilMask(0x00);
@@ -210,6 +219,9 @@ void SimuladorGLWidget::paintGL ()
         // Select model based on whether robot is carrying a box
         const int modelIndex = hasBox ? 2 : 1;  // Model 2 = with box, Model 1 = without box
 
+        // Ensure color multiplier is white for proper material colors
+        glUniform3fv(colorLoc, 1, &white[0]);
+        
         modelTransforRobot(robot.first, x, y, dir);
         glBindVertexArray(VAO_models[modelIndex]);
         glDrawArrays(GL_TRIANGLES, 0, models[modelIndex].faces().size() * 3);
@@ -637,6 +649,7 @@ void SimuladorGLWidget::calculaCapsaModel (Model &p, float &escala, float amplad
   minX=minx;
   minZ=minz;
   dimensions = glm::vec3(maxx-minx, maxy-miny, maxz-minz);
+  std::cout << dimensions.x << " " << dimensions.y << " " << dimensions.z << std::endl;
 }
 
 void SimuladorGLWidget::creaBuffersModels ()
@@ -856,3 +869,74 @@ void SimuladorGLWidget::carregaShaders()
 }
 
 
+
+// =============================================================================
+// BACKEND INTEGRATION METHODS
+// =============================================================================
+
+void SimuladorGLWidget::startBackendMonitoring(const QString& telemetryDir)
+{
+    qDebug() << "Starting backend monitoring from:" << telemetryDir;
+    telemetryReader_->startMonitoring(telemetryDir);
+    monitoringBackend_ = true;
+}
+
+void SimuladorGLWidget::stopBackendMonitoring()
+{
+    qDebug() << "Stopping backend monitoring";
+    telemetryReader_->stopMonitoring();
+    monitoringBackend_ = false;
+}
+
+bool SimuladorGLWidget::isMonitoringBackend() const
+{
+    return monitoringBackend_;
+}
+
+void SimuladorGLWidget::updateRobotsFromBackend(const std::map<int, TelemetryReader::RobotData>& robotData)
+{
+    makeCurrent();
+    
+    bool selectedRobotUpdated = false;
+    
+    // Update robot positions from backend data
+    for (const auto& pair : robotData) {
+        int robotId = pair.first;
+        const TelemetryReader::RobotData& data = pair.second;
+        
+        // Convert coordinates from backend scale to simulator scale (divide by 10)
+        float x = data.x / 10.0f;
+        float y = data.y / 10.0f;
+        
+        // Calculate angle from velocity vector
+        float angle = 0.0f;
+        if (data.vx != 0.0f || data.vy != 0.0f) {
+            // atan2 gives angle in radians, convert to degrees
+            angle = atan2(data.vx, data.vy) * 180.0f / M_PI;
+        } else if (robots.find(robotId) != robots.end()) {
+            // If not moving, keep the previous angle
+            angle = std::get<2>(robots[robotId]);
+        }
+        
+        if(robots.find(robotId) == robots.end()) {
+          emit robotAfegit(robotId);
+        }
+        
+        // Update robot tuple (x, y, angle, hasPackage)
+        robots[robotId] = std::make_tuple(x, y, angle, data.hasPackage);
+        
+        // Track if we updated the selected robot
+        if (robotId == selectedRObotID) {
+            selectedRobotUpdated = true;
+        }
+    }
+    
+    // If we're in robot camera mode and the selected robot was updated,
+    // update the view and projection transforms
+    if (robotCamera && selectedRobotUpdated && selectedRObotID != -1) {
+        viewTransform();
+        projectTransform();
+    }
+    
+    update();
+}

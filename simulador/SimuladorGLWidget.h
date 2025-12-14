@@ -11,6 +11,7 @@
 
 #include "model.h"
 #include "WarehouseLoader.h"
+#include "TelemetryReader.h"
 
 // definim el numero total de models a carregar
 #define NUM_MODELS 6
@@ -30,17 +31,25 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     // Load warehouse layout from JSON file
     void loadWarehouse(const QString& filename);
     
+    // Backend integration
+    void startBackendMonitoring(const QString& telemetryDir);
+    void stopBackendMonitoring();
+    bool isMonitoringBackend() const;
+    
   public slots:
     void afegirRobot(int x, int y);
     void eliminarRobot(int robotID);
     void modifyselectedRobotID(QString robotID);
     void setRobotBoxState(int robotID, bool hasBox);  // Set whether robot is carrying a box
+    void updateRobotsFromBackend(const std::map<int, TelemetryReader::RobotData>& robotData);
   signals:
     void robotAfegit(int id);
   private:
     QTimer *animationTimer;
+    TelemetryReader *telemetryReader_;
     float Speed = 1.5f;
     bool robotCamera;  // Add this to track which camera is active
+    bool monitoringBackend_;  // Track if we're monitoring backend data
   protected:
     // initializeGL - Aqui incluim les inicialitzacions del contexte grafic.
     virtual void initializeGL ( );

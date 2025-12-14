@@ -7,6 +7,9 @@ class MyForm : public QWidget
   public:
     MyForm (QWidget *parent=0);
   
+  private slots:
+    void onConnectBackendClicked();
+  
   private:
     Ui::MyForm ui;
 };

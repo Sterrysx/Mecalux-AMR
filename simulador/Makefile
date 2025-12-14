@@ -17,7 +17,7 @@ CXX           = g++
 DEFINES       = -DQT_NO_DEBUG -DQT_OPENGL_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -O2 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -O2 -Wall -Wextra -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -I/usr/include/glm -I./Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
+INCPATH       = -I. -I/usr/include/glm -IModel -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I. -I. -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++
 QMAKE         = /usr/lib/qt5/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -53,15 +53,17 @@ OBJECTS_DIR   = ./
 ####### Files
 
 SOURCES       = main.cpp \
-		./Model/model.cpp \
+		Model/model.cpp \
 		SimuladorGLWidget.cpp \
 		MyForm.cpp \
 		AfegirRobotButton.cpp \
 		CustomComboBox.cpp \
-		WarehouseLoader.cpp moc_SimuladorGLWidget.cpp \
+		WarehouseLoader.cpp \
+		TelemetryReader.cpp moc_SimuladorGLWidget.cpp \
 		moc_MyForm.cpp \
 		moc_AfegirRobotButton.cpp \
-		moc_CustomComboBox.cpp
+		moc_CustomComboBox.cpp \
+		moc_TelemetryReader.cpp
 OBJECTS       = main.o \
 		model.o \
 		SimuladorGLWidget.o \
@@ -69,10 +71,12 @@ OBJECTS       = main.o \
 		AfegirRobotButton.o \
 		CustomComboBox.o \
 		WarehouseLoader.o \
+		TelemetryReader.o \
 		moc_SimuladorGLWidget.o \
 		moc_MyForm.o \
 		moc_AfegirRobotButton.o \
-		moc_CustomComboBox.o
+		moc_CustomComboBox.o \
+		moc_TelemetryReader.o
 DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/unix.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/common/linux.conf \
@@ -154,13 +158,15 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		MyForm.h \
 		AfegirRobotButton.h \
 		CustomComboBox.h \
-		WarehouseLoader.h main.cpp \
-		./Model/model.cpp \
+		WarehouseLoader.h \
+		TelemetryReader.h main.cpp \
+		Model/model.cpp \
 		SimuladorGLWidget.cpp \
 		MyForm.cpp \
 		AfegirRobotButton.cpp \
 		CustomComboBox.cpp \
-		WarehouseLoader.cpp
+		WarehouseLoader.cpp \
+		TelemetryReader.cpp
 QMAKE_TARGET  = examen
 DESTDIR       = 
 TARGET        = examen
@@ -344,8 +350,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents SimuladorGLWidget.h MyForm.h AfegirRobotButton.h CustomComboBox.h WarehouseLoader.h $(DISTDIR)/
-	$(COPY_FILE) --parents main.cpp ./Model/model.cpp SimuladorGLWidget.cpp MyForm.cpp AfegirRobotButton.cpp CustomComboBox.cpp WarehouseLoader.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents SimuladorGLWidget.h MyForm.h AfegirRobotButton.h CustomComboBox.h WarehouseLoader.h TelemetryReader.h $(DISTDIR)/
+	$(COPY_FILE) --parents main.cpp Model/model.cpp SimuladorGLWidget.cpp MyForm.cpp AfegirRobotButton.cpp CustomComboBox.cpp WarehouseLoader.cpp TelemetryReader.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents MyForm.ui $(DISTDIR)/
 
 
@@ -378,17 +384,25 @@ compiler_moc_predefs_clean:
 moc_predefs.h: /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 	g++ -pipe -O2 -Wall -Wextra -dM -E -o moc_predefs.h /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: moc_SimuladorGLWidget.cpp moc_MyForm.cpp moc_AfegirRobotButton.cpp moc_CustomComboBox.cpp
+compiler_moc_header_make_all: moc_SimuladorGLWidget.cpp moc_MyForm.cpp moc_AfegirRobotButton.cpp moc_CustomComboBox.cpp moc_TelemetryReader.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) moc_SimuladorGLWidget.cpp moc_MyForm.cpp moc_AfegirRobotButton.cpp moc_CustomComboBox.cpp
+	-$(DEL_FILE) moc_SimuladorGLWidget.cpp moc_MyForm.cpp moc_AfegirRobotButton.cpp moc_CustomComboBox.cpp moc_TelemetryReader.cpp
 moc_SimuladorGLWidget.cpp: SimuladorGLWidget.h \
+		Model/model.h \
 		WarehouseLoader.h \
+		TelemetryReader.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include SimuladorGLWidget.h -o moc_SimuladorGLWidget.cpp
 
 moc_MyForm.cpp: MyForm.h \
 		ui_MyForm.h \
+		AfegirRobotButton.h \
+		CustomComboBox.h \
+		SimuladorGLWidget.h \
+		Model/model.h \
+		WarehouseLoader.h \
+		TelemetryReader.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include MyForm.h -o moc_MyForm.cpp
@@ -403,6 +417,11 @@ moc_CustomComboBox.cpp: CustomComboBox.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include CustomComboBox.h -o moc_CustomComboBox.cpp
 
+moc_TelemetryReader.cpp: TelemetryReader.h \
+		moc_predefs.h \
+		/usr/lib/qt5/bin/moc
+	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include TelemetryReader.h -o moc_TelemetryReader.cpp
+
 compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
 compiler_moc_source_make_all:
@@ -415,7 +434,9 @@ ui_MyForm.h: MyForm.ui \
 		SimuladorGLWidget.h \
 		AfegirRobotButton.h \
 		CustomComboBox.h \
-		WarehouseLoader.h
+		Model/model.h \
+		WarehouseLoader.h \
+		TelemetryReader.h
 	/usr/lib/qt5/bin/uic MyForm.ui -o ui_MyForm.h
 
 compiler_yacc_decl_make_all:
@@ -429,18 +450,32 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean compiler_ui
 ####### Compile
 
 main.o: main.cpp MyForm.h \
-		ui_MyForm.h
+		ui_MyForm.h \
+		AfegirRobotButton.h \
+		CustomComboBox.h \
+		SimuladorGLWidget.h \
+		Model/model.h \
+		WarehouseLoader.h \
+		TelemetryReader.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
-model.o: ./Model/model.cpp 
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o model.o ./Model/model.cpp
+model.o: Model/model.cpp Model/model.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o model.o Model/model.cpp
 
 SimuladorGLWidget.o: SimuladorGLWidget.cpp SimuladorGLWidget.h \
-		WarehouseLoader.h
+		Model/model.h \
+		WarehouseLoader.h \
+		TelemetryReader.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o SimuladorGLWidget.o SimuladorGLWidget.cpp
 
 MyForm.o: MyForm.cpp MyForm.h \
-		ui_MyForm.h
+		ui_MyForm.h \
+		AfegirRobotButton.h \
+		CustomComboBox.h \
+		SimuladorGLWidget.h \
+		Model/model.h \
+		WarehouseLoader.h \
+		TelemetryReader.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o MyForm.o MyForm.cpp
 
 AfegirRobotButton.o: AfegirRobotButton.cpp AfegirRobotButton.h
@@ -451,6 +486,9 @@ CustomComboBox.o: CustomComboBox.cpp CustomComboBox.h
 
 WarehouseLoader.o: WarehouseLoader.cpp WarehouseLoader.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o WarehouseLoader.o WarehouseLoader.cpp
+
+TelemetryReader.o: TelemetryReader.cpp TelemetryReader.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o TelemetryReader.o TelemetryReader.cpp
 
 moc_SimuladorGLWidget.o: moc_SimuladorGLWidget.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_SimuladorGLWidget.o moc_SimuladorGLWidget.cpp
@@ -463,6 +501,9 @@ moc_AfegirRobotButton.o: moc_AfegirRobotButton.cpp
 
 moc_CustomComboBox.o: moc_CustomComboBox.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_CustomComboBox.o moc_CustomComboBox.cpp
+
+moc_TelemetryReader.o: moc_TelemetryReader.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o moc_TelemetryReader.o moc_TelemetryReader.cpp
 
 ####### Install
 

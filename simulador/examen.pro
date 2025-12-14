@@ -10,7 +10,8 @@ HEADERS += SimuladorGLWidget.h \
            MyForm.h \
            AfegirRobotButton.h \
            CustomComboBox.h \
-           WarehouseLoader.h
+           WarehouseLoader.h \
+           TelemetryReader.h
 
 SOURCES += main.cpp \
         ./Model/model.cpp \
@@ -18,4 +19,5 @@ SOURCES += main.cpp \
         MyForm.cpp \
         AfegirRobotButton.cpp \
         CustomComboBox.cpp \
-        WarehouseLoader.cpp
+        WarehouseLoader.cpp \
+        TelemetryReader.cpp
