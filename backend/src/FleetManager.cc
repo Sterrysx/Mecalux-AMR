@@ -403,6 +403,24 @@ void FleetManager::createRobots() {
             // Track waypoints for task completion (2 waypoints = 1 task)
             totalWaypointsVisited_.fetch_add(1);
             
+            // Update package state based on POI type
+            // NOTE: No lock needed here - callback is invoked from runFleetLoop which already holds fleetMutex_
+            if (poiRegistry_) {
+                if (robotId >= 0 && robotId < static_cast<int>(drivers_.size())) {
+                    auto& driver = drivers_[robotId];
+                    
+                    if (poiRegistry_->NodeHasPOIType(goalNode, Layer1::POIType::PICKUP)) {
+                        driver->SetHasPackage(true);
+                        std::cout << "[FleetManager] Robot " << robotId << " picked up package at node " << goalNode << "\n";
+                    }
+                    else if (poiRegistry_->NodeHasPOIType(goalNode, Layer1::POIType::DROPOFF)) {
+                        driver->SetHasPackage(false);
+                        std::cout << "[FleetManager] Robot " << robotId << " dropped off package at node " << goalNode << "\n";
+                    }
+                    // If it's a CHARGING station or intermediate waypoint, hasPackage stays the same
+                }
+            }
+            
             // Note: onRobotArrived_ callback skipped due to thread safety concerns
             // The callback is set from main thread but called from fleet thread
         });
@@ -744,6 +762,7 @@ void FleetManager::runFleetLoop() {
                     t.currentNodeId = it->second.GetCurrentNodeId();
                     t.targetNodeId = drivers_[i]->GetGoalNodeId();
                     t.remainingWaypoints = static_cast<int>(it->second.GetItinerary().size());
+                    t.hasPackage = drivers_[i]->HasPackage();
                     telemetry.push_back(t);
                 }
             }

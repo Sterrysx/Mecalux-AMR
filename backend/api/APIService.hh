@@ -45,6 +45,7 @@ struct RobotTelemetry {
     int currentNodeId;              ///< Current nearest NavMesh node
     int targetNodeId;               ///< Target node (or -1 if none)
     int remainingWaypoints;         ///< Remaining waypoints in itinerary
+    bool hasPackage;                ///< Whether robot is carrying a package
 };
 
 /**
@@ -219,7 +220,8 @@ public:
             ss << "      \"battery\": " << r.battery << ",\n";
             ss << "      \"currentNodeId\": " << r.currentNodeId << ",\n";
             ss << "      \"targetNodeId\": " << r.targetNodeId << ",\n";
-            ss << "      \"remainingWaypoints\": " << r.remainingWaypoints << "\n";
+            ss << "      \"remainingWaypoints\": " << r.remainingWaypoints << ",\n";
+            ss << "      \"hasPackage\": " << (r.hasPackage ? "true" : "false") << "\n";
             ss << "    }";
             if (i < data.size() - 1) ss << ",";
             ss << "\n";

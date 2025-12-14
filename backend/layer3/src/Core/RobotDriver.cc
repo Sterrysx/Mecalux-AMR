@@ -22,6 +22,7 @@ RobotDriver::RobotDriver()
     , currentPosition_{0, 0}
     , currentVelocity_()
     , currentSpeed_(0.0)
+    , hasPackage_(false)
     , pathIndex_(0)
     , currentGoalNodeId_(-1)
     , navMesh_(nullptr) {}
@@ -39,6 +40,7 @@ RobotDriver::RobotDriver(
     , currentPosition_(startPosition)
     , currentVelocity_()
     , currentSpeed_(0.0)
+    , hasPackage_(false)
     , pathIndex_(0)
     , currentGoalNodeId_(-1)  // Will be set by SetStartNode() after construction
     , navMesh_(&navMesh) {}

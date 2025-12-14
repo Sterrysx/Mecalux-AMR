@@ -93,6 +93,7 @@ private:
     Backend::Common::Coordinates currentPosition_;  // Integer position for grid lookups
     Vector2 currentVelocity_;
     double currentSpeed_;
+    bool hasPackage_;                           // Whether robot is carrying a package
     
     // Path following
     std::vector<Backend::Common::Coordinates> currentPath_;
@@ -227,6 +228,11 @@ public:
      * @brief Get current path (read-only).
      */
     const std::vector<Backend::Common::Coordinates>& GetPath() const { return currentPath_; }
+    
+    /**
+     * @brief Check if robot is carrying a package.
+     */
+    bool HasPackage() const { return hasPackage_; }
 
     // =========================================================================
     // SETTERS
@@ -256,6 +262,14 @@ public:
      */
     void SetPosition(const Backend::Common::Coordinates& pos) {
         currentPosition_ = pos;
+    }
+    
+    /**
+     * @brief Set whether robot is carrying a package.
+     * This should be called by Layer 2 when robot reaches PICKUP/DROPOFF POIs.
+     */
+    void SetHasPackage(bool hasPackage) {
+        hasPackage_ = hasPackage;
     }
 
     // =========================================================================
