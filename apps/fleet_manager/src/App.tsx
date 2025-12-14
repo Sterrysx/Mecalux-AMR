@@ -3,7 +3,6 @@ import { useFleetStore, useFleetOverview, useTaskStats } from './stores/fleetSto
 import { fleetAPI } from './services/FleetAPI';
 import ChargingStations from './components/ChargingStations';
 import TaskCompletionChart from './components/TaskCompletionChart';
-import RobotTaskHistory from './components/RobotTaskHistory';
 
 // Error Boundary Component
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -759,122 +758,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Robot Battery Controls */}
-                <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
-                      <span>🔋</span>
-                      Robot Battery Controls
-                    </h3>
-                    <span className="text-sm text-gray-500">Adjust individual robot battery levels</span>
-                  </div>
-                  
-                  {Array.from(useFleetStore.getState().robots.values()).length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
-                      <div className="text-5xl mb-3">⏳</div>
-                      <p>Loading robot data...</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {Array.from(useFleetStore.getState().robots.values()).map(robot => (
-                        <div key={robot.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-all">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                                robot.state === 'BUSY' ? 'bg-gray-600 text-white' : 
-                                robot.state === 'IDLE' ? 'bg-gray-400 text-white' : 
-                                'bg-yellow-500 text-white'
-                              }`}>
-                                🤖
-                              </div>
-                              <div>
-                                <p className="font-bold text-gray-100">Robot #{robot.id}</p>
-                                <p className="text-xs text-gray-500">{robot.state}</p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Battery Display */}
-                          <div className="mb-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-gray-600">Battery Level</span>
-                              <span className={`text-lg font-bold ${getBatteryColor(robot?.batteryLevel || 100)}`}>
-                                {robot?.batteryLevel || 100}%
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
-                              <div 
-                                className={`h-full transition-all duration-300 ${getBatteryBgColor(robot?.batteryLevel || 100)} flex items-center justify-end pr-1`}
-                                style={{ width: `${robot?.batteryLevel || 100}%` }}
-                              >
-                                {(robot?.batteryLevel || 100) > 20 && (
-                                  <span className="text-xs text-white font-bold">⚡</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Battery Control Slider */}
-                          <div className="mb-3">
-                            <input 
-                              type="range" 
-                              min="0" 
-                              max="100" 
-                              value={robot?.batteryLevel || 100}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRobotBattery(robot.id, Number(e.target.value))}
-                              className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                              style={{
-                                background: `linear-gradient(to right, ${
-                                  (robot?.batteryLevel || 100) >= 80 ? '#10b981' :
-                                  (robot?.batteryLevel || 100) >= 50 ? '#eab308' :
-                                  (robot?.batteryLevel || 100) >= 20 ? '#f97316' :
-                                  '#ef4444'
-                                } ${robot?.batteryLevel || 100}%, #d1d5db ${robot?.batteryLevel || 100}%)`
-                              }}
-                            />
-                          </div>
-
-                          {/* Quick Battery Actions */}
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => updateRobotBattery(robot.id, 100)}
-                              className="flex-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg font-medium transition-colors"
-                            >
-                              Full
-                            </button>
-                            <button
-                              onClick={() => updateRobotBattery(robot.id, 50)}
-                              className="flex-1 px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded-lg font-medium transition-colors"
-                            >
-                              50%
-                            </button>
-                            <button
-                              onClick={() => updateRobotBattery(robot.id, 20)}
-                              className="flex-1 px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded-lg font-medium transition-colors"
-                            >
-                              Low
-                            </button>
-                          </div>
-
-                          {/* Additional Info */}
-                          <div className="mt-3 pt-3 border-t border-gray-300 text-xs text-gray-600">
-                            <div className="flex justify-between mb-1">
-                              <span>Position:</span>
-                              <span className="font-mono">({robot?.x || 0}, {robot?.y || 0})</span>
-                            </div>
-                            {robot?.itinerary && robot.itinerary > 0 && (
-                              <div className="flex justify-between">
-                                <span>Tasks:</span>
-                                <span className="font-semibold text-gray-400">{robot.itinerary} queued</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
               </>
             )}
           </>
@@ -1209,8 +1092,7 @@ function App() {
                 {Array.from(useFleetStore.getState().robots?.values() || []).map(robot => (
                   <div 
                     key={robot?.id || 0} 
-                    className={`rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer hover:border-gray-500 ${darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'}`}
-                    onClick={() => setSelectedRobotId(robot?.id || 0)}
+                    className={`rounded-lg border p-4 transition-all ${darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'}`}
                   >
                     <div className="flex items-center gap-6">
                       {/* Robot ID and Status */}
@@ -1231,32 +1113,6 @@ function App() {
                         <div className="text-xs text-gray-500">⚡ Velocity: ({(robot?.vx || 0).toFixed(1)}, {(robot?.vy || 0).toFixed(1)})</div>
                       </div>
 
-                      {/* Battery */}
-                      <div className="flex-1 min-w-[200px]">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-400">🔋 Battery</span>
-                          <span className={`text-lg font-bold ${
-                            (robot?.batteryLevel || 100) >= 80 ? 'text-green-400' :
-                            (robot?.batteryLevel || 100) >= 50 ? 'text-yellow-400' :
-                            (robot?.batteryLevel || 100) >= 20 ? 'text-orange-400' :
-                            'text-red-400'
-                          }`}>
-                            {robot?.batteryLevel || 100}%
-                          </span>
-                        </div>
-                        <div className={`h-2 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} overflow-hidden`}>
-                          <div 
-                            className={`h-full transition-all duration-300 ${
-                              (robot?.batteryLevel || 100) >= 80 ? 'bg-green-500' :
-                              (robot?.batteryLevel || 100) >= 50 ? 'bg-yellow-500' :
-                              (robot?.batteryLevel || 100) >= 20 ? 'bg-orange-500' :
-                              'bg-red-500'
-                            }`}
-                            style={{ width: `${robot?.batteryLevel || 100}%` }}
-                          />
-                        </div>
-                      </div>
-
                       {/* Task Info */}
                       <div className="flex-1 min-w-[200px]">
                         {robot?.goal !== null && robot?.goal !== undefined && (
@@ -1273,21 +1129,10 @@ function App() {
                           <div className="text-xs text-gray-400">💤 Awaiting tasks</div>
                         )}
                       </div>
-
-                      {/* Action hint */}
-                      <div className="text-xs text-gray-400">👆 Click for history</div>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-
-            {/* Robot Task History Modal */}
-            {selectedRobotId && (
-              <RobotTaskHistory 
-                robotId={selectedRobotId} 
-                onClose={() => setSelectedRobotId(null)}
-              />
             )}
           </div>
         ) : null}

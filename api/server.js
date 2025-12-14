@@ -14,6 +14,41 @@ const wss = new WebSocket.Server({ server });
 
 // Output directory for fleet data
 const OUTPUT_DIR = path.resolve(__dirname, './output');
+const ORCA_DIR = path.resolve(__dirname, './orca');
+
+// Function to find and read the latest orca_tick_*.json file
+async function getLatestOrcaTick() {
+  try {
+    // Read all files in the orca directory
+    const files = await fs.readdir(ORCA_DIR);
+    
+    // Filter and extract tick numbers
+    const tickFiles = files
+      .filter(file => file.startsWith('orca_tick_') && file.endsWith('.json'))
+      .map(file => {
+        const match = file.match(/orca_tick_(\d+)\.json/);
+        return match ? { filename: file, tick: parseInt(match[1], 10) } : null;
+      })
+      .filter(item => item !== null);
+    
+    // If no tick files found, return null
+    if (tickFiles.length === 0) {
+      return null;
+    }
+    
+    // Sort by tick number descending and get the highest
+    tickFiles.sort((a, b) => b.tick - a.tick);
+    const latestFile = tickFiles[0];
+    
+    // Read and parse the latest file
+    const filePath = path.join(ORCA_DIR, latestFile.filename);
+    const data = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading latest orca tick:', error);
+    return null;
+  }
+}
 
 // OS Detection and Path Configuration
 const isWindows = os.platform() === 'win32';
@@ -697,9 +732,62 @@ wss.on('connection', (ws) => {
 
 // ==================== FLEET MANAGEMENT API ====================
 
-// Get current robot data
-app.get('/api/fleet/robots', (req, res) => {
-  res.json(currentRobotData);
+// Get current robot data from latest orca tick
+app.get('/api/fleet/robots', async (req, res) => {
+  try {
+    const latestData = await getLatestOrcaTick();
+    
+    if (!latestData) {
+      // Fallback: return waiting state if no tick files found
+      return res.json({
+        robots: [],
+        timestamp: Date.now(),
+        status: 'waiting',
+        message: 'Waiting for simulation to start'
+      });
+    }
+    
+    // Transform orca format to expected format
+    const robotsData = {
+      robots: latestData.robots.map(robot => ({
+        id: robot.id,
+        x: robot.x,
+        y: robot.y,
+        vx: robot.vx,
+        vy: robot.vy,
+        state: robot.status || robot.driverState,
+        goal: robot.targetNodeId,
+        itinerary: robot.remainingWaypoints ? [robot.remainingWaypoints] : [],
+        batteryLevel: Math.round(robot.battery * 100)
+      })),
+      timestamp: new Date(latestData.timestamp).getTime(),
+      tick: latestData.tick
+    };
+    
+    res.json(robotsData);
+  } catch (error) {
+    console.error('Error serving robot data:', error);
+    res.status(500).json({ error: 'Failed to fetch robot data' });
+  }
+});
+
+// Get latest orca tick (raw format)
+app.get('/api/orca/latest', async (req, res) => {
+  try {
+    const latestData = await getLatestOrcaTick();
+    
+    if (!latestData) {
+      return res.status(404).json({
+        error: 'No simulation data available',
+        message: 'Waiting for ORCA simulation to generate tick files'
+      });
+    }
+    
+    res.json(latestData);
+  } catch (error) {
+    console.error('Error serving latest orca tick:', error);
+    res.status(500).json({ error: 'Failed to fetch latest tick' });
+  }
 });
 
 // Serve static JSON files from output directory
@@ -852,7 +940,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`📡 Server listening on all interfaces: 0.0.0.0:${PORT}`);
   console.log(`📊 Fleet API endpoints:`);
   console.log(`   GET  /health - Health check`);
-  console.log(`   GET  /api/output/robots.json - Robot positions (20 Hz)`);
+  console.log(`   GET  /api/fleet/robots - Latest robot data (from orca ticks)`);
+  console.log(`   GET  /api/orca/latest - Latest raw orca tick data`);
+  console.log(`   GET  /api/output/robots.json - Robot positions (legacy)`);
   console.log(`   GET  /api/output/tasks.json - Task statuses (1 Hz)`);
   console.log(`   GET  /api/output/map.json - Dynamic obstacles (1 Hz)`);
   console.log(`   GET  /api/pois.json - POI configuration`);
