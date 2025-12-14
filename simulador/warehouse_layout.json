@@ -3,57 +3,246 @@
   "objects": [
     {
       "modelIndex": 0,
-      "center": [10, 0, 3],
-      "dimensions": [2.0, 1.0, 5.0],
-      "rotation": 0.0
+      "center": [2.5, 0, 2.5],
+      "dimensions": [4.0, 1.0, 1.0],
+      "rotation": 0.0,
+      "description": "Conveyor belt"
     },
     {
-      "modelIndex": 3,
-      "center": [15.0, 0.0, 10.0],
-      "dimensions": [2, 4, 5.0],
-      "rotation": 45.0
+      "modelIndex": 1,
+      "center": [6.0, 0, 6.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 1 - left"
     },
     {
-      "modelIndex": 4,
-      "center": [20.0, 0.0, 10.0],
-      "dimensions": [2, 4, 5.0],
-      "rotation": 0.0
+      "modelIndex": 1,
+      "center": [10.0, 0, 6.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 1 - center"
     },
     {
-      "modelIndex": 5,
-      "center": [25.0, 0.0, 15.0],
-      "dimensions": [0.5, 1, 2.5],
-      "rotation": 0.0
+      "modelIndex": 1,
+      "center": [14.0, 0, 6.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 1 - right"
+    },
+    {
+      "modelIndex": 1,
+      "center": [6.0, 0, 10.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 2 - left"
+    },
+    {
+      "modelIndex": 1,
+      "center": [10.0, 0, 10.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 2 - center"
+    },
+    {
+      "modelIndex": 1,
+      "center": [14.0, 0, 10.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 2 - right"
+    },
+    {
+      "modelIndex": 1,
+      "center": [6.0, 0, 14.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 3 - left"
+    },
+    {
+      "modelIndex": 1,
+      "center": [10.0, 0, 14.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 3 - center"
+    },
+    {
+      "modelIndex": 1,
+      "center": [14.0, 0, 14.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 3 - right"
+    },
+    {
+      "modelIndex": 1,
+      "center": [6.0, 0, 20.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 4 - left"
+    },
+    {
+      "modelIndex": 1,
+      "center": [10.0, 0, 20.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 4 - center"
+    },
+    {
+      "modelIndex": 1,
+      "center": [14.0, 0, 20.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 4 - right"
+    },
+    {
+      "modelIndex": 1,
+      "center": [6.0, 0, 24.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 5 - left"
+    },
+    {
+      "modelIndex": 1,
+      "center": [10.0, 0, 24.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 5 - center"
+    },
+    {
+      "modelIndex": 1,
+      "center": [14.0, 0, 24.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 5 - right"
+    },
+    {
+      "modelIndex": 1,
+      "center": [6.0, 0, 28.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 6 - left"
+    },
+    {
+      "modelIndex": 1,
+      "center": [10.0, 0, 28.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 6 - center"
+    },
+    {
+      "modelIndex": 1,
+      "center": [14.0, 0, 28.0],
+      "dimensions": [1.5, 3.0, 3.0],
+      "rotation": 0.0,
+      "description": "Shelf row 6 - right"
     }
   ],
+<<<<<<< Updated upstream
+=======
+  "robots": [
+    {
+      "startPosition": [20.0, 0.0, 25.0],
+      "startOrientation": 0.0,
+      "description": "Robot starting at charging station area"
+    }
+  ],
+>>>>>>> Stashed changes
   "pickingZones": [
     {
       "type": "PICKUP",
-      "center": [10.0, 0.0, 3.0],
-      "dimensions": [2.0, 0.0, 2.0],
+      "center": [4.5, 0.0, 2.5],
+      "dimensions": [1.5, 0.0, 1.0],
       "rotation": 0.0,
-      "description": "Conveyor belt pickup area"
+      "description": "Conveyor belt pickup point"
     },
     {
       "type": "DROPOFF",
-      "center": [15.0, 0.0, 10.0],
-      "dimensions": [2.0, 0.0, 3.0],
-      "rotation": 45.0,
-      "description": "Shelf dropoff zone"
+      "center": [8.0, 0.0, 6.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 1 - aisle 1"
     },
     {
-      "type": "PICKUP",
+      "type": "DROPOFF",
+      "center": [12.0, 0.0, 6.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 1 - aisle 2"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [8.0, 0.0, 10.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 2 - aisle 1"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [12.0, 0.0, 10.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 2 - aisle 2"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [8.0, 0.0, 14.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 3 - aisle 1"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [12.0, 0.0, 14.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 3 - aisle 2"
+    },
+    {
+      "type": "DROPOFF",
       "center": [8.0, 0.0, 20.0],
-      "dimensions": [3.0, 0.0, 2.0],
+      "dimensions": [1.0, 0.0, 1.0],
       "rotation": 0.0,
-      "description": "Secondary pickup station"
+      "description": "Dropoff point row 4 - aisle 1"
     },
     {
       "type": "DROPOFF",
-      "center": [22.0, 0.0, 25.0],
-      "dimensions": [2.5, 0.0, 2.5],
+      "center": [12.0, 0.0, 20.0],
+      "dimensions": [1.0, 0.0, 1.0],
       "rotation": 0.0,
-      "description": "Final delivery zone"
+      "description": "Dropoff point row 4 - aisle 2"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [8.0, 0.0, 24.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 5 - aisle 1"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [12.0, 0.0, 24.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 5 - aisle 2"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [8.0, 0.0, 28.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 6 - aisle 1"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [12.0, 0.0, 28.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Dropoff point row 6 - aisle 2"
+    },
+    {
+      "type": "CHARGING",
+      "center": [20.0, 0.0, 25.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 0.0,
+      "description": "Charging station"
     }
   ]
 }
