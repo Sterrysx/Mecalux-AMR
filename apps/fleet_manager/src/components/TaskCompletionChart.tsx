@@ -13,12 +13,12 @@ export default function TaskCompletionChart() {
 
   if (taskHistory.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
+      <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-gray-100">Task Completion Over Time</h3>
           <div className="flex gap-2">
             <div className="flex items-center gap-2 text-xs">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <div className="w-3 h-3 bg-gray-500 rounded"></div>
               <span className="text-gray-400">Completed</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
@@ -54,12 +54,12 @@ export default function TaskCompletionChart() {
     : 1;
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
+    <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-gray-100">Task Completion Over Time</h3>
         <div className="flex gap-3">
           <div className="flex items-center gap-2 text-xs">
-            <div className="w-3 h-3 bg-blue-500 rounded"></div>
+            <div className="w-3 h-3 bg-gray-500 rounded"></div>
             <span className="text-gray-400">Completed</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
@@ -86,9 +86,9 @@ export default function TaskCompletionChart() {
                 }}
                 title={`Active: ${point.active}`}
               />
-              {/* Completed Tasks Bar (Blue) */}
+              {/* Completed Tasks Bar (Gray) */}
               <div 
-                className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all duration-500 hover:from-blue-600 hover:to-blue-500" 
+                className="w-full bg-gradient-to-t from-gray-600 to-gray-500 rounded-t-lg transition-all duration-500 hover:from-gray-700 hover:to-gray-600" 
                 style={{ 
                   height: `${completedHeight}%`, 
                   minHeight: completedHeight > 0 ? '4px' : '0px' 
@@ -100,7 +100,7 @@ export default function TaskCompletionChart() {
         })}
       </div>
       
-      <div className="mt-4 pt-4 border-t border-gray-700">
+      <div className="mt-4 pt-4 border-t border-zinc-700">
         <div className="flex justify-between text-sm">
           <span className="text-gray-400">Real-time Performance</span>
           <span className="font-semibold text-gray-100">

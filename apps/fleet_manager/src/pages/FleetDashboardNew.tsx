@@ -152,7 +152,7 @@ function ScenarioIndicator({ scenario }: { scenario?: 'A' | 'B' | 'C' }) {
   if (!scenario) return null;
 
   const scenarioInfo = {
-    A: { label: 'Boot-Up', color: 'bg-blue-100 text-blue-700', desc: 'Full VRP Solve' },
+    A: { label: 'Boot-Up', color: 'bg-gray-200 text-gray-800', desc: 'Full VRP Solve' },
     B: { label: 'Streaming', color: 'bg-green-100 text-green-700', desc: 'Cheap Insertion' },
     C: { label: 'Batch', color: 'bg-orange-100 text-orange-700', desc: 'Background Re-plan' }
   };
@@ -179,7 +179,7 @@ interface StatsCardProps {
 
 function StatsCard({ title, value, subtitle, icon, color }: StatsCardProps) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
+    blue: 'bg-gray-100 text-gray-700',
     green: 'bg-green-50 text-green-600',
     yellow: 'bg-yellow-50 text-yellow-600',
     purple: 'bg-purple-50 text-purple-600'

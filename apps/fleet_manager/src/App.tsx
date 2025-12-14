@@ -225,7 +225,7 @@ function App() {
   // Helper function to categorize and style messages
   const getMessageStyle = (line: string) => {
     if (line.startsWith('>')) {
-      return { icon: '▶', color: 'text-blue-400', bg: darkMode ? 'bg-blue-900/20' : 'bg-blue-100', border: 'border-l-4 border-blue-500' };
+      return { icon: '▶', color: 'text-gray-300', bg: darkMode ? 'bg-zinc-800/50' : 'bg-gray-100', border: 'border-l-4 border-gray-500' };
     }
     if (line.includes('ERROR') || line.includes('Error')) {
       return { icon: '❌', color: 'text-red-400', bg: darkMode ? 'bg-red-900/20' : 'bg-red-100', border: 'border-l-4 border-red-500' };
@@ -252,7 +252,7 @@ function App() {
       return { icon: '📊', color: 'text-gray-300', bg: darkMode ? 'bg-gray-800' : 'bg-gray-100', border: 'border-l-4 border-gray-600' };
     }
     if (line.includes('amr>')) {
-      return { icon: '💻', color: 'text-blue-300', bg: darkMode ? 'bg-blue-900/10' : 'bg-blue-50', border: 'border-l-4 border-blue-400' };
+      return { icon: '💻', color: 'text-gray-300', bg: darkMode ? 'bg-zinc-800/50' : 'bg-gray-50', border: 'border-l-4 border-gray-500' };
     }
     return { icon: '•', color: 'text-gray-400', bg: 'transparent', border: 'border-l-4 border-transparent' };
   };
@@ -518,7 +518,7 @@ function App() {
   const getStateColor = (state: string) => {
     switch (state) {
       case 'IDLE': return 'text-gray-400';
-      case 'MOVING': return 'text-blue-400';
+      case 'MOVING': return 'text-gray-300';
       case 'EXECUTING': return 'text-purple-400';
       case 'WAITING': return 'text-yellow-400';
       default: return 'text-gray-400';
@@ -528,7 +528,7 @@ function App() {
   const getStateBadgeColor = (state: string) => {
     switch (state) {
       case 'IDLE': return 'bg-gray-700 text-gray-300';
-      case 'MOVING': return 'bg-blue-600 text-white';
+      case 'MOVING': return 'bg-gray-600 text-white';
       case 'EXECUTING': return 'bg-purple-600 text-white';
       case 'WAITING': return 'bg-yellow-600 text-white';
       default: return 'bg-gray-700 text-gray-300';
@@ -536,90 +536,94 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen flex ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Sidebar Navigation */}
-      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-gradient-to-b from-blue-900 to-blue-800 text-white flex-shrink-0 transition-all duration-300 shadow-xl relative flex flex-col`}>
-        <div className="p-6 flex-1">
-          {/* User Profile */}
-          <div className={`${sidebarCollapsed ? 'flex justify-center' : ''} mb-8`}>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center">
-              <div className="w-16 h-16 bg-white rounded-full mx-auto mb-3 flex items-center justify-center">
-                <span className="text-3xl">👤</span>
-              </div>
-              {!sidebarCollapsed && (
-                <>
-                  <h3 className="font-bold text-lg">FLEET ADMIN</h3>
-                  <p className="text-xs text-blue-200">admin@mecalux.com</p>
-                </>
-              )}
-            </div>
-          </div>
-
+    <div className={`min-h-screen ${darkMode ? 'bg-zinc-950 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
+      {/* Sidebar Navigation - Fixed */}
+      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-slate-900 text-white fixed left-0 top-0 h-screen transition-all duration-300 shadow-2xl flex flex-col z-50`}>
+        <div className="p-6 flex-1 flex flex-col">
           {/* Navigation Menu */}
-          <nav className="space-y-2">
+          <nav className="space-y-2 mt-8">
             <button
               onClick={() => setCurrentPage('dashboard')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${
                 currentPage === 'dashboard' 
-                  ? 'bg-white/20 shadow-lg' 
-                  : 'hover:bg-white/10'
+                  ? 'bg-slate-700 border-gray-400 text-white' 
+                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <span className="text-xl">🏠</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Dashboard</span>}
             </button>
             
             <button
               onClick={() => setCurrentPage('robots')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${
                 currentPage === 'robots' 
-                  ? 'bg-white/20 shadow-lg' 
-                  : 'hover:bg-white/10'
+                  ? 'bg-slate-700 border-gray-400 text-white' 
+                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <span className="text-xl">🤖</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Fleet</span>}
             </button>
 
             <button
               onClick={() => setCurrentPage('control')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${
                 currentPage === 'control' 
-                  ? 'bg-white/20 shadow-lg' 
-                  : 'hover:bg-white/10'
+                  ? 'bg-slate-700 border-gray-400 text-white' 
+                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <span className="text-xl">🎮</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Control</span>}
             </button>
 
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-all">
-              <span className="text-xl">📊</span>
+            <button className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 border-transparent text-gray-400 hover:bg-slate-800 hover:text-white`}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Analytics</span>}
             </button>
 
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-all">
-              <span className="text-xl">⚙️</span>
+            <button className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 border-transparent text-gray-400 hover:bg-slate-800 hover:text-white`}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Settings</span>}
             </button>
           </nav>
         </div>
 
         {/* Sidebar Toggle - Fixed at bottom */}
-        <div className="p-6">
+        <div className="p-6 border-t border-slate-800">
           <button 
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full bg-white/20 hover:bg-white/30 p-3 rounded-lg transition-all flex items-center justify-center"
+            className="w-full bg-slate-800 hover:bg-slate-700 p-3 rounded-lg transition-all flex items-center justify-center text-gray-300"
           >
-            <span className="text-xl">{sidebarCollapsed ? '→' : '←'}</span>
+            {sidebarCollapsed ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            )}
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300 overflow-y-auto h-screen`}>
         {/* Top Bar */}
-        <header className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white'} shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10`}>
+        <header className={`${darkMode ? 'bg-slate-800 border-b border-slate-700' : 'bg-white'} shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10`}>
           <div>
             <h1 className={`text-2xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Dashboard</h1>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Real-time fleet monitoring system</p>
@@ -650,7 +654,7 @@ function App() {
           </div>
         </header>
 
-        <main className={`p-8 ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+        <main className={`p-8 ${darkMode ? 'bg-slate-950' : 'bg-gray-100'}`}>
           {currentPage === 'dashboard' ? (
           // LIVE DASHBOARD PAGE
           <>
@@ -675,12 +679,12 @@ function App() {
                 {/* Top Stats Cards - Professional Style */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                   {/* Tasks Completed */}
-                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
+                      <div className="bg-gradient-to-br from-gray-600 to-gray-700 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         📊
                       </div>
-                      <div className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-bold">
+                      <div className="bg-gray-500/20 text-gray-400 px-3 py-1 rounded-full text-sm font-bold">
                         +{efficiency.toFixed(1)}/min
                       </div>
                     </div>
@@ -690,7 +694,7 @@ function App() {
                   </div>
 
                   {/* Active Robots */}
-                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className="bg-gradient-to-br from-orange-500 to-orange-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         🤖
@@ -705,7 +709,7 @@ function App() {
                   </div>
 
                   {/* Battery Health */}
-                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className="bg-gradient-to-br from-green-500 to-green-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         🔋
@@ -725,7 +729,7 @@ function App() {
                   </div>
 
                   {/* Efficiency Rating */}
-                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         ⭐
@@ -756,7 +760,7 @@ function App() {
                 </div>
 
                 {/* Robot Battery Controls */}
-                <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
+                <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
                       <span>🔋</span>
@@ -777,7 +781,7 @@ function App() {
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                               <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                                robot.state === 'BUSY' ? 'bg-blue-500 text-white' : 
+                                robot.state === 'BUSY' ? 'bg-gray-600 text-white' : 
                                 robot.state === 'IDLE' ? 'bg-gray-400 text-white' : 
                                 'bg-yellow-500 text-white'
                               }`}>
@@ -861,7 +865,7 @@ function App() {
                             {robot?.itinerary && robot.itinerary > 0 && (
                               <div className="flex justify-between">
                                 <span>Tasks:</span>
-                                <span className="font-semibold text-blue-600">{robot.itinerary} queued</span>
+                                <span className="font-semibold text-gray-400">{robot.itinerary} queued</span>
                               </div>
                             )}
                           </div>
@@ -949,19 +953,19 @@ function App() {
               // Stats Grid (when running)
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Efficiency Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-blue-900/50 to-blue-800/30 border-blue-700/50' : 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-300">Efficiency</p>
-                    <p className="text-3xl font-bold text-white mt-2">
+                    <p className="text-sm font-medium text-gray-400">Efficiency</p>
+                    <p className="text-3xl font-bold text-gray-100 mt-2">
                       {efficiency.toFixed(1)}
                     </p>
-                    <p className="text-xs text-blue-200 mt-1">tasks/min</p>
+                    <p className="text-xs text-gray-400 mt-1">tasks/min</p>
                   </div>
                   <div className="text-3xl">📊</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-blue-700/50">
-                  <p className="text-xs text-blue-200">
+                <div className="mt-4 pt-4 border-t border-zinc-700">
+                  <p className="text-xs text-gray-400">
                     {taskCompleted} / {totalTasks} tasks completed
                   </p>
                 </div>
@@ -1041,11 +1045,11 @@ function App() {
                   </h2>
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => sendQuickCommand('inject 3')} disabled={!state.isRunning}
-                      className="px-4 py-3 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                      className="px-4 py-3 text-sm bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
                       Inject 3 Tasks<span className="block text-xs opacity-75">Scenario B</span>
                     </button>
                     <button onClick={() => sendQuickCommand('inject 5')} disabled={!state.isRunning}
-                      className="px-4 py-3 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                      className="px-4 py-3 text-sm bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
                       Inject 5 Tasks<span className="block text-xs opacity-75">Scenario B</span>
                     </button>
                     <button onClick={() => sendQuickCommand('inject 10')} disabled={!state.isRunning}
@@ -1101,7 +1105,7 @@ function App() {
                         <button
                           type="submit"
                           disabled={!state.isRunning || !command.trim()}
-                          className="px-6 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                          className="px-6 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
                           Send
                         </button>
                       </form>
@@ -1205,7 +1209,7 @@ function App() {
                 {Array.from(useFleetStore.getState().robots?.values() || []).map(robot => (
                   <div 
                     key={robot?.id || 0} 
-                    className={`rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer hover:border-blue-500 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
+                    className={`rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer hover:border-gray-500 ${darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'}`}
                     onClick={() => setSelectedRobotId(robot?.id || 0)}
                   >
                     <div className="flex items-center gap-6">
@@ -1257,7 +1261,7 @@ function App() {
                       <div className="flex-1 min-w-[200px]">
                         {robot?.goal !== null && robot?.goal !== undefined && (
                           <div className="text-xs">
-                            <span className="text-blue-400">🎯 Goal:</span> {robot.goal}
+                            <span className="text-gray-400">🎯 Goal:</span> {robot.goal}
                           </div>
                         )}
                         {robot?.itinerary && robot.itinerary > 0 && (
@@ -1271,7 +1275,7 @@ function App() {
                       </div>
 
                       {/* Action hint */}
-                      <div className="text-xs text-blue-400">👆 Click for history</div>
+                      <div className="text-xs text-gray-400">👆 Click for history</div>
                     </div>
                   </div>
                 ))}
