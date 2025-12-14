@@ -678,7 +678,7 @@ function App() {
                 {/* Top Stats Cards - Professional Style */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                   {/* Tasks Completed */}
-                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className="bg-gradient-to-br from-gray-600 to-gray-700 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         📊
@@ -693,7 +693,7 @@ function App() {
                   </div>
 
                   {/* Active Robots */}
-                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className="bg-gradient-to-br from-orange-500 to-orange-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         🤖
@@ -708,7 +708,7 @@ function App() {
                   </div>
 
                   {/* Battery Health */}
-                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className="bg-gradient-to-br from-green-500 to-green-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         🔋
@@ -728,7 +728,7 @@ function App() {
                   </div>
 
                   {/* Efficiency Rating */}
-                  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                  <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
                       <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         ⭐
@@ -836,56 +836,56 @@ function App() {
               // Stats Grid (when running)
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Efficiency Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-400">Efficiency</p>
-                    <p className="text-3xl font-bold text-gray-100 mt-2">
+                    <p className="text-3xl font-bold text-white mt-2">
                       {efficiency.toFixed(1)}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">tasks/min</p>
+                    <p className="text-xs text-slate-200 mt-1">tasks/min</p>
                   </div>
                   <div className="text-3xl">📊</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-zinc-700">
-                  <p className="text-xs text-gray-400">
+                <div className="mt-4 pt-4 border-t border-slate-500/50">
+                  <p className="text-xs text-slate-200">
                     {taskCompleted} / {totalTasks} tasks completed
                   </p>
                 </div>
               </div>
 
               {/* Robots Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-purple-900/50 to-purple-800/30 border-purple-700/50' : 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-purple-300">Fleet Status</p>
+                    <p className="text-sm font-medium text-gray-400">Fleet Status</p>
                     <p className="text-3xl font-bold text-white mt-2">
                       {activeRobots}/{totalRobots}
                     </p>
-                    <p className="text-xs text-purple-200 mt-1">robots active</p>
+                    <p className="text-xs text-gray-400 mt-1">robots active</p>
                   </div>
                   <div className="text-3xl">🤖</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-purple-700/50">
-                  <p className="text-xs text-purple-200">
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <p className="text-xs text-gray-400">
                     {idleRobots} idle · {inProgressTasks} tasks running
                   </p>
                 </div>
               </div>
 
               {/* Battery Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-green-900/50 to-green-800/30 border-green-700/50' : 'bg-gradient-to-br from-green-50 to-green-100 border-green-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-green-50 to-green-100 border-green-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-green-300">Avg Battery</p>
+                    <p className="text-sm font-medium text-gray-400">Avg Battery</p>
                     <p className="text-3xl font-bold text-white mt-2">
                       {avgBattery}%
                     </p>
-                    <p className="text-xs text-green-200 mt-1">fleet average</p>
+                    <p className="text-xs text-gray-400 mt-1">fleet average</p>
                   </div>
                   <div className="text-3xl">🔋</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-green-700/50">
+                <div className="mt-4 pt-4 border-t border-gray-700">
                   <div className="w-full bg-gray-700/50 rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full transition-all ${getBatteryBgColor(avgBattery)}`}
@@ -896,19 +896,19 @@ function App() {
               </div>
 
               {/* Uptime Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-orange-900/50 to-orange-800/30 border-orange-700/50' : 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-orange-300">Uptime</p>
+                    <p className="text-sm font-medium text-gray-400">Uptime</p>
                     <p className="text-3xl font-bold text-white mt-2">
                       {Math.floor(systemUptime / 60)}m
                     </p>
-                    <p className="text-xs text-orange-200 mt-1">{Math.floor(systemUptime % 60)}s elapsed</p>
+                    <p className="text-xs text-gray-400 mt-1">{Math.floor(systemUptime % 60)}s elapsed</p>
                   </div>
                   <div className="text-3xl">⏱️</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-orange-700/50">
-                  <p className="text-xs text-orange-200">
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <p className="text-xs text-gray-400">
                     {state.isRunning ? 'System operational' : 'System offline'}
                   </p>
                 </div>
@@ -1092,7 +1092,7 @@ function App() {
                 {Array.from(useFleetStore.getState().robots?.values() || []).map(robot => (
                   <div 
                     key={robot?.id || 0} 
-                    className={`rounded-lg border p-4 transition-all ${darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-gray-200'}`}
+                    className={`rounded-lg border p-4 transition-all ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
                   >
                     <div className="flex items-center gap-6">
                       {/* Robot ID and Status */}

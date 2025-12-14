@@ -13,7 +13,7 @@ export default function TaskCompletionChart() {
 
   if (taskHistory.length === 0) {
     return (
-      <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6">
+      <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-gray-100">Task Completion Over Time</h3>
           <div className="flex gap-2">
@@ -54,7 +54,7 @@ export default function TaskCompletionChart() {
     : 1;
 
   return (
-    <div className="bg-zinc-800 border border-zinc-700 rounded-2xl shadow-lg p-6">
+    <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-gray-100">Task Completion Over Time</h3>
         <div className="flex gap-3">
