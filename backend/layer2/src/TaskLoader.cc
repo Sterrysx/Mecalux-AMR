@@ -302,12 +302,16 @@ std::vector<Task> TaskLoader::ParseJSONWithPOI(const std::string& content,
         if (sourcePos != std::string::npos) {
             size_t colonPos = obj.find(':', sourcePos);
             if (colonPos != std::string::npos) {
-                // Find the string value in quotes
-                size_t quoteStart = obj.find('"', colonPos);
-                if (quoteStart != std::string::npos) {
-                    size_t quoteEnd = obj.find('"', quoteStart + 1);
+                // Skip whitespace and find the opening quote of the value
+                size_t searchStart = colonPos + 1;
+                while (searchStart < obj.size() && std::isspace(obj[searchStart])) {
+                    searchStart++;
+                }
+                // Now find the first quote (should be the value's opening quote)
+                if (searchStart < obj.size() && obj[searchStart] == '"') {
+                    size_t quoteEnd = obj.find('"', searchStart + 1);
                     if (quoteEnd != std::string::npos) {
-                        sourceId = obj.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
+                        sourceId = obj.substr(searchStart + 1, quoteEnd - searchStart - 1);
                     }
                 }
             }
@@ -321,12 +325,16 @@ std::vector<Task> TaskLoader::ParseJSONWithPOI(const std::string& content,
         if (destPos != std::string::npos) {
             size_t colonPos = obj.find(':', destPos);
             if (colonPos != std::string::npos) {
-                // Find the string value in quotes
-                size_t quoteStart = obj.find('"', colonPos);
-                if (quoteStart != std::string::npos) {
-                    size_t quoteEnd = obj.find('"', quoteStart + 1);
+                // Skip whitespace and find the opening quote of the value
+                size_t searchStart = colonPos + 1;
+                while (searchStart < obj.size() && std::isspace(obj[searchStart])) {
+                    searchStart++;
+                }
+                // Now find the first quote (should be the value's opening quote)
+                if (searchStart < obj.size() && obj[searchStart] == '"') {
+                    size_t quoteEnd = obj.find('"', searchStart + 1);
                     if (quoteEnd != std::string::npos) {
-                        destId = obj.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
+                        destId = obj.substr(searchStart + 1, quoteEnd - searchStart - 1);
                     }
                 }
             }
