@@ -29,6 +29,44 @@ lerna-debug.log*
 *.sw?
 *.o
 
+# C++ Build artifacts
+*.out
+*.exe
+*.a
+*.so
+*.dylib
+build/
+backend/build/
+tests/build/
+backend/layer1/build/
+backend/layer2/build/
+backend/layer3/build/
+
+# Test executables
+**/test_layer1
+**/test_layer2
+**/test_layer3
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Backend executables
+backend/fleet_manager
+backend/build/fleet_manager
+
+# Simulator build artifacts and executables
+simulador/examen
+simulador/*.o
+simulador/moc_*.cpp
+simulador/ui_*.h
+simulador/moc_predefs.h
+simulador/Makefile
+simulador/.qmake.stash
+
 # Environment variables
 .env
 .env.local
