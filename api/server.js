@@ -14,6 +14,54 @@ const wss = new WebSocket.Server({ server });
 
 // Output directory for fleet data
 const OUTPUT_DIR = path.resolve(__dirname, './output');
+const ORCA_DIR = path.resolve(__dirname, './orca');
+
+// Function to find and read the latest orca_tick_*.json file
+async function getLatestOrcaTick() {
+  try {
+    // Read all files in the orca directory
+    const files = await fs.readdir(ORCA_DIR);
+    
+    // Filter and extract tick numbers
+    const tickFiles = files
+      .filter(file => file.startsWith('orca_tick_') && file.endsWith('.json'))
+      .map(file => {
+        const match = file.match(/orca_tick_(\d+)\.json/);
+        return match ? { filename: file, tick: parseInt(match[1], 10) } : null;
+      })
+      .filter(item => item !== null);
+    
+    // If no tick files found, return null
+    if (tickFiles.length === 0) {
+      return null;
+    }
+    
+    // Sort by tick number descending and get the highest
+    tickFiles.sort((a, b) => b.tick - a.tick);
+    const latestFile = tickFiles[0];
+    
+    // Read and parse the latest file
+    const filePath = path.join(ORCA_DIR, latestFile.filename);
+    const data = await fs.readFile(filePath, 'utf8');
+    
+    // Validate data is not empty
+    if (!data || data.trim().length === 0) {
+      console.warn(`[API] Empty ORCA file: ${latestFile.filename}`);
+      return null;
+    }
+    
+    try {
+      return JSON.parse(data);
+    } catch (parseError) {
+      console.error(`[API] JSON parse error in ${latestFile.filename}:`, parseError.message);
+      // File might be corrupted or incomplete, return null
+      return null;
+    }
+  } catch (error) {
+    console.error('Error reading latest orca tick:', error);
+    return null;
+  }
+}
 
 // OS Detection and Path Configuration
 const isWindows = os.platform() === 'win32';
@@ -697,9 +745,66 @@ wss.on('connection', (ws) => {
 
 // ==================== FLEET MANAGEMENT API ====================
 
-// Get current robot data
-app.get('/api/fleet/robots', (req, res) => {
-  res.json(currentRobotData);
+// Get current robot data from latest orca tick
+app.get('/api/fleet/robots', async (req, res) => {
+  try {
+    console.log('[API] 🤖 /api/fleet/robots called - fetching latest ORCA tick...');
+    const latestData = await getLatestOrcaTick();
+    
+    if (!latestData) {
+      console.log('[API] ⚠️  No ORCA tick files found');
+      // Fallback: return waiting state if no tick files found
+      return res.json({
+        robots: [],
+        timestamp: Date.now(),
+        status: 'waiting',
+        message: 'Waiting for simulation to start'
+      });
+    }
+    
+    console.log(`[API] ✅ Found tick ${latestData.tick} with ${latestData.robots.length} robot(s)`);
+    
+    // Transform orca format to expected format
+    const robotsData = {
+      robots: latestData.robots.map(robot => ({
+        id: robot.id,
+        x: robot.x,
+        y: robot.y,
+        vx: robot.vx,
+        vy: robot.vy,
+        state: robot.status || robot.driverState,
+        goal: robot.targetNodeId,
+        itinerary: robot.remainingWaypoints ? [robot.remainingWaypoints] : [],
+        batteryLevel: Math.round(robot.battery * 100)
+      })),
+      timestamp: new Date(latestData.timestamp).getTime(),
+      tick: latestData.tick
+    };
+    
+    res.json(robotsData);
+  } catch (error) {
+    console.error('[API] ❌ Error serving robot data:', error);
+    res.status(500).json({ error: 'Failed to fetch robot data' });
+  }
+});
+
+// Get latest orca tick (raw format)
+app.get('/api/orca/latest', async (req, res) => {
+  try {
+    const latestData = await getLatestOrcaTick();
+    
+    if (!latestData) {
+      return res.status(404).json({
+        error: 'No simulation data available',
+        message: 'Waiting for ORCA simulation to generate tick files'
+      });
+    }
+    
+    res.json(latestData);
+  } catch (error) {
+    console.error('Error serving latest orca tick:', error);
+    res.status(500).json({ error: 'Failed to fetch latest tick' });
+  }
 });
 
 // Serve static JSON files from output directory
@@ -805,46 +910,36 @@ app.get('/api/fleet/stats', async (req, res) => {
   }
 });
 
-// Initialize output directory with mock data
-async function initializeMockData() {
+// Initialize output directory (C++ backend will populate the files)
+async function initializeOutputDirectory() {
   try {
     await fs.mkdir(OUTPUT_DIR, { recursive: true });
     
-    // Create mock robots.json
-    const robotsData = {
-      robots: [
-        { id: 0, x: 1467, y: 207, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 95 },
-        { id: 1, x: 1467, y: 257, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 88 },
-        { id: 2, x: 1467, y: 307, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 92 },
-        { id: 3, x: 1467, y: 357, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 76 }
-      ],
-      timestamp: Date.now()
-    };
+    // Create empty placeholder files only if they don't exist
+    const files = ['robots.json', 'tasks.json', 'map.json'];
     
-    // Create mock tasks.json
-    const tasksData = {
-      tasks: [],
-      timestamp: Date.now()
-    };
-    
-    // Create mock map.json
-    const mapData = {
-      obstacles: [],
-      timestamp: Date.now()
-    };
-    
-    await fs.writeFile(path.join(OUTPUT_DIR, 'robots.json'), JSON.stringify(robotsData, null, 2));
-    await fs.writeFile(path.join(OUTPUT_DIR, 'tasks.json'), JSON.stringify(tasksData, null, 2));
-    await fs.writeFile(path.join(OUTPUT_DIR, 'map.json'), JSON.stringify(mapData, null, 2));
-    
-    console.log('✅ Initialized mock fleet data in', OUTPUT_DIR);
+    for (const file of files) {
+      const filePath = path.join(OUTPUT_DIR, file);
+      try {
+        await fs.access(filePath);
+        console.log(`⏩ ${file} already exists`);
+      } catch {
+        // File doesn't exist, create empty structure
+        const emptyData = {
+          [file === 'robots.json' ? 'robots' : file === 'tasks.json' ? 'tasks' : 'obstacles']: [],
+          timestamp: Date.now()
+        };
+        await fs.writeFile(filePath, JSON.stringify(emptyData, null, 2));
+        console.log(`✅ Created empty ${file} (waiting for C++ backend)`);
+      }
+    }
   } catch (error) {
-    console.error('Error initializing mock data:', error);
+    console.error('Error initializing output directory:', error);
   }
 }
 
 // Initialize on startup
-initializeMockData();
+initializeOutputDirectory();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Planner API server running on http://localhost:${PORT}`);
@@ -852,7 +947,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`📡 Server listening on all interfaces: 0.0.0.0:${PORT}`);
   console.log(`📊 Fleet API endpoints:`);
   console.log(`   GET  /health - Health check`);
-  console.log(`   GET  /api/output/robots.json - Robot positions (20 Hz)`);
+  console.log(`   GET  /api/fleet/robots - Latest robot data (from orca ticks)`);
+  console.log(`   GET  /api/orca/latest - Latest raw orca tick data`);
+  console.log(`   GET  /api/output/robots.json - Robot positions (legacy)`);
   console.log(`   GET  /api/output/tasks.json - Task statuses (1 Hz)`);
   console.log(`   GET  /api/output/map.json - Dynamic obstacles (1 Hz)`);
   console.log(`   GET  /api/pois.json - POI configuration`);

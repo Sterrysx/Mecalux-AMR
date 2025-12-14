@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, Component, ReactNode } from 'react';
+import { useState, useEffect, useRef, useMemo, Component, ReactNode } from 'react';
 import { useFleetStore, useFleetOverview, useTaskStats } from './stores/fleetStore';
 import { fleetAPI } from './services/FleetAPI';
 import ChargingStations from './components/ChargingStations';
 import TaskCompletionChart from './components/TaskCompletionChart';
-import RobotTaskHistory from './components/RobotTaskHistory';
 
 // Error Boundary Component
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -100,6 +99,9 @@ function App() {
   
   // Direct selectors to avoid re-render loops
   const totalRobots = useFleetStore(state => state?.robots?.size || 0);
+  // Subscribe to robots map for live updates in robots page
+  const robotsMap = useFleetStore(state => state?.robots);
+  const robotsList = Array.from(robotsMap?.values() || []);
   const activeRobots = useFleetStore(state => state?.getActiveRobotCount?.() || 0);
   const idleRobots = useFleetStore(state => state?.getIdleRobotCount?.() || 0);
   const avgBattery = useFleetStore(state => state?.getAverageBattery?.() || 100);
@@ -189,43 +191,10 @@ function App() {
     }
   }, [state.isRunning, updateUptime, addTaskHistoryPoint]);
 
-  // Update stats whenever robot data changes
-  useEffect(() => {
-    if (state.robots.length > 0 || state.isRunning) {
-      const busyRobots = state.robots.filter(r => r.state !== 'IDLE').length;
-      const avgBattery = state.robots.length > 0 
-        ? state.robots.reduce((sum, r) => sum + r.batteryLevel, 0) / state.robots.length 
-        : 100;
-      const activeTasks = state.robots.filter(r => r.itinerary && r.itinerary > 0).length;
-      
-      let uptime = 0;
-      let efficiency = 0;
-      if (state.startTime) {
-        uptime = (Date.now() - state.startTime) / 1000; // seconds
-        const minutes = uptime / 60;
-        efficiency = minutes > 0 ? state.stats.completedTasks / minutes : 0;
-      }
-
-      setState(prev => ({
-        ...prev,
-        stats: {
-          ...prev.stats,
-          totalRobots: state.robots.length > 0 ? state.robots.length : prev.stats.totalRobots,
-          busyRobots,
-          idleRobots: (state.robots.length > 0 ? state.robots.length : prev.stats.totalRobots) - busyRobots,
-          avgBattery: Math.round(avgBattery),
-          activeTasks,
-          uptime,
-          efficiency
-        }
-      }));
-    }
-  }, [state.robots, state.startTime, state.isRunning]);
-
   // Helper function to categorize and style messages
   const getMessageStyle = (line: string) => {
     if (line.startsWith('>')) {
-      return { icon: '▶', color: 'text-blue-400', bg: darkMode ? 'bg-blue-900/20' : 'bg-blue-100', border: 'border-l-4 border-blue-500' };
+      return { icon: '▶', color: 'text-gray-300', bg: darkMode ? 'bg-zinc-800/50' : 'bg-gray-100', border: 'border-l-4 border-gray-500' };
     }
     if (line.includes('ERROR') || line.includes('Error')) {
       return { icon: '❌', color: 'text-red-400', bg: darkMode ? 'bg-red-900/20' : 'bg-red-100', border: 'border-l-4 border-red-500' };
@@ -252,7 +221,7 @@ function App() {
       return { icon: '📊', color: 'text-gray-300', bg: darkMode ? 'bg-gray-800' : 'bg-gray-100', border: 'border-l-4 border-gray-600' };
     }
     if (line.includes('amr>')) {
-      return { icon: '💻', color: 'text-blue-300', bg: darkMode ? 'bg-blue-900/10' : 'bg-blue-50', border: 'border-l-4 border-blue-400' };
+      return { icon: '💻', color: 'text-gray-300', bg: darkMode ? 'bg-zinc-800/50' : 'bg-gray-50', border: 'border-l-4 border-gray-500' };
     }
     return { icon: '•', color: 'text-gray-400', bg: 'transparent', border: 'border-l-4 border-transparent' };
   };
@@ -434,7 +403,9 @@ function App() {
         numRobots
       }));
       setState(prev => ({ 
-        ...prev, 
+        ...prev,
+        isRunning: true,
+        startTime: Date.now(),
         stats: {
           ...prev.stats,
           totalRobots: numRobots,
@@ -518,7 +489,7 @@ function App() {
   const getStateColor = (state: string) => {
     switch (state) {
       case 'IDLE': return 'text-gray-400';
-      case 'MOVING': return 'text-blue-400';
+      case 'MOVING': return 'text-gray-300';
       case 'EXECUTING': return 'text-purple-400';
       case 'WAITING': return 'text-yellow-400';
       default: return 'text-gray-400';
@@ -528,7 +499,7 @@ function App() {
   const getStateBadgeColor = (state: string) => {
     switch (state) {
       case 'IDLE': return 'bg-gray-700 text-gray-300';
-      case 'MOVING': return 'bg-blue-600 text-white';
+      case 'MOVING': return 'bg-gray-600 text-white';
       case 'EXECUTING': return 'bg-purple-600 text-white';
       case 'WAITING': return 'bg-yellow-600 text-white';
       default: return 'bg-gray-700 text-gray-300';
@@ -536,90 +507,94 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen flex ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Sidebar Navigation */}
-      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-gradient-to-b from-blue-900 to-blue-800 text-white flex-shrink-0 transition-all duration-300 shadow-xl relative flex flex-col`}>
-        <div className="p-6 flex-1">
-          {/* User Profile */}
-          <div className={`${sidebarCollapsed ? 'flex justify-center' : ''} mb-8`}>
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 text-center">
-              <div className="w-16 h-16 bg-white rounded-full mx-auto mb-3 flex items-center justify-center">
-                <span className="text-3xl">👤</span>
-              </div>
-              {!sidebarCollapsed && (
-                <>
-                  <h3 className="font-bold text-lg">FLEET ADMIN</h3>
-                  <p className="text-xs text-blue-200">admin@mecalux.com</p>
-                </>
-              )}
-            </div>
-          </div>
-
+    <div className={`min-h-screen ${darkMode ? 'bg-zinc-950 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
+      {/* Sidebar Navigation - Fixed */}
+      <aside className={`${sidebarCollapsed ? 'w-20' : 'w-64'} bg-slate-900 text-white fixed left-0 top-0 h-screen transition-all duration-300 shadow-2xl flex flex-col z-50`}>
+        <div className="p-6 flex-1 flex flex-col">
           {/* Navigation Menu */}
-          <nav className="space-y-2">
+          <nav className="space-y-2 mt-8">
             <button
               onClick={() => setCurrentPage('dashboard')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${
                 currentPage === 'dashboard' 
-                  ? 'bg-white/20 shadow-lg' 
-                  : 'hover:bg-white/10'
+                  ? 'bg-slate-700 border-gray-400 text-white' 
+                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <span className="text-xl">🏠</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Dashboard</span>}
             </button>
             
             <button
               onClick={() => setCurrentPage('robots')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${
                 currentPage === 'robots' 
-                  ? 'bg-white/20 shadow-lg' 
-                  : 'hover:bg-white/10'
+                  ? 'bg-slate-700 border-gray-400 text-white' 
+                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <span className="text-xl">🤖</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Fleet</span>}
             </button>
 
             <button
               onClick={() => setCurrentPage('control')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${
                 currentPage === 'control' 
-                  ? 'bg-white/20 shadow-lg' 
-                  : 'hover:bg-white/10'
+                  ? 'bg-slate-700 border-gray-400 text-white' 
+                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <span className="text-xl">🎮</span>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Control</span>}
             </button>
 
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-all">
-              <span className="text-xl">📊</span>
+            <button className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 border-transparent text-gray-400 hover:bg-slate-800 hover:text-white`}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Analytics</span>}
             </button>
 
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-all">
-              <span className="text-xl">⚙️</span>
+            <button className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 border-transparent text-gray-400 hover:bg-slate-800 hover:text-white`}>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
               {!sidebarCollapsed && <span className="font-medium">Settings</span>}
             </button>
           </nav>
         </div>
 
         {/* Sidebar Toggle - Fixed at bottom */}
-        <div className="p-6">
+        <div className="p-6 border-t border-slate-800">
           <button 
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full bg-white/20 hover:bg-white/30 p-3 rounded-lg transition-all flex items-center justify-center"
+            className="w-full bg-slate-800 hover:bg-slate-700 p-3 rounded-lg transition-all flex items-center justify-center text-gray-300"
           >
-            <span className="text-xl">{sidebarCollapsed ? '→' : '←'}</span>
+            {sidebarCollapsed ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            )}
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300 overflow-y-auto h-screen`}>
         {/* Top Bar */}
-        <header className={`${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white'} shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10`}>
+        <header className={`${darkMode ? 'bg-slate-800 border-b border-slate-700' : 'bg-white'} shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10`}>
           <div>
             <h1 className={`text-2xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Dashboard</h1>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Real-time fleet monitoring system</p>
@@ -650,7 +625,7 @@ function App() {
           </div>
         </header>
 
-        <main className={`p-8 ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+        <main className={`p-8 ${darkMode ? 'bg-slate-950' : 'bg-gray-100'}`}>
           {currentPage === 'dashboard' ? (
           // LIVE DASHBOARD PAGE
           <>
@@ -677,10 +652,10 @@ function App() {
                   {/* Tasks Completed */}
                   <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
+                      <div className="bg-gradient-to-br from-gray-600 to-gray-700 w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
                         📊
                       </div>
-                      <div className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-bold">
+                      <div className="bg-gray-500/20 text-gray-400 px-3 py-1 rounded-full text-sm font-bold">
                         +{efficiency.toFixed(1)}/min
                       </div>
                     </div>
@@ -753,122 +728,6 @@ function App() {
                       <ChargingStations />
                     </ErrorBoundary>
                   </div>
-                </div>
-
-                {/* Robot Battery Controls */}
-                <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
-                      <span>🔋</span>
-                      Robot Battery Controls
-                    </h3>
-                    <span className="text-sm text-gray-500">Adjust individual robot battery levels</span>
-                  </div>
-                  
-                  {Array.from(useFleetStore.getState().robots.values()).length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
-                      <div className="text-5xl mb-3">⏳</div>
-                      <p>Loading robot data...</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {Array.from(useFleetStore.getState().robots.values()).map(robot => (
-                        <div key={robot.id} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-all">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                                robot.state === 'BUSY' ? 'bg-blue-500 text-white' : 
-                                robot.state === 'IDLE' ? 'bg-gray-400 text-white' : 
-                                'bg-yellow-500 text-white'
-                              }`}>
-                                🤖
-                              </div>
-                              <div>
-                                <p className="font-bold text-gray-100">Robot #{robot.id}</p>
-                                <p className="text-xs text-gray-500">{robot.state}</p>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Battery Display */}
-                          <div className="mb-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-gray-600">Battery Level</span>
-                              <span className={`text-lg font-bold ${getBatteryColor(robot?.batteryLevel || 100)}`}>
-                                {robot?.batteryLevel || 100}%
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
-                              <div 
-                                className={`h-full transition-all duration-300 ${getBatteryBgColor(robot?.batteryLevel || 100)} flex items-center justify-end pr-1`}
-                                style={{ width: `${robot?.batteryLevel || 100}%` }}
-                              >
-                                {(robot?.batteryLevel || 100) > 20 && (
-                                  <span className="text-xs text-white font-bold">⚡</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Battery Control Slider */}
-                          <div className="mb-3">
-                            <input 
-                              type="range" 
-                              min="0" 
-                              max="100" 
-                              value={robot?.batteryLevel || 100}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateRobotBattery(robot.id, Number(e.target.value))}
-                              className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                              style={{
-                                background: `linear-gradient(to right, ${
-                                  (robot?.batteryLevel || 100) >= 80 ? '#10b981' :
-                                  (robot?.batteryLevel || 100) >= 50 ? '#eab308' :
-                                  (robot?.batteryLevel || 100) >= 20 ? '#f97316' :
-                                  '#ef4444'
-                                } ${robot?.batteryLevel || 100}%, #d1d5db ${robot?.batteryLevel || 100}%)`
-                              }}
-                            />
-                          </div>
-
-                          {/* Quick Battery Actions */}
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => updateRobotBattery(robot.id, 100)}
-                              className="flex-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg font-medium transition-colors"
-                            >
-                              Full
-                            </button>
-                            <button
-                              onClick={() => updateRobotBattery(robot.id, 50)}
-                              className="flex-1 px-2 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded-lg font-medium transition-colors"
-                            >
-                              50%
-                            </button>
-                            <button
-                              onClick={() => updateRobotBattery(robot.id, 20)}
-                              className="flex-1 px-2 py-1 bg-orange-500 hover:bg-orange-600 text-white text-xs rounded-lg font-medium transition-colors"
-                            >
-                              Low
-                            </button>
-                          </div>
-
-                          {/* Additional Info */}
-                          <div className="mt-3 pt-3 border-t border-gray-300 text-xs text-gray-600">
-                            <div className="flex justify-between mb-1">
-                              <span>Position:</span>
-                              <span className="font-mono">({robot?.x || 0}, {robot?.y || 0})</span>
-                            </div>
-                            {robot?.itinerary && robot.itinerary > 0 && (
-                              <div className="flex justify-between">
-                                <span>Tasks:</span>
-                                <span className="font-semibold text-blue-600">{robot.itinerary} queued</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
               </>
@@ -949,56 +808,56 @@ function App() {
               // Stats Grid (when running)
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {/* Efficiency Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-blue-900/50 to-blue-800/30 border-blue-700/50' : 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-blue-300">Efficiency</p>
+                    <p className="text-sm font-medium text-gray-400">Efficiency</p>
                     <p className="text-3xl font-bold text-white mt-2">
                       {efficiency.toFixed(1)}
                     </p>
-                    <p className="text-xs text-blue-200 mt-1">tasks/min</p>
+                    <p className="text-xs text-slate-200 mt-1">tasks/min</p>
                   </div>
                   <div className="text-3xl">📊</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-blue-700/50">
-                  <p className="text-xs text-blue-200">
+                <div className="mt-4 pt-4 border-t border-slate-500/50">
+                  <p className="text-xs text-slate-200">
                     {taskCompleted} / {totalTasks} tasks completed
                   </p>
                 </div>
               </div>
 
               {/* Robots Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-purple-900/50 to-purple-800/30 border-purple-700/50' : 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-purple-300">Fleet Status</p>
+                    <p className="text-sm font-medium text-gray-400">Fleet Status</p>
                     <p className="text-3xl font-bold text-white mt-2">
                       {activeRobots}/{totalRobots}
                     </p>
-                    <p className="text-xs text-purple-200 mt-1">robots active</p>
+                    <p className="text-xs text-gray-400 mt-1">robots active</p>
                   </div>
                   <div className="text-3xl">🤖</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-purple-700/50">
-                  <p className="text-xs text-purple-200">
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <p className="text-xs text-gray-400">
                     {idleRobots} idle · {inProgressTasks} tasks running
                   </p>
                 </div>
               </div>
 
               {/* Battery Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-green-900/50 to-green-800/30 border-green-700/50' : 'bg-gradient-to-br from-green-50 to-green-100 border-green-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-green-50 to-green-100 border-green-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-green-300">Avg Battery</p>
+                    <p className="text-sm font-medium text-gray-400">Avg Battery</p>
                     <p className="text-3xl font-bold text-white mt-2">
                       {avgBattery}%
                     </p>
-                    <p className="text-xs text-green-200 mt-1">fleet average</p>
+                    <p className="text-xs text-gray-400 mt-1">fleet average</p>
                   </div>
                   <div className="text-3xl">🔋</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-green-700/50">
+                <div className="mt-4 pt-4 border-t border-gray-700">
                   <div className="w-full bg-gray-700/50 rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full transition-all ${getBatteryBgColor(avgBattery)}`}
@@ -1009,19 +868,19 @@ function App() {
               </div>
 
               {/* Uptime Card */}
-              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gradient-to-br from-orange-900/50 to-orange-800/30 border-orange-700/50' : 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200'}`}>
+              <div className={`rounded-xl border p-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200'}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-orange-300">Uptime</p>
+                    <p className="text-sm font-medium text-gray-400">Uptime</p>
                     <p className="text-3xl font-bold text-white mt-2">
                       {Math.floor(systemUptime / 60)}m
                     </p>
-                    <p className="text-xs text-orange-200 mt-1">{Math.floor(systemUptime % 60)}s elapsed</p>
+                    <p className="text-xs text-gray-400 mt-1">{Math.floor(systemUptime % 60)}s elapsed</p>
                   </div>
                   <div className="text-3xl">⏱️</div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-orange-700/50">
-                  <p className="text-xs text-orange-200">
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <p className="text-xs text-gray-400">
                     {state.isRunning ? 'System operational' : 'System offline'}
                   </p>
                 </div>
@@ -1041,11 +900,11 @@ function App() {
                   </h2>
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={() => sendQuickCommand('inject 3')} disabled={!state.isRunning}
-                      className="px-4 py-3 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                      className="px-4 py-3 text-sm bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
                       Inject 3 Tasks<span className="block text-xs opacity-75">Scenario B</span>
                     </button>
                     <button onClick={() => sendQuickCommand('inject 5')} disabled={!state.isRunning}
-                      className="px-4 py-3 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                      className="px-4 py-3 text-sm bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
                       Inject 5 Tasks<span className="block text-xs opacity-75">Scenario B</span>
                     </button>
                     <button onClick={() => sendQuickCommand('inject 10')} disabled={!state.isRunning}
@@ -1101,7 +960,7 @@ function App() {
                         <button
                           type="submit"
                           disabled={!state.isRunning || !command.trim()}
-                          className="px-6 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
+                          className="px-6 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors">
                           Send
                         </button>
                       </form>
@@ -1169,11 +1028,53 @@ function App() {
         ) : currentPage === 'robots' ? (
           // ROBOTS PAGE
           <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold">Robot Fleet Monitor</h2>
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Real-time status, battery levels, and position tracking. Click a robot to view task history.
-              </p>
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Robot Fleet Monitor</h2>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Real-time status, battery levels, and position tracking. Click a robot to view task history.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  console.log('🔄 Manually refreshing robot data...');
+                  const btn = event?.target as HTMLButtonElement;
+                  if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                  }
+                  
+                  fleetAPI.stopPolling();
+                  setTimeout(() => {
+                    fleetAPI.startPolling({
+                      onRobotsUpdate: (data) => {
+                        console.log('✅ Fresh data received:', data.robots.length, 'robots, tick', data.tick);
+                        updateRobots(data);
+                        if (btn) {
+                          btn.disabled = false;
+                          btn.style.opacity = '1';
+                        }
+                      },
+                      onTasksUpdate: updateTasks,
+                      onMapUpdate: updateMap,
+                      onError: (error) => {
+                        console.error('Fleet API error:', error);
+                        setBackendConnected(false);
+                        if (btn) {
+                          btn.disabled = false;
+                          btn.style.opacity = '1';
+                        }
+                      }
+                    });
+                  }, 100);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5 animate-spin-on-click" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
             </div>
 
             {!state.isRunning ? (
@@ -1202,11 +1103,10 @@ function App() {
               </div>
             ) : (
               <div className="space-y-2">
-                {Array.from(useFleetStore.getState().robots?.values() || []).map(robot => (
+                {robotsList.map((robot, idx) => (
                   <div 
-                    key={robot?.id || 0} 
-                    className={`rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer hover:border-blue-500 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
-                    onClick={() => setSelectedRobotId(robot?.id || 0)}
+                    key={robot?.id !== undefined ? robot.id : idx} 
+                    className={`rounded-lg border p-4 transition-all ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
                   >
                     <div className="flex items-center gap-6">
                       {/* Robot ID and Status */}
@@ -1227,37 +1127,11 @@ function App() {
                         <div className="text-xs text-gray-500">⚡ Velocity: ({(robot?.vx || 0).toFixed(1)}, {(robot?.vy || 0).toFixed(1)})</div>
                       </div>
 
-                      {/* Battery */}
-                      <div className="flex-1 min-w-[200px]">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-400">🔋 Battery</span>
-                          <span className={`text-lg font-bold ${
-                            (robot?.batteryLevel || 100) >= 80 ? 'text-green-400' :
-                            (robot?.batteryLevel || 100) >= 50 ? 'text-yellow-400' :
-                            (robot?.batteryLevel || 100) >= 20 ? 'text-orange-400' :
-                            'text-red-400'
-                          }`}>
-                            {robot?.batteryLevel || 100}%
-                          </span>
-                        </div>
-                        <div className={`h-2 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} overflow-hidden`}>
-                          <div 
-                            className={`h-full transition-all duration-300 ${
-                              (robot?.batteryLevel || 100) >= 80 ? 'bg-green-500' :
-                              (robot?.batteryLevel || 100) >= 50 ? 'bg-yellow-500' :
-                              (robot?.batteryLevel || 100) >= 20 ? 'bg-orange-500' :
-                              'bg-red-500'
-                            }`}
-                            style={{ width: `${robot?.batteryLevel || 100}%` }}
-                          />
-                        </div>
-                      </div>
-
                       {/* Task Info */}
                       <div className="flex-1 min-w-[200px]">
                         {robot?.goal !== null && robot?.goal !== undefined && (
                           <div className="text-xs">
-                            <span className="text-blue-400">🎯 Goal:</span> {robot.goal}
+                            <span className="text-gray-400">🎯 Goal:</span> {robot.goal}
                           </div>
                         )}
                         {robot?.itinerary && robot.itinerary > 0 && (
@@ -1269,21 +1143,10 @@ function App() {
                           <div className="text-xs text-gray-400">💤 Awaiting tasks</div>
                         )}
                       </div>
-
-                      {/* Action hint */}
-                      <div className="text-xs text-blue-400">👆 Click for history</div>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-
-            {/* Robot Task History Modal */}
-            {selectedRobotId && (
-              <RobotTaskHistory 
-                robotId={selectedRobotId} 
-                onClose={() => setSelectedRobotId(null)}
-              />
             )}
           </div>
         ) : null}

@@ -3,9 +3,9 @@ import { useAMRFleet, useWarehouseAnalytics } from '../hooks/useWarehouseData';
 // Sidebar Component
 const Sidebar = () => {
   return (
-    <aside className="fixed inset-y-0 flex-wrap items-center justify-between block w-full p-0 my-4 overflow-y-auto antialiased transition-transform duration-200 -translate-x-full bg-white border-0 shadow-xl dark:shadow-none dark:bg-slate-850 max-w-64 ease-nav-brand z-990 xl:ml-6 rounded-2xl xl:left-0 xl:translate-x-0" aria-expanded="false">
+    <aside className="fixed inset-y-0 flex-wrap items-center justify-between block w-full p-0 my-4 overflow-y-auto antialiased transition-transform duration-200 -translate-x-full bg-white border-0 shadow-xl dark:shadow-none dark:bg-zinc-900 max-w-64 ease-nav-brand z-990 xl:ml-6 rounded-2xl xl:left-0 xl:translate-x-0" aria-expanded="false">
       <div className="h-19">
-        <a className="block px-8 py-6 m-0 text-sm whitespace-nowrap dark:text-white text-slate-700" href="#" target="_blank">
+        <a className="block px-8 py-6 m-0 text-sm whitespace-nowrap dark:text-white text-gray-700" href="#" target="_blank">
           <img src="/assets/img/logo-ct-dark.png" className="inline h-full max-w-full transition-all duration-200 dark:hidden ease-nav-brand max-h-8" alt="main_logo" />
           <img src="/assets/img/logo-ct.png" className="hidden h-full max-w-full transition-all duration-200 dark:inline ease-nav-brand max-h-8" alt="main_logo" />
           <span className="ml-1 font-semibold transition-all duration-200 ease-nav-brand">Fleet Manager</span>
@@ -17,9 +17,9 @@ const Sidebar = () => {
       <div className="items-center block w-auto max-h-screen overflow-auto h-sidenav grow basis-full">
         <ul className="flex flex-col pl-0 mb-0">
           <li className="mt-0.5 w-full">
-            <a className="py-2.7 bg-blue-500/13 dark:text-white dark:opacity-80 text-sm ease-nav-brand my-0 mx-2 flex items-center whitespace-nowrap rounded-lg px-4 font-semibold text-slate-700 transition-colors" href="#dashboard">
+            <a className="py-2.7 bg-zinc-800 dark:text-white dark:opacity-80 text-sm ease-nav-brand my-0 mx-2 flex items-center whitespace-nowrap rounded-lg px-4 font-semibold text-gray-700 transition-colors" href="#dashboard">
               <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg bg-center stroke-0 text-center xl:p-2.5">
-                <i className="relative top-0 text-sm leading-normal text-blue-500 ni ni-tv-2"></i>
+                <i className="relative top-0 text-sm leading-normal text-gray-400 ni ni-tv-2"></i>
               </div>
               <span className="ml-1 duration-300 opacity-100 pointer-events-none ease">Dashboard</span>
             </a>
@@ -59,7 +59,7 @@ const Sidebar = () => {
           <li className="mt-0.5 w-full">
             <a className="dark:text-white dark:opacity-80 py-2.7 text-sm ease-nav-brand my-0 mx-2 flex items-center whitespace-nowrap px-4 transition-colors" href="#settings">
               <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-lg bg-center stroke-0 text-center xl:p-2.5">
-                <i className="relative top-0 text-sm leading-normal text-slate-700 fas fa-cog"></i>
+                <i className="relative top-0 text-sm leading-normal text-gray-600 fas fa-cog"></i>
               </div>
               <span className="ml-1 duration-300 opacity-100 pointer-events-none ease">Settings</span>
             </a>
@@ -88,10 +88,10 @@ const Navbar = () => {
         <div className="flex items-center mt-2 grow sm:mt-0 sm:mr-6 md:mr-0 lg:flex lg:basis-auto">
           <div className="flex items-center md:ml-auto md:pr-4">
             <div className="relative flex flex-wrap items-stretch w-full transition-all rounded-lg ease">
-              <span className="text-sm ease leading-5.6 absolute z-50 -ml-px flex h-full items-center whitespace-nowrap rounded-lg rounded-tr-none rounded-br-none border border-r-0 border-transparent bg-transparent py-2 px-2.5 text-center font-normal text-slate-500 transition-all">
+              <span className="text-sm ease leading-5.6 absolute z-50 -ml-px flex h-full items-center whitespace-nowrap rounded-lg rounded-tr-none rounded-br-none border border-r-0 border-transparent bg-transparent py-2 px-2.5 text-center font-normal text-gray-500 transition-all">
                 <i className="fas fa-search"></i>
               </span>
-              <input type="text" className="pl-9 text-sm focus:shadow-primary-outline ease w-1/100 leading-5.6 relative -ml-px block min-w-0 flex-auto rounded-lg border border-solid border-gray-300 dark:bg-slate-850 dark:text-white bg-white bg-clip-padding py-2 pr-3 text-gray-700 transition-all placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:transition-shadow" placeholder="Search robots..." />
+              <input type="text" className="pl-9 text-sm focus:shadow-primary-outline ease w-1/100 leading-5.6 relative -ml-px block min-w-0 flex-auto rounded-lg border border-solid border-gray-300 dark:bg-zinc-800 dark:text-white bg-white bg-clip-padding py-2 pr-3 text-gray-700 transition-all placeholder:text-gray-500 focus:border-gray-500 focus:outline-none focus:transition-shadow" placeholder="Search robots..." />
             </div>
           </div>
           <ul className="flex flex-row justify-end pl-0 mb-0 list-none md-max:w-full">
@@ -129,7 +129,7 @@ const StatsCard = ({ title, value, change, changeType, icon, iconColor }: {
 }) => {
   return (
     <div className="w-full max-w-full px-3 mb-6 sm:w-1/2 sm:flex-none xl:mb-0 xl:w-1/4">
-      <div className="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+      <div className="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-zinc-800 dark:shadow-dark-xl rounded-2xl bg-clip-border">
         <div className="flex-auto p-4">
           <div className="flex flex-row -mx-3">
             <div className="flex-none w-2/3 max-w-full px-3">
@@ -163,7 +163,7 @@ const FleetTable = () => {
   const getStatusBadge = (status: string) => {
     const statusClasses = {
       'Active': 'bg-gradient-to-tl from-emerald-600 to-lime-400 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white',
-      'Idle': 'bg-gradient-to-tl from-slate-600 to-slate-300 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white',
+      'Idle': 'bg-gradient-to-tl from-gray-600 to-gray-400 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white',
       'Charging': 'bg-gradient-to-tl from-orange-600 to-yellow-400 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white',
       'Maintenance': 'bg-gradient-to-tl from-purple-700 to-pink-500 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white',
       'Error': 'bg-gradient-to-tl from-red-600 to-orange-600 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white'
@@ -174,21 +174,21 @@ const FleetTable = () => {
   return (
     <div className="flex flex-wrap -mx-3">
       <div className="flex-none w-full max-w-full px-3">
-        <div className="relative flex flex-col min-w-0 mb-6 break-words bg-white border-0 border-transparent border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+        <div className="relative flex flex-col min-w-0 mb-6 break-words bg-white border-0 border-transparent border-solid shadow-xl dark:bg-zinc-800 dark:shadow-dark-xl rounded-2xl bg-clip-border">
           <div className="p-6 pb-0 mb-0 border-b-0 border-b-solid rounded-t-2xl border-b-transparent">
             <h6 className="dark:text-white">AMR Fleet Status</h6>
           </div>
           <div className="flex-auto px-0 pt-0 pb-2">
             <div className="p-0 overflow-x-auto">
-              <table className="items-center w-full mb-0 align-top border-gray-200 text-slate-500">
+              <table className="items-center w-full mb-0 align-top border-gray-200 text-gray-500">
                 <thead className="align-bottom">
                   <tr>
-                    <th className="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Robot</th>
-                    <th className="px-6 py-3 pl-2 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Status</th>
-                    <th className="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Battery</th>
-                    <th className="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Tasks</th>
-                    <th className="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Efficiency</th>
-                    <th className="px-6 py-3 font-semibold capitalize align-middle bg-transparent border-b border-gray-200 border-solid shadow-none tracking-none whitespace-nowrap text-slate-400 opacity-70"></th>
+                    <th className="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-gray-400 opacity-70">Robot</th>
+                    <th className="px-6 py-3 pl-2 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-gray-400 opacity-70">Status</th>
+                    <th className="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-gray-400 opacity-70">Battery</th>
+                    <th className="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-gray-400 opacity-70">Tasks</th>
+                    <th className="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none text-xxs border-b-solid tracking-none whitespace-nowrap text-gray-400 opacity-70">Efficiency</th>
+                    <th className="px-6 py-3 font-semibold capitalize align-middle bg-transparent border-b border-gray-200 border-solid shadow-none tracking-none whitespace-nowrap text-gray-400 opacity-70"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -201,29 +201,29 @@ const FleetTable = () => {
                           </div>
                           <div className="flex flex-col justify-center">
                             <h6 className="mb-0 text-sm leading-normal dark:text-white">{robot.name}</h6>
-                            <p className="mb-0 text-xs leading-tight text-slate-400">{robot.id}</p>
+                            <p className="mb-0 text-xs leading-tight text-gray-400">{robot.id}</p>
                           </div>
                         </div>
                       </td>
                       <td className="p-2 align-middle bg-transparent border-b whitespace-nowrap shadow-transparent">
                         <span className={getStatusBadge(robot.status)}>{robot.status}</span>
                         {robot.currentTask && (
-                          <p className="text-xs leading-tight text-slate-400 mt-2">{robot.currentTask}</p>
+                          <p className="text-xs leading-tight text-gray-400 mt-2">{robot.currentTask}</p>
                         )}
                       </td>
                       <td className="p-2 text-center align-middle bg-transparent border-b whitespace-nowrap shadow-transparent">
                         <div className="flex items-center justify-center">
-                          <span className="mr-2 text-xs font-semibold leading-tight text-slate-400">{robot.battery}%</span>
+                          <span className="mr-2 text-xs font-semibold leading-tight text-gray-400">{robot.battery}%</span>
                           <div className="text-xs h-0.75 w-30 bg-gray-200 rounded overflow-hidden">
                             <div className={`duration-600 ease-in-out h-0.75 transition-all ${robot.battery > 60 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : robot.battery > 30 ? 'bg-gradient-to-r from-orange-400 to-orange-600' : 'bg-gradient-to-r from-red-400 to-red-600'}`} style={{ width: `${robot.battery}%` }}></div>
                           </div>
                         </div>
                       </td>
                       <td className="p-2 text-center align-middle bg-transparent border-b whitespace-nowrap shadow-transparent">
-                        <span className="text-xs font-semibold leading-tight text-slate-400">{robot.tasksCompleted}</span>
+                        <span className="text-xs font-semibold leading-tight text-gray-400">{robot.tasksCompleted}</span>
                       </td>
                       <td className="p-2 text-center align-middle bg-transparent border-b whitespace-nowrap shadow-transparent">
-                        <span className="text-xs font-semibold leading-tight text-slate-400">{robot.efficiency}%</span>
+                        <span className="text-xs font-semibold leading-tight text-gray-400">{robot.efficiency}%</span>
                       </td>
                       <td className="p-2 align-middle bg-transparent border-b whitespace-nowrap shadow-transparent">
                         <div className="flex items-center justify-center space-x-2">
@@ -246,7 +246,7 @@ const FleetTable = () => {
                           {robot.status !== 'Maintenance' && (
                             <button
                               onClick={() => sendRobotToMaintenance(robot.id)}
-                              className="inline-block px-4 py-2 mb-0 text-xs font-bold text-center uppercase align-middle transition-all bg-transparent border border-solid rounded-lg shadow-none cursor-pointer leading-pro ease-in bg-150 hover:-translate-y-px active:opacity-85 hover:shadow-xs text-slate-500 border-slate-500 hover:bg-transparent hover:text-slate-500 hover:shadow-none active:bg-slate-500 active:text-white active:hover:bg-transparent active:hover:text-slate-500"
+                              className="inline-block px-4 py-2 mb-0 text-xs font-bold text-center uppercase align-middle transition-all bg-transparent border border-solid rounded-lg shadow-none cursor-pointer leading-pro ease-in bg-150 hover:-translate-y-px active:opacity-85 hover:shadow-xs text-gray-600 border-gray-500 hover:bg-transparent hover:text-gray-600 hover:shadow-none active:bg-gray-600 active:text-white active:hover:bg-transparent active:hover:text-gray-600"
                             >
                               Maintenance
                             </button>
@@ -270,9 +270,9 @@ const FleetDashboard = () => {
   const { analytics } = useWarehouseAnalytics();
 
   return (
-    <div className="min-h-screen">
-      {/* Blue background */}
-      <div className="absolute w-full bg-blue-500 dark:hidden min-h-75"></div>
+    <div className="min-h-screen bg-zinc-950">
+      {/* Monochrome background */}
+      <div className="absolute w-full bg-zinc-900 dark:hidden min-h-75"></div>
       
       {/* Sidebar */}
       <Sidebar />
@@ -292,7 +292,7 @@ const FleetDashboard = () => {
               change="+3%"
               changeType="positive"
               icon="fas fa-robot"
-              iconColor="from-blue-600 to-cyan-400"
+              iconColor="from-gray-600 to-gray-700"
             />
             <StatsCard
               title="Active Robots"

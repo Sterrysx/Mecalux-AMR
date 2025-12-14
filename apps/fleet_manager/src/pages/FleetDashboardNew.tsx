@@ -127,7 +127,29 @@ export default function FleetDashboard() {
 
         {/* Robot Detail Panels */}
         <div className="bg-white rounded-lg shadow-sm p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Robot Fleet</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Robot Fleet</h2>
+            <button
+              onClick={() => {
+                fleetAPI.stopPolling();
+                fleetAPI.startPolling({
+                  onRobotsUpdate: updateRobots,
+                  onTasksUpdate: updateTasks,
+                  onMapUpdate: updateMap,
+                  onError: (error) => {
+                    console.error('Fleet API error:', error);
+                    setBackendConnected(false);
+                  }
+                });
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+          </div>
           <RobotDetailPanel />
         </div>
       </div>
@@ -152,7 +174,7 @@ function ScenarioIndicator({ scenario }: { scenario?: 'A' | 'B' | 'C' }) {
   if (!scenario) return null;
 
   const scenarioInfo = {
-    A: { label: 'Boot-Up', color: 'bg-blue-100 text-blue-700', desc: 'Full VRP Solve' },
+    A: { label: 'Boot-Up', color: 'bg-gray-200 text-gray-800', desc: 'Full VRP Solve' },
     B: { label: 'Streaming', color: 'bg-green-100 text-green-700', desc: 'Cheap Insertion' },
     C: { label: 'Batch', color: 'bg-orange-100 text-orange-700', desc: 'Background Re-plan' }
   };
@@ -179,7 +201,7 @@ interface StatsCardProps {
 
 function StatsCard({ title, value, subtitle, icon, color }: StatsCardProps) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
+    blue: 'bg-gray-100 text-gray-700',
     green: 'bg-green-50 text-green-600',
     yellow: 'bg-yellow-50 text-yellow-600',
     purple: 'bg-purple-50 text-purple-600'
