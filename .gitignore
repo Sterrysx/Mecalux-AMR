@@ -64,7 +64,6 @@ simulador/*.o
 simulador/moc_*.cpp
 simulador/ui_*.h
 simulador/moc_predefs.h
-simulador/Makefile
 simulador/.qmake.stash
 
 # Environment variables
