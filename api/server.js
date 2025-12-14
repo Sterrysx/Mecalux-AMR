@@ -43,7 +43,20 @@ async function getLatestOrcaTick() {
     // Read and parse the latest file
     const filePath = path.join(ORCA_DIR, latestFile.filename);
     const data = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(data);
+    
+    // Validate data is not empty
+    if (!data || data.trim().length === 0) {
+      console.warn(`[API] Empty ORCA file: ${latestFile.filename}`);
+      return null;
+    }
+    
+    try {
+      return JSON.parse(data);
+    } catch (parseError) {
+      console.error(`[API] JSON parse error in ${latestFile.filename}:`, parseError.message);
+      // File might be corrupted or incomplete, return null
+      return null;
+    }
   } catch (error) {
     console.error('Error reading latest orca tick:', error);
     return null;
@@ -735,9 +748,11 @@ wss.on('connection', (ws) => {
 // Get current robot data from latest orca tick
 app.get('/api/fleet/robots', async (req, res) => {
   try {
+    console.log('[API] 🤖 /api/fleet/robots called - fetching latest ORCA tick...');
     const latestData = await getLatestOrcaTick();
     
     if (!latestData) {
+      console.log('[API] ⚠️  No ORCA tick files found');
       // Fallback: return waiting state if no tick files found
       return res.json({
         robots: [],
@@ -746,6 +761,8 @@ app.get('/api/fleet/robots', async (req, res) => {
         message: 'Waiting for simulation to start'
       });
     }
+    
+    console.log(`[API] ✅ Found tick ${latestData.tick} with ${latestData.robots.length} robot(s)`);
     
     // Transform orca format to expected format
     const robotsData = {
@@ -766,7 +783,7 @@ app.get('/api/fleet/robots', async (req, res) => {
     
     res.json(robotsData);
   } catch (error) {
-    console.error('Error serving robot data:', error);
+    console.error('[API] ❌ Error serving robot data:', error);
     res.status(500).json({ error: 'Failed to fetch robot data' });
   }
 });
@@ -893,46 +910,36 @@ app.get('/api/fleet/stats', async (req, res) => {
   }
 });
 
-// Initialize output directory with mock data
-async function initializeMockData() {
+// Initialize output directory (C++ backend will populate the files)
+async function initializeOutputDirectory() {
   try {
     await fs.mkdir(OUTPUT_DIR, { recursive: true });
     
-    // Create mock robots.json
-    const robotsData = {
-      robots: [
-        { id: 0, x: 1467, y: 207, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 95 },
-        { id: 1, x: 1467, y: 257, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 88 },
-        { id: 2, x: 1467, y: 307, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 92 },
-        { id: 3, x: 1467, y: 357, vx: 0, vy: 0, state: 'IDLE', goal: null, itinerary: [], batteryLevel: 76 }
-      ],
-      timestamp: Date.now()
-    };
+    // Create empty placeholder files only if they don't exist
+    const files = ['robots.json', 'tasks.json', 'map.json'];
     
-    // Create mock tasks.json
-    const tasksData = {
-      tasks: [],
-      timestamp: Date.now()
-    };
-    
-    // Create mock map.json
-    const mapData = {
-      obstacles: [],
-      timestamp: Date.now()
-    };
-    
-    await fs.writeFile(path.join(OUTPUT_DIR, 'robots.json'), JSON.stringify(robotsData, null, 2));
-    await fs.writeFile(path.join(OUTPUT_DIR, 'tasks.json'), JSON.stringify(tasksData, null, 2));
-    await fs.writeFile(path.join(OUTPUT_DIR, 'map.json'), JSON.stringify(mapData, null, 2));
-    
-    console.log('✅ Initialized mock fleet data in', OUTPUT_DIR);
+    for (const file of files) {
+      const filePath = path.join(OUTPUT_DIR, file);
+      try {
+        await fs.access(filePath);
+        console.log(`⏩ ${file} already exists`);
+      } catch {
+        // File doesn't exist, create empty structure
+        const emptyData = {
+          [file === 'robots.json' ? 'robots' : file === 'tasks.json' ? 'tasks' : 'obstacles']: [],
+          timestamp: Date.now()
+        };
+        await fs.writeFile(filePath, JSON.stringify(emptyData, null, 2));
+        console.log(`✅ Created empty ${file} (waiting for C++ backend)`);
+      }
+    }
   } catch (error) {
-    console.error('Error initializing mock data:', error);
+    console.error('Error initializing output directory:', error);
   }
 }
 
 // Initialize on startup
-initializeMockData();
+initializeOutputDirectory();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Planner API server running on http://localhost:${PORT}`);

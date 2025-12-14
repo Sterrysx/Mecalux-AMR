@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Component, ReactNode } from 'react';
+import { useState, useEffect, useRef, useMemo, Component, ReactNode } from 'react';
 import { useFleetStore, useFleetOverview, useTaskStats } from './stores/fleetStore';
 import { fleetAPI } from './services/FleetAPI';
 import ChargingStations from './components/ChargingStations';
@@ -99,6 +99,9 @@ function App() {
   
   // Direct selectors to avoid re-render loops
   const totalRobots = useFleetStore(state => state?.robots?.size || 0);
+  // Subscribe to robots map for live updates in robots page
+  const robotsMap = useFleetStore(state => state?.robots);
+  const robotsList = Array.from(robotsMap?.values() || []);
   const activeRobots = useFleetStore(state => state?.getActiveRobotCount?.() || 0);
   const idleRobots = useFleetStore(state => state?.getIdleRobotCount?.() || 0);
   const avgBattery = useFleetStore(state => state?.getAverageBattery?.() || 100);
@@ -187,39 +190,6 @@ function App() {
       return () => clearInterval(interval);
     }
   }, [state.isRunning, updateUptime, addTaskHistoryPoint]);
-
-  // Update stats whenever robot data changes
-  useEffect(() => {
-    if (state.robots.length > 0 || state.isRunning) {
-      const busyRobots = state.robots.filter(r => r.state !== 'IDLE').length;
-      const avgBattery = state.robots.length > 0 
-        ? state.robots.reduce((sum, r) => sum + r.batteryLevel, 0) / state.robots.length 
-        : 100;
-      const activeTasks = state.robots.filter(r => r.itinerary && r.itinerary > 0).length;
-      
-      let uptime = 0;
-      let efficiency = 0;
-      if (state.startTime) {
-        uptime = (Date.now() - state.startTime) / 1000; // seconds
-        const minutes = uptime / 60;
-        efficiency = minutes > 0 ? state.stats.completedTasks / minutes : 0;
-      }
-
-      setState(prev => ({
-        ...prev,
-        stats: {
-          ...prev.stats,
-          totalRobots: state.robots.length > 0 ? state.robots.length : prev.stats.totalRobots,
-          busyRobots,
-          idleRobots: (state.robots.length > 0 ? state.robots.length : prev.stats.totalRobots) - busyRobots,
-          avgBattery: Math.round(avgBattery),
-          activeTasks,
-          uptime,
-          efficiency
-        }
-      }));
-    }
-  }, [state.robots, state.startTime, state.isRunning]);
 
   // Helper function to categorize and style messages
   const getMessageStyle = (line: string) => {
@@ -433,7 +403,9 @@ function App() {
         numRobots
       }));
       setState(prev => ({ 
-        ...prev, 
+        ...prev,
+        isRunning: true,
+        startTime: Date.now(),
         stats: {
           ...prev.stats,
           totalRobots: numRobots,
@@ -1056,11 +1028,53 @@ function App() {
         ) : currentPage === 'robots' ? (
           // ROBOTS PAGE
           <div>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold">Robot Fleet Monitor</h2>
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Real-time status, battery levels, and position tracking. Click a robot to view task history.
-              </p>
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Robot Fleet Monitor</h2>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Real-time status, battery levels, and position tracking. Click a robot to view task history.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  console.log('🔄 Manually refreshing robot data...');
+                  const btn = event?.target as HTMLButtonElement;
+                  if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                  }
+                  
+                  fleetAPI.stopPolling();
+                  setTimeout(() => {
+                    fleetAPI.startPolling({
+                      onRobotsUpdate: (data) => {
+                        console.log('✅ Fresh data received:', data.robots.length, 'robots, tick', data.tick);
+                        updateRobots(data);
+                        if (btn) {
+                          btn.disabled = false;
+                          btn.style.opacity = '1';
+                        }
+                      },
+                      onTasksUpdate: updateTasks,
+                      onMapUpdate: updateMap,
+                      onError: (error) => {
+                        console.error('Fleet API error:', error);
+                        setBackendConnected(false);
+                        if (btn) {
+                          btn.disabled = false;
+                          btn.style.opacity = '1';
+                        }
+                      }
+                    });
+                  }, 100);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg disabled:cursor-not-allowed"
+              >
+                <svg className="w-5 h-5 animate-spin-on-click" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
             </div>
 
             {!state.isRunning ? (
@@ -1089,9 +1103,9 @@ function App() {
               </div>
             ) : (
               <div className="space-y-2">
-                {Array.from(useFleetStore.getState().robots?.values() || []).map(robot => (
+                {robotsList.map((robot, idx) => (
                   <div 
-                    key={robot?.id || 0} 
+                    key={robot?.id !== undefined ? robot.id : idx} 
                     className={`rounded-lg border p-4 transition-all ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}
                   >
                     <div className="flex items-center gap-6">

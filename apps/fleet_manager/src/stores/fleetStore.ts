@@ -81,6 +81,7 @@ export const useFleetStore = create<FleetState>((set, get) => ({
   // Actions
   updateRobots: (data: FleetData) => {
     const robotsMap = new Map<number, RobotState>();
+    
     data.robots.forEach(robot => {
       robotsMap.set(robot.id, robot);
     });
