@@ -155,6 +155,7 @@ void FleetManager::Start() {
     
     running_ = true;
     startTime_ = std::chrono::steady_clock::now();
+    lastRobotsJsonExport_ = startTime_;
     
     // Start threads
     mainThread_ = std::thread(&FleetManager::runMainLoop, this);
@@ -401,7 +402,7 @@ void FleetManager::createRobots() {
             std::cout << "[FleetManager] Robot " << robotId << " reached node " << goalNode << "\n";
             
             // Track waypoints for task completion (2 waypoints = 1 task)
-            totalWaypointsVisited_.fetch_add(1);
+            int waypoints = totalWaypointsVisited_.fetch_add(1) + 1;
             
             // Update package state based on POI type
             // NOTE: No lock needed here - callback is invoked from runFleetLoop which already holds fleetMutex_
@@ -416,6 +417,15 @@ void FleetManager::createRobots() {
                     else if (poiRegistry_->NodeHasPOIType(goalNode, Layer1::POIType::DROPOFF)) {
                         driver->SetHasPackage(false);
                         std::cout << "[FleetManager] Robot " << robotId << " dropped off package at node " << goalNode << "\n";
+                        
+                        // Task completed when dropoff is reached (every 2 waypoints = 1 task)
+                        if (waypoints % 2 == 0) {
+                            int taskId = waypoints / 2;  // Simple task ID from waypoint counter
+                            // Track task completion (mutex already held by runFleetLoop)
+                            if (robotCurrentTask_[robotId] != -1) {
+                                onRobotTaskCompleted(robotId, robotCurrentTask_[robotId]);
+                            }
+                        }
                     }
                     // If it's a CHARGING station or intermediate waypoint, hasPackage stays the same
                 }
@@ -778,6 +788,18 @@ void FleetManager::runFleetLoop() {
             apiService_.BroadcastTelemetry(telemetry);
         }
         
+        // Export robots.json every 5 seconds
+        auto now = std::chrono::steady_clock::now();
+        auto timeSinceLastExport = std::chrono::duration_cast<std::chrono::seconds>(
+            now - lastRobotsJsonExport_
+        ).count();
+        
+        if (timeSinceLastExport >= 5) {
+            exportRobotsJSON();
+            updateMinuteStats();
+            lastRobotsJsonExport_ = now;
+        }
+        
         // SLEEP: In live mode, maintain 20 Hz rate. In batch mode, skip sleep.
         if (!config_.batchMode) {
             auto elapsed = std::chrono::steady_clock::now() - tickStart;
@@ -972,6 +994,13 @@ void FleetManager::runVRPSolver() {
                 it->second.AssignItinerary(itinerary);
                 std::cout << "[MainLoop] Robot " << robotId << " assigned " 
                           << itinerary.size() << " waypoints\n";
+                
+                // Track task assignments (2 waypoints = 1 task)
+                int numTasks = itinerary.size() / 2;
+                for (int i = 0; i < numTasks; ++i) {
+                    int taskId = nextTaskId_.fetch_add(1);
+                    onRobotTaskAssigned(robotId, taskId);
+                }
             }
         }
     }
@@ -1085,6 +1114,13 @@ void FleetManager::runCheapInsertion(const std::vector<Layer2::Task>& tasks) {
                 auto& state = it->second.GetMutableState();
                 state.currentItinerary.push_back(task.sourceNode);
                 state.currentItinerary.push_back(task.destinationNode);
+                
+                // Track task assignment
+                int taskId = task.taskId;
+                if (taskId < 0) {
+                    taskId = nextTaskId_.fetch_add(1);
+                }
+                onRobotTaskAssigned(bestRobotId, taskId);
                 
                 std::cout << "[Insertion] Task " << task.taskId << " assigned to Robot " 
                           << bestRobotId << " (extra cost: " << std::fixed 
@@ -1263,6 +1299,170 @@ int FleetManager::estimateRobotRemainingTimeMs(int robotId) const {
 int FleetManager::findNearestNode(const Common::Coordinates& pos) const {
     // Use NavMesh's built-in method
     return navMesh_->GetNodeIdAt(pos);
+}
+
+// =============================================================================
+// ROBOTS.JSON EXPORT
+// =============================================================================
+
+void FleetManager::exportRobotsJSON() {
+    std::lock_guard<std::mutex> lock(fleetMutex_);
+    
+    // Collect robot states
+    std::vector<API::RobotState> robotStates;
+    for (const auto& [id, agent] : fleetRegistry_) {
+        API::RobotState state;
+        state.id = id;
+        state.battery = agent.GetCurrentBattery() * 100.0f; // Convert to percentage
+        
+        // Get position from driver
+        const auto* driver = GetRobotDriver(id);
+        if (driver) {
+            const auto& pos = driver->GetPosition();
+            state.posX = pos.x;
+            state.posY = pos.y;
+        } else {
+            state.posX = 0;
+            state.posY = 0;
+        }
+        
+        // Current task
+        state.currentTask = (robotCurrentTask_.count(id) > 0) ? robotCurrentTask_[id] : -1;
+        
+        // Assigned tasks
+        if (robotAssignedTasks_.count(id) > 0) {
+            state.assignedTasks = robotAssignedTasks_[id];
+        }
+        
+        // Completed tasks
+        if (robotCompletedTasks_.count(id) > 0) {
+            state.completedTasks = robotCompletedTasks_[id];
+        }
+        
+        robotStates.push_back(state);
+    }
+    
+    // Collect charging station data
+    std::vector<API::ChargingStationData> chargingStations;
+    if (poiRegistry_) {
+        auto chargingNodes = poiRegistry_->GetNodesByType(Layer1::POIType::CHARGING);
+        for (int nodeId : chargingNodes) {
+            API::ChargingStationData station;
+            station.nodeId = nodeId;
+            
+            // Get position from NavMesh
+            const auto& nodes = navMesh_->GetAllNodes();
+            if (nodeId >= 0 && nodeId < static_cast<int>(nodes.size())) {
+                const auto& center = nodes[nodeId].center;
+                station.posX = center.x;
+                station.posY = center.y;
+            } else {
+                station.posX = 0;
+                station.posY = 0;
+            }
+            
+            // Check if any robot is charging here
+            station.robotCharging = -1;
+            station.remainingTime = 0.0f;
+            
+            for (const auto& [robotId, agent] : fleetRegistry_) {
+                if (agent.GetCurrentNodeId() == nodeId && 
+                    agent.GetStatus() == Layer2::RobotStatus::IDLE) {
+                    // Robot might be charging here
+                    station.robotCharging = robotId;
+                    // Estimate remaining charge time based on battery level
+                    float batteryLevel = agent.GetCurrentBattery();
+                    if (batteryLevel < 1.0f) {
+                        station.remainingTime = (1.0f - batteryLevel) * 300.0f; // Estimate 5 min for full charge
+                    }
+                    break;
+                }
+            }
+            
+            chargingStations.push_back(station);
+        }
+    }
+    
+    // Collect time statistics
+    std::vector<API::TimeStats> timeStats;
+    {
+        std::lock_guard<std::mutex> statsLock(statsTimeMutex_);
+        for (size_t i = 0; i < minuteStats_.size(); ++i) {
+            API::TimeStats stats;
+            stats.minute = static_cast<int>(i + 1);
+            stats.tasksCompleted = minuteStats_[i].tasksCompleted;
+            stats.tasksInProgress = minuteStats_[i].tasksInProgress;
+            timeStats.push_back(stats);
+        }
+    }
+    
+    // Export to JSON
+    apiService_.ExportRobotsJSON(robotStates, chargingStations, timeStats);
+}
+
+void FleetManager::updateMinuteStats() {
+    std::lock_guard<std::mutex> statsLock(statsTimeMutex_);
+    
+    // Calculate current minute since start
+    auto now = std::chrono::steady_clock::now();
+    int currentMinute = static_cast<int>(
+        std::chrono::duration_cast<std::chrono::minutes>(now - startTime_).count()
+    );
+    
+    // Ensure we have enough entries in minuteStats_
+    while (static_cast<int>(minuteStats_.size()) <= currentMinute) {
+        minuteStats_.push_back(MinuteStats());
+    }
+    
+    // Update current minute stats
+    MinuteStats& currentStats = minuteStats_[currentMinute];
+    
+    // Count completed tasks (from waypoints visited)
+    currentStats.tasksCompleted = totalWaypointsVisited_.load() / 2;
+    
+    // Count tasks in progress
+    int tasksInProgress = 0;
+    {
+        std::lock_guard<std::mutex> fleetLock(fleetMutex_);
+        for (const auto& [id, agent] : fleetRegistry_) {
+            if (!agent.GetItinerary().empty() || 
+                agent.GetStatus() != Layer2::RobotStatus::IDLE) {
+                tasksInProgress++;
+            }
+        }
+    }
+    currentStats.tasksInProgress = tasksInProgress;
+}
+
+void FleetManager::onRobotTaskCompleted(int robotId, int taskId) {
+    std::lock_guard<std::mutex> lock(fleetMutex_);
+    
+    // Add to completed tasks
+    robotCompletedTasks_[robotId].push_back(taskId);
+    
+    // Remove from assigned tasks
+    auto& assigned = robotAssignedTasks_[robotId];
+    assigned.erase(std::remove(assigned.begin(), assigned.end(), taskId), assigned.end());
+    
+    // Clear current task if it matches
+    if (robotCurrentTask_[robotId] == taskId) {
+        robotCurrentTask_[robotId] = -1;
+    }
+}
+
+void FleetManager::onRobotTaskAssigned(int robotId, int taskId) {
+    std::lock_guard<std::mutex> lock(fleetMutex_);
+    
+    // Add to assigned tasks if not already there
+    auto& assigned = robotAssignedTasks_[robotId];
+    if (std::find(assigned.begin(), assigned.end(), taskId) == assigned.end()) {
+        assigned.push_back(taskId);
+    }
+    
+    // Set as current task if robot doesn't have one
+    if (robotCurrentTask_[robotId] == -1) {
+        robotCurrentTask_[robotId] = taskId;
+    }
 }
 
 } // namespace Backend

@@ -49,6 +49,49 @@ struct RobotTelemetry {
 };
 
 /**
+ * @brief Task data for robot assignment.
+ */
+struct TaskData {
+    int taskId;                     ///< Task ID
+    int sourceNode;                 ///< Source node ID
+    int destNode;                   ///< Destination node ID
+    std::string status;             ///< Task status (PENDING, IN_PROGRESS, COMPLETED)
+};
+
+/**
+ * @brief Complete robot state for robots.json export.
+ */
+struct RobotState {
+    int id;                         ///< Robot ID
+    float battery;                  ///< Battery level (0.0 - 100.0)
+    int posX;                       ///< Position X in pixels
+    int posY;                       ///< Position Y in pixels
+    int currentTask;                ///< Current task ID (-1 if none)
+    std::vector<int> assignedTasks; ///< List of assigned task IDs
+    std::vector<int> completedTasks;///< List of completed task IDs
+};
+
+/**
+ * @brief Charging station data.
+ */
+struct ChargingStationData {
+    int nodeId;                     ///< NavMesh node ID
+    int posX;                       ///< Position X in pixels
+    int posY;                       ///< Position Y in pixels
+    int robotCharging;              ///< Robot ID charging (-1 if none)
+    float remainingTime;            ///< Remaining charge time in seconds
+};
+
+/**
+ * @brief Time-based statistics (per minute).
+ */
+struct TimeStats {
+    int minute;                     ///< Minute number since start
+    int tasksCompleted;             ///< Tasks completed in this minute
+    int tasksInProgress;            ///< Tasks in progress at end of minute
+};
+
+/**
  * @brief Dynamic obstacle data for API broadcast.
  */
 struct ObstacleInfo {
@@ -338,6 +381,102 @@ public:
      */
     long long GetPhysicsTick() const { return tickPhysics_; }
     long long GetMapTick() const { return tickMap_; }
+    
+    // =========================================================================
+    // ROBOTS.JSON EXPORT (EVERY 5 SECONDS)
+    // =========================================================================
+    
+    /**
+     * @brief Export complete fleet state to output/robots.json.
+     * 
+     * This is called every 5 seconds and contains:
+     * - All robot states (position, battery, tasks)
+     * - Charging station states
+     * - Time-based statistics (per minute)
+     * 
+     * @param robots Vector of robot states
+     * @param chargingStations Vector of charging station data
+     * @param timeStats Vector of time-based statistics
+     */
+    void ExportRobotsJSON(const std::vector<RobotState>& robots,
+                         const std::vector<ChargingStationData>& chargingStations,
+                         const std::vector<TimeStats>& timeStats) {
+        if (!enabled_) return;
+        
+        std::lock_guard<std::mutex> lock(apiMutex_);
+        
+        std::stringstream ss;
+        ss << "{\n";
+        ss << "  \"timestamp\": \"" << GetTimestamp() << "\",\n";
+        ss << "  \"robots\": [\n";
+        
+        // Write robots
+        for (size_t i = 0; i < robots.size(); ++i) {
+            const auto& r = robots[i];
+            ss << "    {\n";
+            ss << "      \"id\": " << r.id << ",\n";
+            ss << "      \"battery\": " << std::fixed << std::setprecision(1) << r.battery << ",\n";
+            ss << "      \"position\": {\n";
+            ss << "        \"x\": " << r.posX << ",\n";
+            ss << "        \"y\": " << r.posY << "\n";
+            ss << "      },\n";
+            ss << "      \"currentTask\": " << r.currentTask << ",\n";
+            ss << "      \"assignedTasks\": [";
+            for (size_t j = 0; j < r.assignedTasks.size(); ++j) {
+                ss << r.assignedTasks[j];
+                if (j < r.assignedTasks.size() - 1) ss << ", ";
+            }
+            ss << "],\n";
+            ss << "      \"completedTasks\": [";
+            for (size_t j = 0; j < r.completedTasks.size(); ++j) {
+                ss << r.completedTasks[j];
+                if (j < r.completedTasks.size() - 1) ss << ", ";
+            }
+            ss << "]\n";
+            ss << "    }";
+            if (i < robots.size() - 1) ss << ",";
+            ss << "\n";
+        }
+        
+        ss << "  ],\n";
+        ss << "  \"chargingStations\": [\n";
+        
+        // Write charging stations
+        for (size_t i = 0; i < chargingStations.size(); ++i) {
+            const auto& c = chargingStations[i];
+            ss << "    {\n";
+            ss << "      \"nodeId\": " << c.nodeId << ",\n";
+            ss << "      \"position\": {\n";
+            ss << "        \"x\": " << c.posX << ",\n";
+            ss << "        \"y\": " << c.posY << "\n";
+            ss << "      },\n";
+            ss << "      \"robotCharging\": " << c.robotCharging << ",\n";
+            ss << "      \"remainingTime\": " << std::fixed << std::setprecision(1) << c.remainingTime << "\n";
+            ss << "    }";
+            if (i < chargingStations.size() - 1) ss << ",";
+            ss << "\n";
+        }
+        
+        ss << "  ],\n";
+        ss << "  \"timeStats\": [\n";
+        
+        // Write time statistics
+        for (size_t i = 0; i < timeStats.size(); ++i) {
+            const auto& t = timeStats[i];
+            ss << "    {\n";
+            ss << "      \"minute\": " << t.minute << ",\n";
+            ss << "      \"tasksCompleted\": " << t.tasksCompleted << ",\n";
+            ss << "      \"tasksInProgress\": " << t.tasksInProgress << "\n";
+            ss << "    }";
+            if (i < timeStats.size() - 1) ss << ",";
+            ss << "\n";
+        }
+        
+        ss << "  ]\n";
+        ss << "}\n";
+        
+        WriteFile("output", "robots.json", ss.str());
+    }
 };
 
 } // namespace API

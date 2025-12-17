@@ -204,6 +204,30 @@ private:
     std::atomic<int> totalWaypointsVisited_{0};
     
     // =========================================================================
+    // ROBOT STATE TRACKING FOR ROBOTS.JSON
+    // =========================================================================
+    
+    /// Track completed tasks per robot
+    std::map<int, std::vector<int>> robotCompletedTasks_;
+    
+    /// Track assigned tasks per robot
+    std::map<int, std::vector<int>> robotAssignedTasks_;
+    
+    /// Track current task per robot
+    std::map<int, int> robotCurrentTask_;
+    
+    /// Time-based statistics per minute
+    struct MinuteStats {
+        int tasksCompleted = 0;
+        int tasksInProgress = 0;
+    };
+    std::vector<MinuteStats> minuteStats_;
+    std::mutex statsTimeMutex_;
+    
+    /// Last export time for 5-second interval
+    std::chrono::steady_clock::time_point lastRobotsJsonExport_;
+    
+    // =========================================================================
     // DYNAMIC SCHEDULING STATE (Scenarios A, B, C)
     // =========================================================================
     
@@ -505,6 +529,31 @@ private:
      * @brief Find nearest NavMesh node ID for a given position.
      */
     int findNearestNode(const Common::Coordinates& pos) const;
+    
+    // =========================================================================
+    // ROBOTS.JSON EXPORT
+    // =========================================================================
+    
+    /**
+     * @brief Export complete fleet state to output/robots.json.
+     * Called every 5 seconds from the fleet loop.
+     */
+    void exportRobotsJSON();
+    
+    /**
+     * @brief Update time-based statistics (called every minute).
+     */
+    void updateMinuteStats();
+    
+    /**
+     * @brief Track task completion for a robot.
+     */
+    void onRobotTaskCompleted(int robotId, int taskId);
+    
+    /**
+     * @brief Track task assignment for a robot.
+     */
+    void onRobotTaskAssigned(int robotId, int taskId);
     
     // =========================================================================
     // INITIALIZATION HELPERS

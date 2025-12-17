@@ -1,49 +1,105 @@
 {
+  "timestamp": "2025-12-17T10:30:45.123",
   "robots": [
     {
       "id": 0,
-      "x": 1467,
-      "y": 207,
-      "vx": 0,
-      "vy": 0,
-      "state": "IDLE",
-      "goal": null,
-      "itinerary": [],
-      "batteryLevel": 95
+      "battery": 95.5,
+      "position": {
+        "x": 1467,
+        "y": 207
+      },
+      "currentTask": 1002,
+      "assignedTasks": [1002, 1005, 1008],
+      "completedTasks": [1000, 1001]
     },
     {
       "id": 1,
-      "x": 1467,
-      "y": 257,
-      "vx": 0,
-      "vy": 0,
-      "state": "IDLE",
-      "goal": null,
-      "itinerary": [],
-      "batteryLevel": 88
+      "battery": 88.2,
+      "position": {
+        "x": 1467,
+        "y": 257
+      },
+      "currentTask": 1003,
+      "assignedTasks": [1003, 1006],
+      "completedTasks": [1001]
     },
     {
       "id": 2,
-      "x": 1467,
-      "y": 307,
-      "vx": 0,
-      "vy": 0,
-      "state": "IDLE",
-      "goal": null,
-      "itinerary": [],
-      "batteryLevel": 92
+      "battery": 92.0,
+      "position": {
+        "x": 1467,
+        "y": 307
+      },
+      "currentTask": -1,
+      "assignedTasks": [],
+      "completedTasks": [1000, 1002, 1003]
     },
     {
       "id": 3,
-      "x": 1467,
-      "y": 357,
-      "vx": 0,
-      "vy": 0,
-      "state": "IDLE",
-      "goal": null,
-      "itinerary": [],
-      "batteryLevel": 76
+      "battery": 76.8,
+      "position": {
+        "x": 1467,
+        "y": 357
+      },
+      "currentTask": 1004,
+      "assignedTasks": [1004, 1007, 1009],
+      "completedTasks": []
     }
   ],
-  "timestamp": 1765722229409
+  "chargingStations": [
+    {
+      "nodeId": 45,
+      "position": {
+        "x": 1467,
+        "y": 207
+      },
+      "robotCharging": 2,
+      "remainingTime": 120.5
+    },
+    {
+      "nodeId": 46,
+      "position": {
+        "x": 1467,
+        "y": 257
+      },
+      "robotCharging": -1,
+      "remainingTime": 0.0
+    },
+    {
+      "nodeId": 47,
+      "position": {
+        "x": 1467,
+        "y": 307
+      },
+      "robotCharging": -1,
+      "remainingTime": 0.0
+    }
+  ],
+  "timeStats": [
+    {
+      "minute": 1,
+      "tasksCompleted": 5,
+      "tasksInProgress": 3
+    },
+    {
+      "minute": 2,
+      "tasksCompleted": 12,
+      "tasksInProgress": 4
+    },
+    {
+      "minute": 3,
+      "tasksCompleted": 18,
+      "tasksInProgress": 2
+    },
+    {
+      "minute": 4,
+      "tasksCompleted": 25,
+      "tasksInProgress": 5
+    },
+    {
+      "minute": 5,
+      "tasksCompleted": 32,
+      "tasksInProgress": 3
+    }
+  ]
 }
