@@ -1353,9 +1353,9 @@ void FleetManager::exportRobotsJSON() {
             // Get position from NavMesh
             const auto& nodes = navMesh_->GetAllNodes();
             if (nodeId >= 0 && nodeId < static_cast<int>(nodes.size())) {
-                const auto& center = nodes[nodeId].center;
-                station.posX = center.x;
-                station.posY = center.y;
+                const auto& coords = nodes[nodeId].coords;
+                station.posX = coords.x;
+                station.posY = coords.y;
             } else {
                 station.posX = 0;
                 station.posY = 0;

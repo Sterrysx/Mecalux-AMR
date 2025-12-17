@@ -5,14 +5,23 @@
 
 export interface RobotState {
   id: number;
-  x: number;              // Pixel coordinates (0.1m resolution)
-  y: number;
-  vx: number;             // Velocity components
-  vy: number;
-  state: 'IDLE' | 'MOVING' | 'COMPUTING_PATH' | 'ARRIVED' | 'COLLISION_WAIT' | 'CARRYING';
-  goal: number | null;    // Current NavMesh node ID
-  itinerary: number[];    // Ordered list of goal nodes
-  batteryLevel?: number;  // Battery percentage
+  battery?: number;       // Battery percentage (0-100)
+  position?: {
+    x: number;
+    y: number;
+  };
+  currentTask?: number;   // Current task ID (-1 if none)
+  assignedTasks?: number[]; // List of assigned task IDs
+  completedTasks?: number[]; // List of completed task IDs
+  // Legacy fields (from orca telemetry)
+  x?: number;              // Pixel coordinates (0.1m resolution)
+  y?: number;
+  vx?: number;             // Velocity components
+  vy?: number;
+  state?: 'IDLE' | 'MOVING' | 'COMPUTING_PATH' | 'ARRIVED' | 'COLLISION_WAIT' | 'CARRYING';
+  goal?: number | null;    // Current NavMesh node ID
+  itinerary?: number[];    // Ordered list of goal nodes
+  batteryLevel?: number;  // Battery percentage (legacy)
 }
 
 export interface Task {
@@ -37,9 +46,27 @@ export interface POI {
   nodeId: number;
 }
 
+export interface ChargingStation {
+  nodeId: number;
+  position: {
+    x: number;
+    y: number;
+  };
+  robotCharging: number;  // Robot ID or -1 if none
+  remainingTime: number;  // Seconds remaining
+}
+
+export interface TimeStats {
+  minute: number;
+  tasksCompleted: number;
+  tasksInProgress: number;
+}
+
 export interface FleetData {
   robots: RobotState[];
-  timestamp: number;
+  timestamp?: number | string;
+  chargingStations?: ChargingStation[];
+  timeStats?: TimeStats[];
 }
 
 export interface TaskData {

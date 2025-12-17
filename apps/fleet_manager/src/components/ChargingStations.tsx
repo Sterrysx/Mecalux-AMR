@@ -1,9 +1,8 @@
 import { useFleetStore } from '../stores/fleetStore';
-import { shallow } from 'zustand/shallow';
 import type { POI } from '../services/FleetAPI';
 
 export default function ChargingStations() {
-  const pois = useFleetStore((state: any) => state?.pois || [], shallow);
+  const pois = useFleetStore((state: any) => state?.pois || []);
   
   // Calculate charging stations locally instead of in the store
   const chargingStations = pois.filter((p: POI) => p?.type === 'CHARGING');

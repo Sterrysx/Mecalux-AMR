@@ -5,6 +5,8 @@ import { useFleetStore, useFleetOverview, useTaskStats, useSystemStats } from '.
 import WarehouseCanvas from '../components/WarehouseCanvas';
 import TaskInjector from '../components/TaskInjector';
 import RobotDetailPanel from '../components/RobotDetailPanel';
+import RobotGrid from '../components/RobotGrid';
+import TaskCompletionChart from '../components/TaskCompletionChart';
 
 export default function FleetDashboard() {
   const { 
@@ -99,13 +101,7 @@ export default function FleetDashboard() {
             icon="📦"
             color="yellow"
           />
-          <StatsCard
-            title="Completed"
-            value={taskStats.completed}
-            subtitle={`${systemStats.throughput || 0} tasks/min`}
-            icon="✅"
-            color="purple"
-          />
+          <EfficiencyCard taskStats={taskStats} />
         </div>
 
         {/* Main Content Grid */}
@@ -125,32 +121,14 @@ export default function FleetDashboard() {
           </div>
         </div>
 
-        {/* Robot Detail Panels */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Robot Fleet</h2>
-            <button
-              onClick={() => {
-                fleetAPI.stopPolling();
-                fleetAPI.startPolling({
-                  onRobotsUpdate: updateRobots,
-                  onTasksUpdate: updateTasks,
-                  onMapUpdate: updateMap,
-                  onError: (error) => {
-                    console.error('Fleet API error:', error);
-                    setBackendConnected(false);
-                  }
-                });
-              }}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Refresh
-            </button>
-          </div>
-          <RobotDetailPanel />
+        {/* Task Completion Chart */}
+        <div>
+          <TaskCompletionChart />
+        </div>
+
+        {/* Robot Grid */}
+        <div>
+          <RobotGrid />
         </div>
       </div>
     </div>
@@ -262,5 +240,25 @@ function MetricRow({ label, value }: { label: string; value: string }) {
       <span className="text-gray-600">{label}</span>
       <span className="font-mono font-medium text-gray-900">{value}</span>
     </div>
+  );
+}
+
+// Efficiency Card with calculation
+function EfficiencyCard({ taskStats }: { taskStats: any }) {
+  const timeStats = useFleetStore((state) => state.timeStats);
+  const efficiency = timeStats.length > 0 && timeStats[timeStats.length - 1]
+    ? (timeStats[timeStats.length - 1].minute > 0 
+        ? (timeStats[timeStats.length - 1].tasksCompleted / timeStats[timeStats.length - 1].minute).toFixed(1)
+        : '0.0')
+    : '0.0';
+
+  return (
+    <StatsCard
+      title="Eficiència"
+      value={`${efficiency} tasks/min`}
+      subtitle={`${taskStats.completed} completades`}
+      icon="✅"
+      color="purple"
+    />
   );
 }

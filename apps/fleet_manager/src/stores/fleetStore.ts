@@ -1,12 +1,17 @@
 // Zustand Store for Fleet Management State
 import { create } from 'zustand';
-import { shallow } from 'zustand/shallow';
-import { RobotState, Task, DynamicObstacle, POI, SystemStats, FleetData, TaskData, MapData } from '../services/FleetAPI';
+import { RobotState, Task, DynamicObstacle, POI, SystemStats, FleetData, TaskData, MapData, ChargingStation, TimeStats } from '../services/FleetAPI';
 
 interface FleetState {
   // Robot data
   robots: Map<number, RobotState>;
   lastRobotUpdate: number;
+  
+  // Charging stations
+  chargingStations: ChargingStation[];
+  
+  // Time-based statistics
+  timeStats: TimeStats[];
   
   // Task data
   tasks: Map<number, Task>;
@@ -65,6 +70,8 @@ export const useFleetStore = create<FleetState>((set, get) => ({
   // Initial state
   robots: new Map(),
   lastRobotUpdate: 0,
+  chargingStations: [],
+  timeStats: [],
   tasks: new Map(),
   lastTaskUpdate: 0,
   taskHistory: [],
@@ -83,12 +90,25 @@ export const useFleetStore = create<FleetState>((set, get) => ({
     const robotsMap = new Map<number, RobotState>();
     
     data.robots.forEach(robot => {
-      robotsMap.set(robot.id, robot);
+      // Normalize robot data - merge position into x,y for compatibility
+      const normalizedRobot = {
+        ...robot,
+        x: robot.position?.x ?? robot.x,
+        y: robot.position?.y ?? robot.y,
+        batteryLevel: robot.battery ?? robot.batteryLevel,
+      };
+      robotsMap.set(robot.id, normalizedRobot);
     });
+    
+    const timestamp = typeof data.timestamp === 'string' 
+      ? Date.now() 
+      : data.timestamp || Date.now();
     
     set({
       robots: robotsMap,
-      lastRobotUpdate: data.timestamp || Date.now()
+      lastRobotUpdate: timestamp,
+      chargingStations: data.chargingStations || [],
+      timeStats: data.timeStats || []
     });
   },
 
@@ -210,7 +230,10 @@ export const useFleetStore = create<FleetState>((set, get) => ({
       const robots = Array.from(get().robots?.values() || []);
       if (!robots || robots.length === 0) return 100;
       
-      const totalBattery = robots.reduce((sum, r) => sum + (r?.batteryLevel || 100), 0);
+      const totalBattery = robots.reduce((sum, r) => {
+        const battery = r?.battery ?? r?.batteryLevel ?? 100;
+        return sum + battery;
+      }, 0);
       return Math.round(totalBattery / robots.length) || 100;
     } catch (error) {
       console.error('Error calculating average battery:', error);
@@ -308,11 +331,15 @@ export const useFleetStore = create<FleetState>((set, get) => ({
 
   getEfficiency: () => {
     try {
-      const uptime = get().uptime || 0;
-      const completed = get().completedTaskIds?.size || 0;
-      if (!uptime || uptime === 0) return 0;
-      const minutes = uptime / 60;
-      return minutes > 0 ? completed / minutes : 0;
+      const timeStats = get().timeStats || [];
+      if (timeStats.length === 0) return 0;
+      
+      // Calculate from latest minute stats
+      const latest = timeStats[timeStats.length - 1];
+      if (!latest) return 0;
+      
+      // Tasks completed per minute
+      return latest.minute > 0 ? latest.tasksCompleted / latest.minute : 0;
     } catch (error) {
       console.error('Error calculating efficiency:', error);
       return 0;
@@ -348,7 +375,7 @@ export const useFleetOverview = () => {
     idleRobots: state?.getIdleRobotCount?.() || 0,
     chargingRobots: state?.getChargingRobotCount?.() || 0,
     avgBattery: state?.getAverageBattery?.() || 100
-  }), shallow);
+  }));
 };
 
 // Helper hook for task statistics
@@ -359,7 +386,7 @@ export const useTaskStats = () => {
     assigned: state?.getAssignedTaskCount?.() || 0,
     inProgress: state?.getInProgressTaskCount?.() || 0,
     completed: state?.getCompletedTaskCount?.() || 0
-  }), shallow);
+  }));
 };
 
 export default useFleetStore;

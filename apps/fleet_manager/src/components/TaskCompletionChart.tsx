@@ -1,17 +1,17 @@
 import { useFleetStore } from '../stores/fleetStore';
 
 interface TaskHistoryPoint {
-  timestamp: number;
-  completed: number;
-  active: number;
+  minute: number;
+  tasksCompleted: number;
+  tasksInProgress: number;
 }
 
 export default function TaskCompletionChart() {
-  const taskHistory = useFleetStore((state: any) => state?.taskHistory as TaskHistoryPoint[] || []);
-  const completedCount = useFleetStore((state: any) => state?.completedTaskIds?.size as number || 0);
-  const activeCount = useFleetStore((state: any) => state?.getInProgressTaskCount?.() as number || 0);
+  const timeStats = useFleetStore((state: any) => state?.timeStats as TaskHistoryPoint[] || []);
+  const completedCount = timeStats.length > 0 ? timeStats[timeStats.length - 1]?.tasksCompleted || 0 : 0;
+  const activeCount = timeStats.length > 0 ? timeStats[timeStats.length - 1]?.tasksInProgress || 0 : 0;
 
-  if (taskHistory.length === 0) {
+  if (timeStats.length === 0) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
@@ -46,9 +46,9 @@ export default function TaskCompletionChart() {
     );
   }
 
-  const maxValue = taskHistory && taskHistory.length > 0 
+  const maxValue = timeStats && timeStats.length > 0 
     ? Math.max(
-        ...taskHistory.map((p: TaskHistoryPoint) => Math.max(p?.completed || 0, p?.active || 0)),
+        ...timeStats.map((p: TaskHistoryPoint) => Math.max(p?.tasksCompleted || 0, p?.tasksInProgress || 0)),
         1
       )
     : 1;
@@ -56,27 +56,36 @@ export default function TaskCompletionChart() {
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-100">Task Completion Over Time</h3>
+        <h3 className="text-lg font-bold text-gray-100">Tasques per Minut</h3>
         <div className="flex gap-3">
           <div className="flex items-center gap-2 text-xs">
-            <div className="w-3 h-3 bg-gray-500 rounded"></div>
-            <span className="text-gray-400">Completed</span>
+            <div className="w-3 h-3 bg-emerald-500 rounded"></div>
+            <span className="text-gray-400">Completades</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
             <div className="w-3 h-3 bg-orange-400 rounded"></div>
-            <span className="text-gray-400">Active</span>
+            <span className="text-gray-400">En Progrés</span>
           </div>
         </div>
       </div>
       
       {/* Bar Chart */}
       <div className="h-64 flex items-end justify-between gap-1">
-        {taskHistory.slice(-20).map((point: TaskHistoryPoint, i: number) => {
-          const completedHeight = (point.completed / maxValue) * 100;
-          const activeHeight = (point.active / maxValue) * 100;
+        {timeStats.slice(-20).map((point: TaskHistoryPoint, i: number) => {
+          const completedHeight = (point.tasksCompleted / maxValue) * 100;
+          const activeHeight = (point.tasksInProgress / maxValue) * 100;
           
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div key={i} className="flex-1 flex flex-col-reverse items-center gap-1">
+              {/* Completed Tasks Bar (Green) */}
+              <div 
+                className="w-full bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg transition-all duration-500 hover:from-emerald-700 hover:to-emerald-500" 
+                style={{ 
+                  height: `${completedHeight}%`, 
+                  minHeight: completedHeight > 0 ? '4px' : '0px' 
+                }}
+                title={`Minut ${point.minute}: Completades: ${point.tasksCompleted}`}
+              />
               {/* Active Tasks Bar (Orange) */}
               <div 
                 className="w-full bg-gradient-to-t from-orange-500 to-orange-400 rounded-t-lg transition-all duration-500 hover:from-orange-600 hover:to-orange-500" 
@@ -84,17 +93,10 @@ export default function TaskCompletionChart() {
                   height: `${activeHeight}%`, 
                   minHeight: activeHeight > 0 ? '4px' : '0px' 
                 }}
-                title={`Active: ${point.active}`}
+                title={`Minut ${point.minute}: En progrés: ${point.tasksInProgress}`}
               />
-              {/* Completed Tasks Bar (Gray) */}
-              <div 
-                className="w-full bg-gradient-to-t from-gray-600 to-gray-500 rounded-t-lg transition-all duration-500 hover:from-gray-700 hover:to-gray-600" 
-                style={{ 
-                  height: `${completedHeight}%`, 
-                  minHeight: completedHeight > 0 ? '4px' : '0px' 
-                }}
-                title={`Completed: ${point.completed}`}
-              />
+              {/* Minute label */}
+              <span className="text-[10px] text-gray-500 mt-1">{point.minute}</span>
             </div>
           );
         })}

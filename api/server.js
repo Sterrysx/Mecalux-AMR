@@ -75,7 +75,7 @@ function buildPlannerCommand(algorithmId, graphId, numTasks, numRobots) {
   if (isWindows) {
     // On Windows, use WSL with proper path conversion
     const wslPlannerPath = PLANNER_DIR.replace(/\\/g, '/').replace(/^([A-Z]):/, (match, drive) => `/mnt/${drive.toLowerCase()}`);
-    return `wsl -e bash -c "cd ${wslPlannerPath} && ./build/planner ${args}"`;
+    return `wsl -e bash -c "cd '${wslPlannerPath}' && ./build/planner ${args}"`;
   } else {
     // On Linux/macOS, run directly
     return `bash -c "cd ${PLANNER_DIR} && ./build/planner ${args}"`;
@@ -650,7 +650,7 @@ wss.on('connection', (ws) => {
           const wslSimulatorPath = SIMULATOR_DIR.replace(/\\/g, '/').replace(/^([A-Z]):/, (match, drive) => `/mnt/${drive.toLowerCase()}`);
           command = `wsl`;
           // Run fleet_manager with --cli flag for interactive mode
-          const args = ['-e', 'bash', '-c', `cd ${wslSimulatorPath} && ./build/fleet_manager --cli --robots ${numRobots}`];
+          const args = ['-e', 'bash', '-c', `cd "${wslSimulatorPath}" && ./build/fleet_manager --cli --robots ${numRobots}`];
           simulatorProcess = spawn(command, args);
         } else {
           // Run fleet_manager with --cli flag for interactive mode
@@ -745,43 +745,68 @@ wss.on('connection', (ws) => {
 
 // ==================== FLEET MANAGEMENT API ====================
 
-// Get current robot data from latest orca tick
+// Get current robot data - serves robots.json directly (updated every 5s by backend)
 app.get('/api/fleet/robots', async (req, res) => {
   try {
-    console.log('[API] 🤖 /api/fleet/robots called - fetching latest ORCA tick...');
-    const latestData = await getLatestOrcaTick();
+    // Read robots.json (contains complete robot state from backend)
+    const robotsJsonPath = path.join(OUTPUT_DIR, 'robots.json');
     
-    if (!latestData) {
-      console.log('[API] ⚠️  No ORCA tick files found');
-      // Fallback: return waiting state if no tick files found
-      return res.json({
-        robots: [],
-        timestamp: Date.now(),
-        status: 'waiting',
-        message: 'Waiting for simulation to start'
+    try {
+      const robotsJsonData = await fs.readFile(robotsJsonPath, 'utf8');
+      const robotsJson = JSON.parse(robotsJsonData);
+      
+      // Serve robots.json directly - it's updated every 5s by the backend
+      // Add compatibility fields for frontend
+      const robots = robotsJson.robots.map(robot => ({
+        ...robot,
+        x: robot.position?.x,
+        y: robot.position?.y,
+        batteryLevel: robot.battery,
+        state: robot.currentTask !== -1 ? 'MOVING' : 'IDLE'
+      }));
+      
+      res.json({
+        robots,
+        timestamp: robotsJson.timestamp,
+        chargingStations: robotsJson.chargingStations || [],
+        timeStats: robotsJson.timeStats || []
       });
-    }
-    
-    console.log(`[API] ✅ Found tick ${latestData.tick} with ${latestData.robots.length} robot(s)`);
-    
-    // Transform orca format to expected format
-    const robotsData = {
-      robots: latestData.robots.map(robot => ({
+    } catch (error) {
+      // Fallback to ORCA if robots.json doesn't exist yet
+      const latestData = await getLatestOrcaTick();
+      
+      if (!latestData) {
+        return res.json({
+          robots: [],
+          timestamp: Date.now(),
+          chargingStations: [],
+          timeStats: [],
+          status: 'waiting',
+          message: 'Waiting for backend to generate robots.json'
+        });
+      }
+      
+      // Use ORCA as temporary fallback
+      const robots = latestData.robots.map(robot => ({
         id: robot.id,
         x: robot.x,
         y: robot.y,
-        vx: robot.vx,
-        vy: robot.vy,
-        state: robot.status || robot.driverState,
-        goal: robot.targetNodeId,
-        itinerary: robot.remainingWaypoints ? [robot.remainingWaypoints] : [],
-        batteryLevel: Math.round(robot.battery * 100)
-      })),
-      timestamp: new Date(latestData.timestamp).getTime(),
-      tick: latestData.tick
-    };
-    
-    res.json(robotsData);
+        battery: Math.round(robot.battery * 100),
+        batteryLevel: Math.round(robot.battery * 100),
+        position: { x: robot.x, y: robot.y },
+        currentTask: -1,
+        assignedTasks: [],
+        completedTasks: [],
+        state: robot.status || robot.driverState
+      }));
+      
+      res.json({
+        robots,
+        timestamp: new Date(latestData.timestamp).getTime(),
+        chargingStations: [],
+        timeStats: []
+      });
+    }
   } catch (error) {
     console.error('[API] ❌ Error serving robot data:', error);
     res.status(500).json({ error: 'Failed to fetch robot data' });
