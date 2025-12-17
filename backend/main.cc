@@ -292,15 +292,15 @@ int main(int argc, char* argv[]) {
         
     } else if (cliMode) {
         // CLI MODE: Interactive command line interface for live task injection
-        std::cout << "\n[CLI] ═══════════════ INTERACTIVE CLI MODE ═══════════════\n";
-        std::cout << "[CLI] Available commands:\n";
-        std::cout << "       inject <N>  - Inject N random tasks (≤5 = Cheap Insertion, >5 = Background Re-plan)\n";
-        std::cout << "       status      - Show robot states and queue info\n";
-        std::cout << "       stats       - Show system statistics\n";
-        std::cout << "       help        - Show this help message\n";
-        std::cout << "       quit        - Stop the system and exit\n";
-        std::cout << "\n[CLI] Threshold: ≤5 tasks triggers Cheap Insertion, >5 triggers Background Re-plan\n";
-        std::cout << "\n";
+        std::cout << "\n[CLI] ═══════════════ INTERACTIVE CLI MODE ═══════════════\n" << std::flush;
+        std::cout << "[CLI] Available commands:\n" << std::flush;
+        std::cout << "       inject <N>  - Inject N random tasks (≤5 = Cheap Insertion, >5 = Background Re-plan)\n" << std::flush;
+        std::cout << "       status      - Show robot states and queue info\n" << std::flush;
+        std::cout << "       stats       - Show system statistics\n" << std::flush;
+        std::cout << "       help        - Show this help message\n" << std::flush;
+        std::cout << "       quit        - Stop the system and exit\n" << std::flush;
+        std::cout << "\n[CLI] Threshold: ≤5 tasks triggers Cheap Insertion, >5 triggers Background Re-plan\n" << std::flush;
+        std::cout << "\n" << std::flush;
         
         // Get POI nodes from FleetManager
         std::vector<int> pickupNodes = manager.GetPickupNodes();
@@ -308,21 +308,46 @@ int main(int argc, char* argv[]) {
         
         // Check if we have valid POI nodes
         if (pickupNodes.empty() || dropoffNodes.empty()) {
-            std::cout << "[CLI] Warning: No POI nodes found, using fallback node ranges\n";
+            std::cout << "[CLI] Warning: No POI nodes found, using fallback node ranges\n" << std::flush;
             pickupNodes = {20, 25, 30, 35, 40, 45, 50, 55};
             dropoffNodes = {60, 65, 70, 75, 80, 85, 90, 95};
         } else {
             std::cout << "[CLI] Found " << pickupNodes.size() << " pickup nodes, "
-                      << dropoffNodes.size() << " dropoff nodes\n";
+                      << dropoffNodes.size() << " dropoff nodes\n" << std::flush;
         }
         
         int taskIdCounter = 1000;
         std::string line;
         
-        std::cout << "\n[CLI] Ready. Type 'help' for commands.\n";
+        std::cout << "\n[CLI] Ready. Type 'help' for commands.\n" << std::flush;
+        
+        // Use named pipe for WSL compatibility
+        std::string pipePath = "/tmp/fleet_manager_pipe";
+        
+        // Remove old pipe if exists
+        std::remove(pipePath.c_str());
+        
+        // Create named pipe
+        if (mkfifo(pipePath.c_str(), 0666) != 0) {
+            std::cerr << "[CLI] ERROR: Cannot create named pipe\n" << std::flush;
+        } else {
+            std::cout << "[CLI] Listening on pipe: " << pipePath << "\n" << std::flush;
+        }
+        
         std::cout << "amr> " << std::flush;
         
-        while (g_running.load() && std::getline(std::cin, line)) {
+        // Open pipe in non-blocking mode initially to avoid hanging
+        std::ifstream pipeStream;
+        
+        while (g_running.load()) {
+            // Try to open pipe
+            pipeStream.open(pipePath);
+            if (pipeStream.is_open() && std::getline(pipeStream, line)) {
+                pipeStream.close();
+                
+                // DEBUG: Echo received command
+                std::cout << "[CLI] Received: '" << line << "'\n" << std::flush;
+            
             // Trim whitespace
             size_t start = line.find_first_not_of(" \t");
             if (start == std::string::npos) {
@@ -337,6 +362,8 @@ int main(int argc, char* argv[]) {
             std::string cmd;
             iss >> cmd;
             
+            std::cout << "[CLI] Executing command: '" << cmd << "'\n" << std::flush;
+            
             if (cmd == "quit" || cmd == "exit" || cmd == "q") {
                 std::cout << "[CLI] Shutting down...\n";
                 break;
@@ -348,7 +375,7 @@ int main(int argc, char* argv[]) {
                 std::cout << "       status      - Show robot states and queue info\n";
                 std::cout << "       stats       - Show system statistics\n";
                 std::cout << "       help        - Show this help message\n";
-                std::cout << "       quit        - Stop the system and exit\n\n";
+                std::cout << "       quit        - Stop the system and exit\n\n" << std::flush;
                 
             } else if (cmd == "inject") {
                 int count = 0;
@@ -373,16 +400,16 @@ int main(int argc, char* argv[]) {
                     }
                     
                     manager.InjectTasks(tasks);
-                    std::cout << "[CLI] Tasks injected successfully!\n\n";
+                    std::cout << "[CLI] Tasks injected successfully!\n\n" << std::flush;
                     
                 } else {
-                    std::cout << "[CLI] Usage: inject <N> where N is a positive integer\n";
+                    std::cout << "[CLI] Usage: inject <N> where N is a positive integer\n" << std::flush;
                 }
                 
             } else if (cmd == "status") {
-                std::cout << "\n";
+                std::cout << "\n" << std::flush;
                 manager.PrintRobotStates();
-                std::cout << "\n";
+                std::cout << "\n" << std::flush;
                 
             } else if (cmd == "stats") {
                 auto stats = manager.GetStats();
@@ -392,14 +419,22 @@ int main(int argc, char* argv[]) {
                 std::cout << "[CLI] Fleet loop count: " << stats.fleetLoopCount << "\n";
                 std::cout << "[CLI] Tasks completed: " << stats.completedTasks 
                           << " / " << stats.totalTasks << "\n";
-                std::cout << "[CLI] Dynamic tasks injected: " << (taskIdCounter - 1000) << "\n\n";
+                std::cout << "[CLI] Dynamic tasks injected: " << (taskIdCounter - 1000) << "\n\n" << std::flush;
                 
             } else if (!cmd.empty()) {
-                std::cout << "[CLI] Unknown command: '" << cmd << "'. Type 'help' for commands.\n";
+                std::cout << "[CLI] Unknown command: '" << cmd << "'. Type 'help' for commands.\n" << std::flush;
             }
             
-            std::cout << "amr> " << std::flush;
+                std::cout << "amr> " << std::flush;
+            } else {
+                pipeStream.close();
+                // Sleep briefly to avoid busy-waiting
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
         }
+        
+        // Clean up pipe
+        std::remove(pipePath.c_str());
         
     } else if (duration > 0) {
         // Run for specified duration

@@ -6,6 +6,7 @@ const os = require('os');
 const http = require('http');
 const WebSocket = require('ws');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 
 const app = express();
 const PORT = 3001;
@@ -648,14 +649,21 @@ wss.on('connection', (ws) => {
         
         if (isWindows) {
           const wslSimulatorPath = SIMULATOR_DIR.replace(/\\/g, '/').replace(/^([A-Z]):/, (match, drive) => `/mnt/${drive.toLowerCase()}`);
-          command = `wsl`;
-          // Run fleet_manager with --cli flag for interactive mode
-          const args = ['-e', 'bash', '-c', `cd "${wslSimulatorPath}" && ./build/fleet_manager --cli --robots ${numRobots}`];
-          simulatorProcess = spawn(command, args);
+          
+          // Simple bash -c without interactive flags
+          simulatorProcess = spawn('wsl', [
+            'bash', '-c',
+            `cd "${wslSimulatorPath}" && stdbuf -oL -eL ./build/fleet_manager --cli --robots ${numRobots}`
+          ], {
+            stdio: ['pipe', 'pipe', 'pipe']
+          });
+          
+          console.log('Started fleet_manager in CLI mode');
         } else {
           // Run fleet_manager with --cli flag for interactive mode
           simulatorProcess = spawn('./build/fleet_manager', ['--cli', '--robots', numRobots.toString()], {
-            cwd: SIMULATOR_DIR
+            cwd: SIMULATOR_DIR,
+            stdio: ['pipe', 'pipe', 'pipe']  // Enable stdin, stdout, stderr pipes
           });
         }
         
