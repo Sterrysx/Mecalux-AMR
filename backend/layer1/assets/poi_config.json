@@ -19,36 +19,106 @@
         {
             "id": "C0",
             "type": "CHARGING",
-            "x": 250,
-            "y": 150,
+            "x": 20,
+            "y": 120,
             "active": true
         },
         {
             "id": "PU0",
             "type": "PICKUP",
-            "x": 100,
-            "y": 60,
+            "x": 60,
+            "y": 20,
+            "active": true
+        },
+        {
+            "id": "PU1",
+            "type": "PICKUP",
+            "x": 60,
+            "y": 50,
+            "active": true
+        },
+        {
+            "id": "PU2",
+            "type": "PICKUP",
+            "x": 60,
+            "y": 80,
+            "active": true
+        },
+        {
+            "id": "PU3",
+            "type": "PICKUP",
+            "x": 60,
+            "y": 220,
+            "active": true
+        },
+        {
+            "id": "PU4",
+            "type": "PICKUP",
+            "x": 60,
+            "y": 250,
+            "active": true
+        },
+        {
+            "id": "PU5",
+            "type": "PICKUP",
+            "x": 60,
+            "y": 280,
             "active": true
         },
         {
             "id": "DO0",
             "type": "DROPOFF",
             "x": 150,
-            "y": 130,
-            "active": true
-        },
-        {
-            "id": "PU1",
-            "type": "PICKUP",
-            "x": 80,
-            "y": 200,
+            "y": 125,
             "active": true
         },
         {
             "id": "DO1",
             "type": "DROPOFF",
-            "x": 220,
-            "y": 250,
+            "x": 150,
+            "y": 175,
+            "active": true
+        },
+        {
+            "id": "PU6",
+            "type": "PICKUP",
+            "x": 210,
+            "y": 175,
+            "active": true
+        },
+        {
+            "id": "DO2",
+            "type": "DROPOFF",
+            "x": 210,
+            "y": 125,
+            "active": true
+        },
+        {
+            "id": "DO3",
+            "type": "DROPOFF",
+            "x": 150,
+            "y": 225,
+            "active": true
+        },
+        {
+            "id": "DO4",
+            "type": "DROPOFF",
+            "x": 210,
+            "y": 225,
+            "active": true
+        },
+        {
+            "id": "PU7",
+            "type": "PICKUP",
+            "x": 150,
+            "y": 75,
+            "active": true
+        },
+        {
+            "id": "DO5",
+            "type": "DROPOFF",
+            "x": 210,
+            "y": 75,
             "active": true
         }
     ]

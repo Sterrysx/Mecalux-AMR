@@ -214,5 +214,61 @@
       "rotation": 90.0,
       "description": "Shelf dropoff zone"
     }
-  ]
+  ],
+  "prohibitedZones": [
+    {
+      "id": "conveyor_1_buffer",
+      "type": "obstacle_buffer",
+      "center": [18, 15],
+      "shape": "rectangle",
+      "dimensions": [12, 2.2],
+      "rotation": 0.0,
+      "description": "Safety buffer around conveyor belt 1"
+    },   
+     {
+      "id": "conveyor_1_buffer",
+      "type": "obstacle_buffer",
+      "center": [18, 10],
+      "shape": "rectangle",
+      "dimensions": [12, 2.2],
+      "rotation": 0.0,
+      "description": "Safety buffer around conveyor belt 1"
+    }, 
+    {
+      "id": "conveyor_1_buffer",
+      "type": "obstacle_buffer",
+      "center": [18, 5],
+      "shape": "rectangle",
+      "dimensions": [12, 2.2],
+      "rotation": 0.0,
+      "description": "Safety buffer around conveyor belt 1"
+    },
+    {
+      "id": "conveyor_1_buffer",
+      "type": "obstacle_buffer",
+      "center": [18, 1],
+      "shape": "rectangle",
+      "dimensions": [12, 2.2],
+      "rotation": 0.0,
+      "description": "Safety buffer around conveyor belt 1"
+    }, 
+    {
+      "id": "conveyor_1_buffer",
+      "type": "obstacle_buffer",
+      "center": [18, 20],
+      "shape": "rectangle",
+      "dimensions": [12, 2.2],
+      "rotation": 0.0,
+      "description": "Safety buffer around conveyor belt 1"
+    },    
+    {
+      "id": "conveyor_1_buffer",
+      "type": "obstacle_buffer",
+      "center": [18, 25],
+      "shape": "rectangle",
+      "dimensions": [12, 2.2],
+      "rotation": 0.0,
+      "description": "Safety buffer around conveyor belt 1"
+    }
+]
 }

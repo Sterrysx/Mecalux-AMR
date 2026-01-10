@@ -1,0 +1,139 @@
+{
+  "poi": [
+    {
+      "id": "C0",
+      "type": "CHARGING",
+      "x": 20,
+      "y": 120,
+      "active": true,
+      "nearestNodeId": 684,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "PU0",
+      "type": "PICKUP",
+      "x": 60,
+      "y": 20,
+      "active": true,
+      "nearestNodeId": 71,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "PU1",
+      "type": "PICKUP",
+      "x": 60,
+      "y": 50,
+      "active": true,
+      "nearestNodeId": 236,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "PU2",
+      "type": "PICKUP",
+      "x": 60,
+      "y": 80,
+      "active": true,
+      "nearestNodeId": 427,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "PU3",
+      "type": "PICKUP",
+      "x": 60,
+      "y": 220,
+      "active": false,
+      "nearestNodeId": -1,
+      "distanceToNode": -1
+    },
+    {
+      "id": "PU4",
+      "type": "PICKUP",
+      "x": 60,
+      "y": 250,
+      "active": false,
+      "nearestNodeId": -1,
+      "distanceToNode": -1
+    },
+    {
+      "id": "PU5",
+      "type": "PICKUP",
+      "x": 60,
+      "y": 280,
+      "active": false,
+      "nearestNodeId": -1,
+      "distanceToNode": -1
+    },
+    {
+      "id": "DO0",
+      "type": "DROPOFF",
+      "x": 150,
+      "y": 125,
+      "active": true,
+      "nearestNodeId": 768,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "DO1",
+      "type": "DROPOFF",
+      "x": 150,
+      "y": 175,
+      "active": true,
+      "nearestNodeId": 1167,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "PU6",
+      "type": "PICKUP",
+      "x": 210,
+      "y": 175,
+      "active": true,
+      "nearestNodeId": 1179,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "DO2",
+      "type": "DROPOFF",
+      "x": 210,
+      "y": 125,
+      "active": true,
+      "nearestNodeId": 780,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "DO3",
+      "type": "DROPOFF",
+      "x": 150,
+      "y": 225,
+      "active": false,
+      "nearestNodeId": -1,
+      "distanceToNode": -1
+    },
+    {
+      "id": "DO4",
+      "type": "DROPOFF",
+      "x": 210,
+      "y": 225,
+      "active": false,
+      "nearestNodeId": -1,
+      "distanceToNode": -1
+    },
+    {
+      "id": "PU7",
+      "type": "PICKUP",
+      "x": 150,
+      "y": 75,
+      "active": true,
+      "nearestNodeId": 396,
+      "distanceToNode": 2.82843
+    },
+    {
+      "id": "DO5",
+      "type": "DROPOFF",
+      "x": 210,
+      "y": 75,
+      "active": true,
+      "nearestNodeId": 408,
+      "distanceToNode": 2.82843
+    }
+  ]
+}

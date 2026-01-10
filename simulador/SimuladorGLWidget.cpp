@@ -74,7 +74,7 @@ void SimuladorGLWidget::initializeGL ()
   // Cal inicialitzar l'ús de les funcions d'OpenGL
   initializeOpenGLFunctions();  
 
-  glClearColor(0.5, 0.7, 1.0, 1.0); // defineix color de fons (d'esborrat)
+  glClearColor(0.3, 0.3, 0.3, 1.0); // defineix color de fons (d'esborrat) - grey
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
   glEnable(GL_STENCIL_TEST);  // Enable stencil testing
@@ -414,33 +414,7 @@ void SimuladorGLWidget::paintStaticObjects()
     }
     
     // Debug: Draw picking zones as black points on the ground
-    const std::vector<PickingZone>& zones = warehouseLoader.getPickingZones();
-    if (!zones.empty()) {
-        glm::vec3 blackColor(0.0f, 0.0f, 0.0f); // Black color for debug points
-        glUniform3fv(colorLoc, 1, &blackColor[0]);
-        
-        for (const auto& zone : zones) {
-            glm::mat4 TG(1.0f);
-            
-            // Position at zone center (slightly above ground to avoid z-fighting)
-            glm::vec3 position = zone.center;
-            position.y = 0.05f; // Slightly above ground
-            TG = glm::translate(TG, position);
-            
-            // Small scale for debug point (0.3 units diameter)
-            TG = glm::scale(TG, glm::vec3(0.3f, 0.3f, 0.3f));
-            
-            // Use model 1 (robot model) as debug marker
-            int debugModelIndex = 1;
-            TG = glm::translate(TG, glm::vec3(-centreCapsaModels[debugModelIndex].x, 
-                                              -minY[debugModelIndex], 
-                                              -centreCapsaModels[debugModelIndex].z));
-            
-            glUniformMatrix4fv(transLoc, 1, GL_FALSE, &TG[0][0]);
-            glBindVertexArray(VAO_models[debugModelIndex]);
-            glDrawArrays(GL_TRIANGLES, 0, models[debugModelIndex].faces().size() * 3);
-        }
-    }
+    
 }
 
 void SimuladorGLWidget::resizeGL (int w, int h) 
