@@ -27,14 +27,14 @@
             "id": "PU0",
             "type": "PICKUP",
             "x": 100,
-            "y": 30,
+            "y": 60,
             "active": true
         },
         {
             "id": "DO0",
             "type": "DROPOFF",
             "x": 150,
-            "y": 100,
+            "y": 130,
             "active": true
         },
         {

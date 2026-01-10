@@ -1,6 +1,7 @@
 #include "SimuladorGLWidget.h"
 
 #include <iostream>
+#include <QImage>
 
 SimuladorGLWidget::SimuladorGLWidget (QWidget* parent) : QOpenGLWidget(parent)
 {
@@ -43,6 +44,49 @@ void SimuladorGLWidget::initializeGL ()
   carregaShaders();
   iniEscena ();
   iniCamera ();
+  
+  // Load floor texture
+  QImage floorImage("./textures/warehouse_floor.png");
+  if (floorImage.isNull()) {
+    std::cout << "Warning: Could not load floor texture, creating procedural texture\n";
+    // Create a simple procedural concrete texture
+    floorImage = QImage(512, 512, QImage::Format_RGB888);
+    for (int y = 0; y < 512; y++) {
+      for (int x = 0; x < 512; x++) {
+        // Create concrete-like pattern with grid lines
+        int baseColor = 180 + (qrand() % 20); // Gray with noise
+        
+        // Add grid lines every 64 pixels (warehouse tiles)
+        if (x % 64 < 2 || y % 64 < 2) {
+          baseColor = 140; // Darker lines
+        }
+        
+        floorImage.setPixel(x, y, qRgb(baseColor, baseColor, baseColor));
+      }
+    }
+  }
+  
+  // Convert to OpenGL format
+  QImage glFormattedImage = floorImage.convertToFormat(QImage::Format_RGBA8888).mirrored();
+  
+  // Generate and bind texture
+  glGenTextures(1, &floorTextureID);
+  glBindTexture(GL_TEXTURE_2D, floorTextureID);
+  
+  // Upload texture data
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, glFormattedImage.width(), glFormattedImage.height(),
+               0, GL_RGBA, GL_UNSIGNED_BYTE, glFormattedImage.bits());
+  
+  // Set texture parameters
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  
+  // Generate mipmaps
+  glGenerateMipmap(GL_TEXTURE_2D);
+  
+  std::cout << "Floor texture loaded successfully\n";
   
   // Load warehouse layout
   loadWarehouse("warehouse_layout.json");
@@ -283,13 +327,27 @@ void SimuladorGLWidget::paintGL ()
 
 void SimuladorGLWidget::paintStaticObjects()
 {
+    // Switch to floor shader program
+    floorProgram->bind();
     
-    // Draw ground
-    glUniform3fv(colorLoc, 1, &white[0]);
+    // Set uniforms for floor shader (projection and view)
+    glUniformMatrix4fv(floorProjLoc, 1, GL_FALSE, &Proj[0][0]);  
+    glUniformMatrix4fv(floorViewLoc, 1, GL_FALSE, &View[0][0]);
+    
+    // Draw ground with texture
     glStencilMask(0x00);
+    
+    // Bind floor texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, floorTextureID);
+    glUniform1i(floorTextureLoc, 0);
+    
     glBindVertexArray(VAO_Terra);
     modelTransformGround();
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    
+    // Switch back to main shader program for other objects
+    program->bind();
     
     // Draw warehouse static objects from JSON
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
@@ -379,7 +437,8 @@ void SimuladorGLWidget::modelTransformGround()
 {
   glm::mat4 TG(1.f);
   TG = glm::scale(TG, floorScale);
-  glUniformMatrix4fv (transLoc, 1, GL_FALSE, &TG[0][0]);
+  // Use floor shader transform location (floorTransLoc is only valid when floor shader is bound)
+  glUniformMatrix4fv (floorTransLoc, 1, GL_FALSE, &TG[0][0]);
 }
 
 
@@ -395,7 +454,7 @@ void SimuladorGLWidget::projectTransform ()
       fov = baseAngle;
     }
     // Apply zoom by dividing FOV (smaller FOV = more zoom)
-    glm::mat4 Proj = glm::perspective(fov / zoomFactor, ra, zn, zf);
+    Proj = glm::perspective(fov / zoomFactor, ra, zn, zf);
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, &Proj[0][0]);
   } else {
     float left,right,top,botom;
@@ -416,7 +475,6 @@ void SimuladorGLWidget::projectTransform ()
     top /= zoomFactor;
     botom /= zoomFactor;
     
-    glm::mat4 Proj;  // Matriu de projecció
     Proj=glm::ortho(left,right,botom,top,0.f,500.f);
     glUniformMatrix4fv (projLoc, 1, GL_FALSE, &Proj[0][0]);
   }
@@ -722,10 +780,10 @@ void SimuladorGLWidget::creaBuffersModels ()
 void SimuladorGLWidget::iniMaterialTerra ()
 {
   // Donem valors al material del terra
-  amb = glm::vec3(0.2,0.1,0.2);
-  diff = glm::vec3(0.6,0.2,0.6);
-  spec = glm::vec3(0,0,0);
-  shin = 500;
+  amb = glm::vec3(0.2,0.2,0.2);  // Gris fosc per l'ambient
+  diff = glm::vec3(0.4,0.4,0.4);  // Gris per la difusa
+  spec = glm::vec3(0.0,0.0,0.0);  // Sense reflexió especular (terra mat)
+  shin = 10;  // Brillantor mínima
 }
 
 void SimuladorGLWidget::creaBuffersTerra ()
@@ -737,6 +795,14 @@ void SimuladorGLWidget::creaBuffersTerra ()
 	glm::vec3(-1.0, 0.0, 0.0),
 	glm::vec3(30.0, 0.0, -1.0),
   }; 
+
+  // VBO amb les coordenades de textura
+  glm::vec2 texterra[] = {
+	glm::vec2(0.0, 3.0),  // Repeat texture 3 times
+	glm::vec2(3.0, 3.0),
+	glm::vec2(0.0, 0.0),
+	glm::vec2(3.0, 0.0),
+  };
 
   // VBO amb la normal de cada vèrtex
   glm::vec3 norm (0,1,0);
@@ -765,49 +831,56 @@ void SimuladorGLWidget::creaBuffersTerra ()
   glGenVertexArrays(1, &VAO_Terra);
   glBindVertexArray(VAO_Terra);
 
-  GLuint VBO_Terra[6];
-  glGenBuffers(6, VBO_Terra);
+  GLuint VBO_Terra[7];  // Increased from 6 to 7 for texture coordinates
+  glGenBuffers(7, VBO_Terra);
   glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[0]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(posterra), posterra, GL_STATIC_DRAW);
 
-  // Activem l'atribut vertexLoc
-  glVertexAttribPointer(vertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(vertexLoc);
+  // Activem l'atribut vertexLoc (floor shader)
+  glVertexAttribPointer(floorVertexLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(floorVertexLoc);
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[1]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(normterra), normterra, GL_STATIC_DRAW);
 
-  // Activem l'atribut normalLoc
-  glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(normalLoc);
+  // Activem l'atribut normalLoc (floor shader)
+  glVertexAttribPointer(floorNormalLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(floorNormalLoc);
+
+  // Buffer de coordenades de textura
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[2]);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(texterra), texterra, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(floorTexCoordLoc, 2, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(floorTexCoordLoc);
 
   // Buffer de component ambient
-  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[2]);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[3]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(matamb), matamb, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(matambLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(matambLoc);
+  glVertexAttribPointer(floorMatambLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(floorMatambLoc);
 
   // Buffer de component difusa
-  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[3]);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[4]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(matdiff), matdiff, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(matdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(matdiffLoc);
+  glVertexAttribPointer(floorMatdiffLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(floorMatdiffLoc);
 
   // Buffer de component especular
-  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[4]);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[5]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(matspec), matspec, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(matspecLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(matspecLoc);
+  glVertexAttribPointer(floorMatspecLoc, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(floorMatspecLoc);
 
   // Buffer de component shininness
-  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[5]);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_Terra[6]);
   glBufferData(GL_ARRAY_BUFFER, sizeof(matshin), matshin, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(matshinLoc, 1, GL_FLOAT, GL_FALSE, 0, 0);
-  glEnableVertexAttribArray(matshinLoc);
+  glVertexAttribPointer(floorMatshinLoc, 1, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(floorMatshinLoc);
 
   glBindVertexArray(0);
 }
@@ -866,6 +939,36 @@ void SimuladorGLWidget::carregaShaders()
   projLoc = glGetUniformLocation (program->programId(), "proj");
   viewLoc = glGetUniformLocation (program->programId(), "view");
   colorLoc = glGetUniformLocation (program->programId(), "colorMul");
+  
+  // Create separate shader program for textured floor
+  QOpenGLShader floorFs (QOpenGLShader::Fragment, this);
+  QOpenGLShader floorVs (QOpenGLShader::Vertex, this);
+  floorFs.compileSourceFile("./shaders/texturedFloor.frag");
+  floorVs.compileSourceFile("./shaders/texturedFloor.vert");
+  
+  floorProgram = new QOpenGLShaderProgram(this);
+  floorProgram->addShader(&floorFs);
+  floorProgram->addShader(&floorVs);
+  floorProgram->link();
+  floorProgram->bind();
+  
+  // Get attribute locations for floor shader
+  floorVertexLoc = glGetAttribLocation (floorProgram->programId(), "vertex");
+  floorNormalLoc = glGetAttribLocation (floorProgram->programId(), "normal");
+  floorTexCoordLoc = glGetAttribLocation (floorProgram->programId(), "texCoord");
+  floorMatambLoc = glGetAttribLocation (floorProgram->programId(), "matamb");
+  floorMatdiffLoc = glGetAttribLocation (floorProgram->programId(), "matdiff");
+  floorMatspecLoc = glGetAttribLocation (floorProgram->programId(), "matspec");
+  floorMatshinLoc = glGetAttribLocation (floorProgram->programId(), "matshin");
+  
+  // Get uniform locations for floor shader
+  floorTransLoc = glGetUniformLocation (floorProgram->programId(), "TG");
+  floorProjLoc = glGetUniformLocation (floorProgram->programId(), "proj");
+  floorViewLoc = glGetUniformLocation (floorProgram->programId(), "view");
+  floorTextureLoc = glGetUniformLocation (floorProgram->programId(), "floorTexture");
+  
+  // Switch back to main program
+  program->bind();
 }
 
 

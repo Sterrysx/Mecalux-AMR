@@ -134,7 +134,6 @@ DIST          = /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_pre.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/qt_config.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_post.prf \
-		.qmake.stash \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/toolchain.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/default_pre.prf \
@@ -235,7 +234,6 @@ Makefile: examen.pro /usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/qmake.conf 
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/qt_config.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/qmake.conf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_post.prf \
-		.qmake.stash \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/exclusive_builds.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/toolchain.prf \
 		/usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/default_pre.prf \
@@ -314,7 +312,6 @@ Makefile: examen.pro /usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/qmake.conf 
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/qt_config.prf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++/qmake.conf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/spec_post.prf:
-.qmake.stash:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/exclusive_builds.prf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/toolchain.prf:
 /usr/lib/x86_64-linux-gnu/qt5/mkspecs/features/default_pre.prf:
@@ -397,12 +394,6 @@ moc_SimuladorGLWidget.cpp: SimuladorGLWidget.h \
 
 moc_MyForm.cpp: MyForm.h \
 		ui_MyForm.h \
-		AfegirRobotButton.h \
-		CustomComboBox.h \
-		SimuladorGLWidget.h \
-		Model/model.h \
-		WarehouseLoader.h \
-		TelemetryReader.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /home/arnau/Mecalux-AMR/simulador/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/home/arnau/Mecalux-AMR/simulador -I/usr/include/glm -I/home/arnau/Mecalux-AMR/simulador/Model -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtOpenGL -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include MyForm.h -o moc_MyForm.cpp
@@ -450,13 +441,7 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean compiler_ui
 ####### Compile
 
 main.o: main.cpp MyForm.h \
-		ui_MyForm.h \
-		AfegirRobotButton.h \
-		CustomComboBox.h \
-		SimuladorGLWidget.h \
-		Model/model.h \
-		WarehouseLoader.h \
-		TelemetryReader.h
+		ui_MyForm.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 model.o: Model/model.cpp Model/model.h
@@ -469,13 +454,7 @@ SimuladorGLWidget.o: SimuladorGLWidget.cpp SimuladorGLWidget.h \
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o SimuladorGLWidget.o SimuladorGLWidget.cpp
 
 MyForm.o: MyForm.cpp MyForm.h \
-		ui_MyForm.h \
-		AfegirRobotButton.h \
-		CustomComboBox.h \
-		SimuladorGLWidget.h \
-		Model/model.h \
-		WarehouseLoader.h \
-		TelemetryReader.h
+		ui_MyForm.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o MyForm.o MyForm.cpp
 
 AfegirRobotButton.o: AfegirRobotButton.cpp AfegirRobotButton.h

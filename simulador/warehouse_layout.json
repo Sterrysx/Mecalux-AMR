@@ -29,15 +29,15 @@
   "pickingZones": [
     {
       "type": "PICKUP",
-      "center": [10.0, 0.0, 3.0],
-      "dimensions": [2.0, 0.0, 2.0],
+      "center": [10.0, 0.0, 6.0],
+      "dimensions": [1.0, 0.0, 1.0],
       "rotation": 0.0,
       "description": "Conveyor belt pickup area"
     },
     {
       "type": "DROPOFF",
-      "center": [15.0, 0.0, 10.0],
-      "dimensions": [2.0, 0.0, 3.0],
+      "center": [15.0, 0.0, 13.0],
+      "dimensions": [1.0, 0.0, 1.0],
       "rotation": 45.0,
       "description": "Shelf dropoff zone"
     },
@@ -51,7 +51,7 @@
     {
       "type": "DROPOFF",
       "center": [22.0, 0.0, 25.0],
-      "dimensions": [2.5, 0.0, 2.5],
+      "dimensions": [1.0, 0.0, 1.0],
       "rotation": 0.0,
       "description": "Final delivery zone"
     }

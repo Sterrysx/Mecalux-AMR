@@ -165,10 +165,17 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
         
     // Program
     QOpenGLShaderProgram *program;
+    QOpenGLShaderProgram *floorProgram;  // Separate program for textured floor
     // uniform locations
     GLuint transLoc, projLoc, viewLoc, colorLoc;
+    GLuint floorTransLoc, floorProjLoc, floorViewLoc;  // Floor shader uniforms
+    GLuint floorTextureLoc;  // Texture uniform for floor
     // attribute locations
     GLuint vertexLoc, normalLoc, matambLoc, matdiffLoc, matspecLoc, matshinLoc;
+    GLuint floorVertexLoc, floorNormalLoc, floorTexCoordLoc;  // Floor shader attributes
+    GLuint floorMatambLoc, floorMatdiffLoc, floorMatspecLoc, floorMatshinLoc;
+    // texture ID
+    GLuint floorTextureID;
 
     /***************************************************/
 
@@ -180,6 +187,7 @@ class SimuladorGLWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_C
     GLint ample, alt;     // Resolució del viewport
 
     glm::mat4 View;     // Matriu de posició i orientació de la càmera
+    glm::mat4 Proj;     // Matriu de projecció
    
     glm::vec3 centreEsc; // centre de l'escena
     float radiEsc, ra, fov, zn, zf; // radi de l'escena, relació d'aspecte, field of view, znear i zfar
