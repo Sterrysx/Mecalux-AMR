@@ -354,11 +354,17 @@ export const useFleetStore = create<FleetState>((set, get) => ({
 
   getEfficiency: () => {
     try {
-      const uptime = get().uptime || 0;
-      const completed = get().completedTaskIds?.size || 0;
-      if (!uptime || uptime === 0) return 0;
-      const minutes = uptime / 60;
-      return minutes > 0 ? completed / minutes : 0;
+      const backendHistory = get().backendHistory || [];
+
+      // Use the last entry from backend history: completedDelta / activeCount (number of robots)
+      if (backendHistory.length > 0) {
+        const lastEntry = backendHistory[backendHistory.length - 1];
+        const completedDelta = lastEntry.completedDelta || 0;
+        const robotCount = lastEntry.activeCount || 1; // Avoid division by zero
+        return robotCount > 0 ? completedDelta / robotCount : 0;
+      }
+
+      return 0;
     } catch (error) {
       console.error('Error calculating efficiency:', error);
       return 0;

@@ -93,12 +93,26 @@ FleetManager::FleetManager(const SystemConfig& config, const std::string& basePa
     , basePath_(basePath)
     , running_(false)
     , apiService_(basePath + "/../api")  // API at repo root: backend/../api
+    , history_()                          // Explicitly initialize empty history
+    , lastCompletedTotal_(0)              // Reset completed counter
+    , lastHistoryUpdate_(0)               // Reset history timestamp
 {
     std::cout << "\n";
     std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗\n";
     std::cout << "║                    FLEET MANAGER - SYSTEM ORCHESTRATOR                    ║\n";
     std::cout << "║                  Bridging Layers 1, 2, and 3 together                     ║\n";
     std::cout << "╚═══════════════════════════════════════════════════════════════════════════╝\n";
+    
+    // Reset robots.json to clean state on startup
+    // This prevents stale data from previous runs
+    std::string robotsJsonPath = basePath + "/../api/output/robots.json";
+    std::error_code ec;
+    if (std::filesystem::exists(robotsJsonPath, ec)) {
+        std::filesystem::remove(robotsJsonPath, ec);
+        if (!ec) {
+            std::cout << "[FleetManager] Cleared previous robots.json for fresh start\n";
+        }
+    }
 }
 
 FleetManager::~FleetManager() {
