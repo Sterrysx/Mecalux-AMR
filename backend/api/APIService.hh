@@ -33,6 +33,26 @@ namespace API {
 // =============================================================================
 
 /**
+ * @brief Task statistics for API output.
+ */
+struct TasksInfo {
+    int active = 0;       ///< Currently in-progress tasks
+    int completed = 0;    ///< Completed tasks count
+    int pending = 0;      ///< Pending tasks in queue
+};
+
+/**
+ * @brief Charging station status for API output.
+ */
+struct ChargingStationStatus {
+    int id;                 ///< Station ID (0-indexed)
+    int x;                  ///< Station X coordinate
+    int y;                  ///< Station Y coordinate
+    std::string status;     ///< "AVAILABLE" or "OCCUPIED"
+    int robotId;            ///< Robot ID if occupied, -1 otherwise
+};
+
+/**
  * @brief Robot telemetry data for API broadcast.
  */
 struct RobotTelemetry {
@@ -331,6 +351,101 @@ public:
         
         std::lock_guard<std::mutex> lock(apiMutex_);
         WriteFile(".", "solution.json", content);
+    }
+    
+    /**
+     * @brief Write aggregated robots.json for frontend consumption.
+     * 
+     * Uses atomic temp-file-rename to ensure safe concurrent reads.
+     * This file is written periodically (every ~20 ticks = 1 Hz).
+     * 
+     * @param robots Robot telemetry data
+     * @param tasks Task statistics
+     * @param stations Charging station statuses
+     */
+    void WriteRobotsJSON(
+        const std::vector<RobotTelemetry>& robots,
+        const TasksInfo& tasks,
+        const std::vector<ChargingStationStatus>& stations
+    ) {
+        if (!enabled_) return;
+        
+        std::lock_guard<std::mutex> lock(apiMutex_);
+        
+        // Get current timestamp in milliseconds
+        auto now = std::chrono::system_clock::now();
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()).count();
+        
+        std::stringstream ss;
+        ss << "{\n";
+        ss << "  \"timestamp\": " << ms << ",\n";
+        
+        // Robots array
+        ss << "  \"robots\": [\n";
+        for (size_t i = 0; i < robots.size(); ++i) {
+            const auto& r = robots[i];
+            ss << "    {\n";
+            ss << "      \"id\": " << r.id << ",\n";
+            ss << "      \"x\": " << r.pos.x << ",\n";
+            ss << "      \"y\": " << r.pos.y << ",\n";
+            ss << "      \"vx\": " << std::fixed << std::setprecision(2) << r.velocity.x << ",\n";
+            ss << "      \"vy\": " << std::fixed << std::setprecision(2) << r.velocity.y << ",\n";
+            ss << "      \"state\": \"" << r.driverState << "\",\n";
+            ss << "      \"batteryLevel\": " << static_cast<int>(r.battery * 100) << ",\n";
+            ss << "      \"goal\": " << (r.targetNodeId >= 0 ? std::to_string(r.targetNodeId) : "null") << ",\n";
+            ss << "      \"itinerary\": " << r.remainingWaypoints << "\n";
+            ss << "    }";
+            if (i < robots.size() - 1) ss << ",";
+            ss << "\n";
+        }
+        ss << "  ],\n";
+        
+        // Tasks object
+        ss << "  \"tasks\": {\n";
+        ss << "    \"active\": " << tasks.active << ",\n";
+        ss << "    \"completed\": " << tasks.completed << ",\n";
+        ss << "    \"pending\": " << tasks.pending << "\n";
+        ss << "  },\n";
+        
+        // Charging stations array
+        ss << "  \"charging_stations\": [\n";
+        for (size_t i = 0; i < stations.size(); ++i) {
+            const auto& s = stations[i];
+            ss << "    {\n";
+            ss << "      \"id\": " << s.id << ",\n";
+            ss << "      \"x\": " << s.x << ",\n";
+            ss << "      \"y\": " << s.y << ",\n";
+            ss << "      \"status\": \"" << s.status << "\",\n";
+            ss << "      \"robot\": " << (s.robotId >= 0 ? std::to_string(s.robotId) : "null") << "\n";
+            ss << "    }";
+            if (i < stations.size() - 1) ss << ",";
+            ss << "\n";
+        }
+        ss << "  ]\n";
+        
+        ss << "}\n";
+        
+        // ATOMIC WRITE: Write to temp file, then rename
+        std::string dir = basePath_ + "/output";
+        EnsureDirectory(dir);
+        
+        std::string tempPath = dir + "/robots.tmp.json";
+        std::string finalPath = dir + "/robots.json";
+        
+        // Write to temp file
+        std::ofstream f(tempPath);
+        if (f.is_open()) {
+            f << ss.str();
+            f.close();
+            
+            // Atomic rename (works on POSIX systems, on Windows this may fail if target exists)
+            // For Windows compatibility, we remove then rename
+            #ifdef _WIN32
+            std::filesystem::remove(finalPath);
+            #endif
+            std::filesystem::rename(tempPath, finalPath);
+        }
     }
     
     /**
