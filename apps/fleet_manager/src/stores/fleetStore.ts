@@ -1,33 +1,35 @@
 // Zustand Store for Fleet Management State
 import { create } from 'zustand';
-import { shallow } from 'zustand/shallow';
-import { RobotState, Task, DynamicObstacle, POI, SystemStats, FleetData, TaskData, MapData } from '../services/FleetAPI';
+import { RobotState, Task, DynamicObstacle, POI, SystemStats, FleetData, TaskData, MapData, ChargingStationInfo, TasksInfo } from '../services/FleetAPI';
 
 interface FleetState {
   // Robot data
   robots: Map<number, RobotState>;
   lastRobotUpdate: number;
-  
+
   // Task data
   tasks: Map<number, Task>;
   lastTaskUpdate: number;
-  
-  // Task history tracking
-  taskHistory: Array<{ timestamp: number; completed: number; active: number }>;
+
+  // Task history tracking (1-minute intervals)
+  taskHistory: Array<{ timestamp: number; completed: number; active: number; completedDelta: number; efficiency: number }>;
   completedTaskIds: Set<number>;
-  
+  previousCompletedTasks: number; // For delta calculation
+
   // Map data
   dynamicObstacles: DynamicObstacle[];
   pois: POI[];
+  chargingStations: ChargingStationInfo[];  // From robots.json
+  taskStats: TasksInfo | null;              // From robots.json
   lastMapUpdate: number;
-  
+
   // System state
   systemStats: SystemStats;
   isBackendConnected: boolean;
   errorCount: number;
   systemStartTime: number | null;
   uptime: number;
-  
+
   // Actions
   updateRobots: (data: FleetData) => void;
   updateTasks: (data: TaskData) => void;
@@ -41,7 +43,7 @@ interface FleetState {
   stopSystem: () => void;
   updateUptime: () => void;
   addTaskHistoryPoint: () => void;
-  
+
   // Computed getters
   getActiveRobotCount: () => number;
   getIdleRobotCount: () => number;
@@ -69,8 +71,11 @@ export const useFleetStore = create<FleetState>((set, get) => ({
   lastTaskUpdate: 0,
   taskHistory: [],
   completedTaskIds: new Set(),
+  previousCompletedTasks: 0,
   dynamicObstacles: [],
   pois: [],
+  chargingStations: [],
+  taskStats: null,
   lastMapUpdate: 0,
   systemStats: {},
   isBackendConnected: false,
@@ -81,14 +86,17 @@ export const useFleetStore = create<FleetState>((set, get) => ({
   // Actions
   updateRobots: (data: FleetData) => {
     const robotsMap = new Map<number, RobotState>();
-    
+
     data.robots.forEach(robot => {
       robotsMap.set(robot.id, robot);
     });
-    
+
+    // Also extract charging_stations and tasks from robots.json
     set({
       robots: robotsMap,
-      lastRobotUpdate: data.timestamp || Date.now()
+      lastRobotUpdate: data.timestamp || Date.now(),
+      chargingStations: data.charging_stations || [],
+      taskStats: data.tasks || null
     });
   },
 
@@ -96,14 +104,14 @@ export const useFleetStore = create<FleetState>((set, get) => ({
     const tasksMap = new Map<number, Task>();
     const prevCompleted = get().completedTaskIds;
     const newCompleted = new Set(prevCompleted);
-    
+
     data.tasks.forEach(task => {
       tasksMap.set(task.id, task);
       if (task.status === 'COMPLETED' && !prevCompleted.has(task.id)) {
         newCompleted.add(task.id);
       }
     });
-    
+
     set({
       tasks: tasksMap,
       lastTaskUpdate: data.timestamp || Date.now(),
@@ -139,7 +147,7 @@ export const useFleetStore = create<FleetState>((set, get) => ({
   },
 
   startSystem: () => {
-    set({ 
+    set({
       systemStartTime: Date.now(),
       uptime: 0,
       taskHistory: [],
@@ -148,7 +156,7 @@ export const useFleetStore = create<FleetState>((set, get) => ({
   },
 
   stopSystem: () => {
-    set({ 
+    set({
       systemStartTime: null,
       uptime: 0
     });
@@ -162,26 +170,46 @@ export const useFleetStore = create<FleetState>((set, get) => ({
   },
 
   addTaskHistoryPoint: () => {
-    const completed = get().completedTaskIds.size;
-    const active = get().getInProgressTaskCount();
+    const taskStats = get().taskStats;
+    const robots = get().robots;
+    const previousCompleted = get().previousCompletedTasks;
     const history = get().taskHistory;
-    
+
+    // Get current counts from taskStats (from robots.json)
+    const currentCompleted = taskStats?.completed || 0;
+    const currentActive = taskStats?.active || 0;
+
+    // Calculate delta (tasks completed since last point)
+    const completedDelta = Math.max(0, currentCompleted - previousCompleted);
+
+    // Calculate efficiency: (tasks completed in period) / (number of robots)
+    const robotCount = robots?.size || 1;
+    const efficiency = robotCount > 0 ? (completedDelta / robotCount) : 0;
+
     const newPoint = {
       timestamp: Date.now(),
-      completed,
-      active
+      completed: currentCompleted,
+      active: currentActive,
+      completedDelta,
+      efficiency
     };
-    
-    // Keep last 30 points
+
+    // Keep last 30 points (30 minutes of history at 1-minute intervals)
     const updatedHistory = [...history, newPoint].slice(-30);
-    set({ taskHistory: updatedHistory });
+    set({
+      taskHistory: updatedHistory,
+      previousCompletedTasks: currentCompleted
+    });
   },
 
   // Computed getters
   getActiveRobotCount: () => {
     try {
       const robots = Array.from(get().robots?.values() || []);
-      return robots.filter(r => r?.state === 'MOVING' || r?.state === 'CARRYING').length || 0;
+      // Active = any state that's not IDLE or ARRIVED
+      return robots.filter(r =>
+        r?.state && r.state !== 'IDLE' && r.state !== 'ARRIVED'
+      ).length || 0;
     } catch (error) {
       return 0;
     }
@@ -209,7 +237,7 @@ export const useFleetStore = create<FleetState>((set, get) => ({
     try {
       const robots = Array.from(get().robots?.values() || []);
       if (!robots || robots.length === 0) return 100;
-      
+
       const totalBattery = robots.reduce((sum, r) => sum + (r?.batteryLevel || 100), 0);
       return Math.round(totalBattery / robots.length) || 100;
     } catch (error) {
@@ -218,20 +246,29 @@ export const useFleetStore = create<FleetState>((set, get) => ({
     }
   },
 
+  getCompletedTaskCount: () => {
+    // Use taskStats from robots.json if available
+    const taskStats = get().taskStats;
+    if (taskStats) return taskStats.completed;
+    return get().completedTaskIds?.size || 0;
+  },
+
+  getInProgressTaskCount: () => {
+    // Use taskStats from robots.json if available
+    const taskStats = get().taskStats;
+    if (taskStats) return taskStats.active;
+    return get().getTasksByStatus('IN_PROGRESS').length;
+  },
+
   getPendingTaskCount: () => {
+    // Use taskStats from robots.json if available
+    const taskStats = get().taskStats;
+    if (taskStats) return taskStats.pending;
     return get().getTasksByStatus('PENDING').length;
   },
 
   getAssignedTaskCount: () => {
     return get().getTasksByStatus('ASSIGNED').length;
-  },
-
-  getInProgressTaskCount: () => {
-    return get().getTasksByStatus('IN_PROGRESS').length;
-  },
-
-  getCompletedTaskCount: () => {
-    return get().getTasksByStatus('COMPLETED').length;
   },
 
   getRobotById: (id: number) => {
@@ -258,7 +295,7 @@ export const useFleetStore = create<FleetState>((set, get) => ({
       const pois = state?.pois || [];
       const chargingPois = pois.filter(p => p?.type === 'CHARGING');
       const robots = Array.from(state?.robots?.values() || []);
-      
+
       return chargingPois.map(poi => {
         // Find if any robot is at this charging station
         // A robot is at a charging station if:
@@ -267,27 +304,27 @@ export const useFleetStore = create<FleetState>((set, get) => ({
         // 3. Its state is IDLE or ARRIVED (charging) or has low battery and is nearby
         const robotAtStation = robots.find(r => {
           if (!r || !poi) return false;
-          
+
           const distanceX = Math.abs((r.x || 0) - (poi.x || 0));
           const distanceY = Math.abs((r.y || 0) - (poi.y || 0));
           const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-          
+
           // Robot is at or heading to this charging station
           const isAtStation = distance < 15;
           const isGoingToStation = r.goal === poi.nodeId;
           const isIdleOrArrived = r.state === 'IDLE' || r.state === 'ARRIVED';
           const needsCharging = (r.batteryLevel || 100) < 95;
-          
+
           // Consider station occupied if robot is there or heading there with low battery
-          return (isAtStation && (isIdleOrArrived || needsCharging)) || 
-                 (isGoingToStation && needsCharging);
+          return (isAtStation && (isIdleOrArrived || needsCharging)) ||
+            (isGoingToStation && needsCharging);
         });
-        
+
         // Calculate estimated charging time based on battery level
         const timeRemaining = robotAtStation && robotAtStation.batteryLevel !== undefined
           ? Math.round((100 - robotAtStation.batteryLevel) * 0.5) // ~0.5s per 1% battery
           : undefined;
-        
+
         return {
           ...poi,
           occupied: !!robotAtStation,
@@ -330,7 +367,7 @@ export const useSystemStats = () => {
   const isBackendConnected = useFleetStore(state => state.isBackendConnected);
   const lastRobotUpdate = useFleetStore(state => state.lastRobotUpdate);
   const lastTaskUpdate = useFleetStore(state => state.lastTaskUpdate);
-  
+
   return {
     ...systemStats,
     isBackendConnected,
@@ -348,7 +385,7 @@ export const useFleetOverview = () => {
     idleRobots: state?.getIdleRobotCount?.() || 0,
     chargingRobots: state?.getChargingRobotCount?.() || 0,
     avgBattery: state?.getAverageBattery?.() || 100
-  }), shallow);
+  }));
 };
 
 // Helper hook for task statistics
@@ -359,7 +396,7 @@ export const useTaskStats = () => {
     assigned: state?.getAssignedTaskCount?.() || 0,
     inProgress: state?.getInProgressTaskCount?.() || 0,
     completed: state?.getCompletedTaskCount?.() || 0
-  }), shallow);
+  }));
 };
 
 export default useFleetStore;

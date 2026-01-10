@@ -3,6 +3,7 @@ import { useFleetStore, useFleetOverview, useTaskStats } from './stores/fleetSto
 import { fleetAPI } from './services/FleetAPI';
 import ChargingStations from './components/ChargingStations';
 import TaskCompletionChart from './components/TaskCompletionChart';
+import Analytics from './components/Analytics';
 
 // Error Boundary Component
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -67,7 +68,7 @@ interface SimulatorState {
   startTime: number | null;
 }
 
-type Page = 'control' | 'dashboard' | 'robots';
+type Page = 'control' | 'dashboard' | 'robots' | 'analytics';
 
 interface TaskHistory {
   timestamp: number;
@@ -179,15 +180,26 @@ function App() {
     };
   }, []); // Empty deps - run ONLY ONCE
 
-  // Update uptime and task history periodically when system is running
+  // Update uptime every second, task history every minute when system is running
   useEffect(() => {
     if (state.isRunning) {
-      const interval = setInterval(() => {
+      // Uptime updates every second
+      const uptimeInterval = setInterval(() => {
         updateUptime();
-        addTaskHistoryPoint();
-      }, 2000); // Every 2 seconds
+      }, 1000);
 
-      return () => clearInterval(interval);
+      // Task history updates every minute for efficiency calculation
+      const historyInterval = setInterval(() => {
+        addTaskHistoryPoint();
+      }, 60000); // Every 60 seconds (1 minute)
+
+      // Add initial point immediately
+      addTaskHistoryPoint();
+
+      return () => {
+        clearInterval(uptimeInterval);
+        clearInterval(historyInterval);
+      };
     }
   }, [state.isRunning, updateUptime, addTaskHistoryPoint]);
 
@@ -516,8 +528,8 @@ function App() {
             <button
               onClick={() => setCurrentPage('dashboard')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${currentPage === 'dashboard'
-                  ? 'bg-slate-700 border-gray-400 text-white'
-                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
+                ? 'bg-slate-700 border-gray-400 text-white'
+                : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -529,8 +541,8 @@ function App() {
             <button
               onClick={() => setCurrentPage('robots')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${currentPage === 'robots'
-                  ? 'bg-slate-700 border-gray-400 text-white'
-                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
+                ? 'bg-slate-700 border-gray-400 text-white'
+                : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -542,8 +554,8 @@ function App() {
             <button
               onClick={() => setCurrentPage('control')}
               className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${currentPage === 'control'
-                  ? 'bg-slate-700 border-gray-400 text-white'
-                  : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
+                ? 'bg-slate-700 border-gray-400 text-white'
+                : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
                 }`}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -552,7 +564,13 @@ function App() {
               {!sidebarCollapsed && <span className="font-medium">Control</span>}
             </button>
 
-            <button className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 border-transparent text-gray-400 hover:bg-slate-800 hover:text-white`}>
+            <button
+              onClick={() => setCurrentPage('analytics')}
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${currentPage === 'analytics'
+                ? 'bg-slate-700 border-gray-400 text-white'
+                : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
+                }`}
+            >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
@@ -588,10 +606,10 @@ function App() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className={`flex-1 ${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300 overflow-y-auto h-screen`}>
-        {/* Top Bar */}
-        <header className={`${darkMode ? 'bg-slate-800 border-b border-slate-700' : 'bg-white'} shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10`}>
+      {/* Main Content - Fixed layout to prevent zoom/cutoff */}
+      <div className={`${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300 min-h-screen flex flex-col`}>
+        {/* Top Bar - Sticky header */}
+        <header className={`${darkMode ? 'bg-slate-800 border-b border-slate-700' : 'bg-white'} shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10 flex-shrink-0`}>
           <div>
             <h1 className={`text-2xl font-bold ${darkMode ? 'text-gray-100' : 'text-gray-800'}`}>Dashboard</h1>
             <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Real-time fleet monitoring system</p>
@@ -1202,6 +1220,9 @@ function App() {
                 </div>
               )}
             </div>
+          ) : currentPage === 'analytics' ? (
+            // ANALYTICS PAGE
+            <Analytics />
           ) : null}
         </main>
       </div>

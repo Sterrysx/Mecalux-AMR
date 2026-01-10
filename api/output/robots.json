@@ -1,21 +1,21 @@
 {
-  "timestamp": 1768046649785,
+  "timestamp": 1768048680698,
   "robots": [
     {
       "id": 0,
-      "x": 131,
-      "y": 130,
-      "vx": -14.82,
-      "vy": -4.21,
+      "x": 201,
+      "y": 244,
+      "vx": -15.07,
+      "vy": -5.38,
       "state": "MOVING",
       "batteryLevel": 100,
-      "goal": 591,
-      "itinerary": 43
+      "goal": 2063,
+      "itinerary": 35
     }
   ],
   "tasks": {
     "active": 1,
-    "completed": 8,
+    "completed": 2,
     "pending": 0
   },
   "charging_stations": [
