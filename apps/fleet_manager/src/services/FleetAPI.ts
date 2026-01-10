@@ -139,7 +139,7 @@ class FleetAPIService {
   // Fetch robots data
   private async fetchRobots() {
     try {
-      const response = await fetch(`${this.baseURL}/api/output/robots.json`, {
+      const response = await fetch(`${this.baseURL}/api/fleet/robots`, {
         cache: 'no-cache'
       });
       

@@ -28,7 +28,7 @@ function RobotCard({ robot }: { robot: any }) {
   const stateColors = {
     IDLE: 'bg-gray-100 text-gray-700',
     MOVING: 'bg-green-100 text-green-700',
-    CARRYING: 'bg-blue-100 text-blue-700',
+    CARRYING: 'bg-gray-200 text-gray-800',
     COMPUTING_PATH: 'bg-yellow-100 text-yellow-700',
     COLLISION_WAIT: 'bg-orange-100 text-orange-700',
     ARRIVED: 'bg-purple-100 text-purple-700'
@@ -114,7 +114,7 @@ function RobotCard({ robot }: { robot: any }) {
       <div className="flex gap-2 pt-3 border-t border-gray-200">
         <button
           onClick={handleSendToCharge}
-          className="flex-1 py-1.5 px-2 text-xs font-medium bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+          className="flex-1 py-1.5 px-2 text-xs font-medium bg-zinc-100 text-zinc-700 rounded hover:bg-zinc-200 transition-colors"
         >
           ⚡ Charge
         </button>

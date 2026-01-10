@@ -25,7 +25,7 @@ export default function RobotTaskHistory({ robotId, onClose }: RobotTaskHistoryP
       case 'COMPLETED':
         return 'bg-green-900/20 border-green-700 text-green-400';
       case 'IN_PROGRESS':
-        return 'bg-blue-900/20 border-blue-700 text-blue-400';
+        return 'bg-gray-700/30 border-gray-600 text-gray-300';
       case 'ASSIGNED':
         return 'bg-yellow-900/20 border-yellow-700 text-yellow-400';
       case 'PENDING':
@@ -45,7 +45,7 @@ export default function RobotTaskHistory({ robotId, onClose }: RobotTaskHistoryP
         <div className="p-6 border-b border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-600 w-12 h-12 rounded-xl flex items-center justify-center text-2xl">
+              <div className="bg-gray-600 w-12 h-12 rounded-xl flex items-center justify-center text-2xl">
                 🤖
               </div>
               <div>
