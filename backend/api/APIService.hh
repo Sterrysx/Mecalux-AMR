@@ -21,6 +21,7 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+#include <thread>
 
 #include "../common/include/Coordinates.hh"
 #include "../layer3/include/Vector2.hh"
@@ -50,6 +51,15 @@ struct ChargingStationStatus {
     int y;                  ///< Station Y coordinate
     std::string status;     ///< "AVAILABLE" or "OCCUPIED"
     int robotId;            ///< Robot ID if occupied, -1 otherwise
+};
+
+/**
+ * @brief History point for per-minute tracking (sliding window).
+ */
+struct HistoryPoint {
+    long long timestamp;    ///< Timestamp in milliseconds
+    int completedDelta;     ///< Tasks completed in this minute
+    int activeCount;        ///< Active tasks at this moment
 };
 
 /**
@@ -362,11 +372,13 @@ public:
      * @param robots Robot telemetry data
      * @param tasks Task statistics
      * @param stations Charging station statuses
+     * @param history History points (computed atomically by FleetManager)
      */
     void WriteRobotsJSON(
         const std::vector<RobotTelemetry>& robots,
         const TasksInfo& tasks,
-        const std::vector<ChargingStationStatus>& stations
+        const std::vector<ChargingStationStatus>& stations,
+        const std::vector<HistoryPoint>& history
     ) {
         if (!enabled_) return;
         
@@ -377,9 +389,15 @@ public:
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
             now.time_since_epoch()).count();
         
+        // NOTE: History is now computed atomically by FleetManager and passed in
+        
+        // =====================================================================
+        // JSON OUTPUT
+        // =====================================================================
         std::stringstream ss;
         ss << "{\n";
         ss << "  \"timestamp\": " << ms << ",\n";
+        ss << "  \"robotCount\": " << robots.size() << ",\n";
         
         // Robots array
         ss << "  \"robots\": [\n";
@@ -422,29 +440,70 @@ public:
             if (i < stations.size() - 1) ss << ",";
             ss << "\n";
         }
+        ss << "  ],\n";
+        
+        // History array (last 20 minutes of per-minute data)
+        ss << "  \"history\": [\n";
+        for (size_t i = 0; i < history.size(); ++i) {
+            const auto& h = history[i];
+            ss << "    {\n";
+            ss << "      \"timestamp\": " << h.timestamp << ",\n";
+            ss << "      \"completedDelta\": " << h.completedDelta << ",\n";
+            ss << "      \"activeCount\": " << h.activeCount << "\n";
+            ss << "    }";
+            if (i < history.size() - 1) ss << ",";
+            ss << "\n";
+        }
         ss << "  ]\n";
         
         ss << "}\n";
         
         // ATOMIC WRITE: Write to temp file, then rename
+        // Use a unique temp file to avoid conflicts with concurrent reads
         std::string dir = basePath_ + "/output";
         EnsureDirectory(dir);
         
-        std::string tempPath = dir + "/robots.tmp.json";
+        // Use process-unique temp file to avoid conflicts
+        auto tempMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        std::string tempPath = dir + "/robots." + std::to_string(tempMs) + ".tmp";
         std::string finalPath = dir + "/robots.json";
         
         // Write to temp file
         std::ofstream f(tempPath);
         if (f.is_open()) {
             f << ss.str();
+            f.flush();  // Ensure data is written to disk
             f.close();
             
-            // Atomic rename (works on POSIX systems, on Windows this may fail if target exists)
-            // For Windows compatibility, we remove then rename
+            // Atomic rename with retry for Windows
+            // Windows requires remove before rename, which creates a brief gap
+            // We retry to handle the case where another process is reading
             #ifdef _WIN32
-            std::filesystem::remove(finalPath);
-            #endif
+            bool success = false;
+            for (int retry = 0; retry < 3 && !success; ++retry) {
+                try {
+                    // Try to remove old file (may fail if locked)
+                    std::error_code ec;
+                    std::filesystem::remove(finalPath, ec);
+                    // Ignore removal errors - file may not exist
+                    
+                    // Rename temp to final
+                    std::filesystem::rename(tempPath, finalPath);
+                    success = true;
+                } catch (const std::filesystem::filesystem_error&) {
+                    // Sleep briefly and retry
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+            }
+            // Clean up temp file if rename failed
+            if (!success) {
+                std::filesystem::remove(tempPath);
+            }
+            #else
+            // POSIX: atomic rename
             std::filesystem::rename(tempPath, finalPath);
+            #endif
         }
     }
     

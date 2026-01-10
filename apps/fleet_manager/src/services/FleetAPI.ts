@@ -29,6 +29,13 @@ export interface ChargingStationInfo {
   robot: number | null;
 }
 
+// History point from backend (1-minute intervals, last 20 minutes)
+export interface HistoryPoint {
+  timestamp: number;
+  completedDelta: number;  // Tasks completed in this minute
+  activeCount: number;     // Active tasks at this moment
+}
+
 export interface Task {
   id: number;
   sourceNode: number;     // Pickup POI node
@@ -55,8 +62,10 @@ export interface FleetData {
   robots: RobotState[];
   timestamp: number;
   tick?: number;
+  robotCount?: number;
   tasks?: TasksInfo;
   charging_stations?: ChargingStationInfo[];
+  history?: HistoryPoint[];
 }
 
 export interface TaskData {

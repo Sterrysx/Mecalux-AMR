@@ -3,7 +3,6 @@ import { useFleetStore, useFleetOverview, useTaskStats } from './stores/fleetSto
 import { fleetAPI } from './services/FleetAPI';
 import ChargingStations from './components/ChargingStations';
 import TaskCompletionChart from './components/TaskCompletionChart';
-import Analytics from './components/Analytics';
 
 // Error Boundary Component
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -68,7 +67,7 @@ interface SimulatorState {
   startTime: number | null;
 }
 
-type Page = 'control' | 'dashboard' | 'robots' | 'analytics';
+type Page = 'control' | 'dashboard' | 'robots';
 
 interface TaskHistory {
   timestamp: number;
@@ -564,19 +563,6 @@ function App() {
               {!sidebarCollapsed && <span className="font-medium">Control</span>}
             </button>
 
-            <button
-              onClick={() => setCurrentPage('analytics')}
-              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 ${currentPage === 'analytics'
-                ? 'bg-slate-700 border-gray-400 text-white'
-                : 'border-transparent text-gray-400 hover:bg-slate-800 hover:text-white'
-                }`}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              {!sidebarCollapsed && <span className="font-medium">Analytics</span>}
-            </button>
-
             <button className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-all border-l-4 border-transparent text-gray-400 hover:bg-slate-800 hover:text-white`}>
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -606,8 +592,8 @@ function App() {
         </div>
       </aside>
 
-      {/* Main Content - Fixed layout to prevent zoom/cutoff */}
-      <div className={`${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300 min-h-screen flex flex-col`}>
+      {/* Main Content - Fixed layout with proper overflow */}
+      <div className={`${sidebarCollapsed ? 'ml-20' : 'ml-64'} transition-all duration-300 h-screen overflow-y-auto`}>
         {/* Top Bar - Sticky header */}
         <header className={`${darkMode ? 'bg-slate-800 border-b border-slate-700' : 'bg-white'} shadow-sm px-8 py-4 flex items-center justify-between sticky top-0 z-10 flex-shrink-0`}>
           <div>
@@ -1220,9 +1206,6 @@ function App() {
                 </div>
               )}
             </div>
-          ) : currentPage === 'analytics' ? (
-            // ANALYTICS PAGE
-            <Analytics />
           ) : null}
         </main>
       </div>

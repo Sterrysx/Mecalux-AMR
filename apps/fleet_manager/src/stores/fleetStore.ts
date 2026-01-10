@@ -1,20 +1,24 @@
 // Zustand Store for Fleet Management State
 import { create } from 'zustand';
-import { RobotState, Task, DynamicObstacle, POI, SystemStats, FleetData, TaskData, MapData, ChargingStationInfo, TasksInfo } from '../services/FleetAPI';
+import { RobotState, Task, DynamicObstacle, POI, SystemStats, FleetData, TaskData, MapData, ChargingStationInfo, TasksInfo, HistoryPoint } from '../services/FleetAPI';
 
 interface FleetState {
   // Robot data
   robots: Map<number, RobotState>;
   lastRobotUpdate: number;
+  robotCount: number;  // From robots.json
 
   // Task data
   tasks: Map<number, Task>;
   lastTaskUpdate: number;
 
-  // Task history tracking (1-minute intervals)
+  // Task history from backend (1-minute intervals, last 7 minutes)
+  backendHistory: HistoryPoint[];
+
+  // Legacy task history tracking (can be removed later)
   taskHistory: Array<{ timestamp: number; completed: number; active: number; completedDelta: number; efficiency: number }>;
   completedTaskIds: Set<number>;
-  previousCompletedTasks: number; // For delta calculation
+  previousCompletedTasks: number;
 
   // Map data
   dynamicObstacles: DynamicObstacle[];
@@ -67,8 +71,10 @@ export const useFleetStore = create<FleetState>((set, get) => ({
   // Initial state
   robots: new Map(),
   lastRobotUpdate: 0,
+  robotCount: 0,
   tasks: new Map(),
   lastTaskUpdate: 0,
+  backendHistory: [],
   taskHistory: [],
   completedTaskIds: new Set(),
   previousCompletedTasks: 0,
@@ -91,12 +97,15 @@ export const useFleetStore = create<FleetState>((set, get) => ({
       robotsMap.set(robot.id, robot);
     });
 
-    // Also extract charging_stations and tasks from robots.json
+    // Also extract charging_stations, tasks, and history from robots.json
     set({
       robots: robotsMap,
       lastRobotUpdate: data.timestamp || Date.now(),
       chargingStations: data.charging_stations || [],
-      taskStats: data.tasks || null
+      taskStats: data.tasks || null,
+      // Backend now provides history array directly
+      backendHistory: data.history || [],
+      robotCount: data.robotCount || robotsMap.size
     });
   },
 

@@ -715,6 +715,7 @@ void FleetManager::runFleetLoop() {
         // Data for WriteRobotsJSON (collected inside lock, written outside)
         API::TasksInfo tasksInfo;
         std::vector<API::ChargingStationStatus> stationStatuses;
+        std::vector<API::HistoryPoint> historySnapshot;  // Atomic copy of history
         
         // =====================================================================
         // CRITICAL SECTION: Update Physics & Gather Data
@@ -836,6 +837,39 @@ void FleetManager::runFleetLoop() {
                         stationStatuses.push_back(station);
                     }
                 }
+                
+                // =========================================================
+                // ATOMIC HISTORY UPDATE (inside fleetMutex_)
+                // =========================================================
+                auto now = std::chrono::system_clock::now();
+                auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    now.time_since_epoch()).count();
+                
+                constexpr long long MINUTE_MS = 60000;
+                if (lastHistoryUpdate_ == 0) {
+                    // First call - initialize baseline
+                    lastCompletedTotal_ = tasksInfo.completed;
+                    lastHistoryUpdate_ = ms;
+                } else if (ms - lastHistoryUpdate_ >= MINUTE_MS) {
+                    // One minute has passed - record new history point
+                    API::HistoryPoint point;
+                    point.timestamp = ms;
+                    point.completedDelta = std::max(0, tasksInfo.completed - lastCompletedTotal_);
+                    point.activeCount = tasksInfo.active;
+                    
+                    // Add to sliding window buffer
+                    history_.push_back(point);
+                    if (static_cast<int>(history_.size()) > HISTORY_LIMIT) {
+                        history_.erase(history_.begin()); // FIFO: remove oldest
+                    }
+                    
+                    // Update tracking for next delta
+                    lastCompletedTotal_ = tasksInfo.completed;
+                    lastHistoryUpdate_ = ms;
+                }
+                
+                // Create immutable snapshot for I/O (outside lock)
+                historySnapshot = history_;
             }
         }
         // =====================================================================
@@ -848,7 +882,7 @@ void FleetManager::runFleetLoop() {
             
             // Write aggregated robots.json every 20 ticks (~1 Hz)
             if (stats_.fleetLoopCount % 20 == 0) {
-                apiService_.WriteRobotsJSON(telemetry, tasksInfo, stationStatuses);
+                apiService_.WriteRobotsJSON(telemetry, tasksInfo, stationStatuses, historySnapshot);
             }
         }
         
