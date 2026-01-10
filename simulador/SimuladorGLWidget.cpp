@@ -2,6 +2,44 @@
 
 #include <iostream>
 #include <QImage>
+#include <QPainter>
+
+// Helper function to generate industrial floor texture
+QImage generateIndustrialFloor(int size = 512) {
+    QImage image(size, size, QImage::Format_RGB888);
+    image.fill(QColor(40, 40, 45)); // Dark base color
+
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // Draw the grid lines (Tile gaps)
+    QPen pen(QColor(25, 25, 30)); // Darker lines (grout)
+    pen.setWidth(4);
+    painter.setPen(pen);
+    
+    int tileSize = 64; // Size of one tile
+    
+    for (int i = 0; i <= size; i += tileSize) {
+        painter.drawLine(i, 0, i, size); // Vertical
+        painter.drawLine(0, i, size, i); // Horizontal
+    }
+
+    // Add some "noise" to make it look like concrete (simple speckles)
+    for (int i = 0; i < 5000; ++i) {
+        int x = rand() % size;
+        int y = rand() % size;
+        int val = (rand() % 20) - 10; // Slight variation
+        QColor pixel = image.pixelColor(x, y);
+        
+        int r = qBound(0, pixel.red() + val, 255);
+        int g = qBound(0, pixel.green() + val, 255);
+        int b = qBound(0, pixel.blue() + val, 255);
+        
+        image.setPixelColor(x, y, QColor(r, g, b));
+    }
+
+    return image;
+}
 
 SimuladorGLWidget::SimuladorGLWidget (QWidget* parent) : QOpenGLWidget(parent)
 {
@@ -45,25 +83,16 @@ void SimuladorGLWidget::initializeGL ()
   iniEscena ();
   iniCamera ();
   
-  // Load floor texture
-  QImage floorImage("./textures/warehouse_floor.png");
+  // Load floor texture from image file
+  std::cout << "Loading floor texture from image...\n";
+  QImage floorImage("./textures/warehouse_floor.jpg");
+  
   if (floorImage.isNull()) {
-    std::cout << "Warning: Could not load floor texture, creating procedural texture\n";
-    // Create a simple procedural concrete texture
-    floorImage = QImage(512, 512, QImage::Format_RGB888);
-    for (int y = 0; y < 512; y++) {
-      for (int x = 0; x < 512; x++) {
-        // Create concrete-like pattern with grid lines
-        int baseColor = 180 + (qrand() % 20); // Gray with noise
-        
-        // Add grid lines every 64 pixels (warehouse tiles)
-        if (x % 64 < 2 || y % 64 < 2) {
-          baseColor = 140; // Darker lines
-        }
-        
-        floorImage.setPixel(x, y, qRgb(baseColor, baseColor, baseColor));
-      }
-    }
+    std::cout << "ERROR: Could not load floor image!\n";
+    floorImage = generateIndustrialFloor(512);
+  } else {
+    std::cout << "Successfully loaded floor texture image (" 
+              << floorImage.width() << "x" << floorImage.height() << ")\n";
   }
   
   // Convert to OpenGL format
@@ -77,16 +106,16 @@ void SimuladorGLWidget::initializeGL ()
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, glFormattedImage.width(), glFormattedImage.height(),
                0, GL_RGBA, GL_UNSIGNED_BYTE, glFormattedImage.bits());
   
-  // Set texture parameters
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  // Set texture parameters - clamp to edge to avoid repeating
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   
   // Generate mipmaps
   glGenerateMipmap(GL_TEXTURE_2D);
   
-  std::cout << "Floor texture loaded successfully\n";
+  std::cout << "Floor texture ready (" << glFormattedImage.width() << "x" << glFormattedImage.height() << ")\n";
   
   // Load warehouse layout
   loadWarehouse("warehouse_layout.json");
@@ -798,10 +827,10 @@ void SimuladorGLWidget::creaBuffersTerra ()
 
   // VBO amb les coordenades de textura
   glm::vec2 texterra[] = {
-	glm::vec2(0.0, 3.0),  // Repeat texture 3 times
-	glm::vec2(3.0, 3.0),
+	glm::vec2(0.0, 1.0),  // Use texture once without repeating
+	glm::vec2(1.0, 1.0),
 	glm::vec2(0.0, 0.0),
-	glm::vec2(3.0, 0.0),
+	glm::vec2(1.0, 0.0),
   };
 
   // VBO amb la normal de cada vèrtex
@@ -909,15 +938,21 @@ void SimuladorGLWidget::carregaShaders()
   QOpenGLShader fs (QOpenGLShader::Fragment, this);
   QOpenGLShader vs (QOpenGLShader::Vertex, this);
   // Carreguem el codi dels fitxers i els compilem
-  fs.compileSourceFile("./shaders/basicLlumShader.frag");
-  vs.compileSourceFile("./shaders/basicLlumShader.vert");
+  if (!fs.compileSourceFile("./shaders/basicLlumShader.frag")) {
+    std::cout << "ERROR: Fragment shader compilation failed:\n" << fs.log().toStdString() << std::endl;
+  }
+  if (!vs.compileSourceFile("./shaders/basicLlumShader.vert")) {
+    std::cout << "ERROR: Vertex shader compilation failed:\n" << vs.log().toStdString() << std::endl;
+  }
   // Creem el program
   program = new QOpenGLShaderProgram(this);
   // Li afegim els shaders corresponents
   program->addShader(&fs);
   program->addShader(&vs);
   // Linkem el program
-  program->link();
+  if (!program->link()) {
+    std::cout << "ERROR: Shader program linking failed:\n" << program->log().toStdString() << std::endl;
+  }
   // Indiquem que aquest és el program que volem usar
   program->bind();
 

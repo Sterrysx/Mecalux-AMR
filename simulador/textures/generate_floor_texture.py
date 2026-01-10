@@ -8,61 +8,70 @@ import math
 
 def generate_warehouse_floor(size=512, tile_size=64):
     """
-    Generate a warehouse floor texture
+    Generate a warehouse floor texture with tiled concrete
     
     Args:
         size: Image size (square)
-        tile_size: Size of each floor tile in pixels
+        tile_size: Size of each concrete tile in pixels
     """
     # Create base concrete color with noise
     img = Image.new('RGB', (size, size))
     pixels = img.load()
     
-    # Generate concrete texture with noise
-    for y in range(size):
-        for x in range(size):
-            # Base concrete gray color
-            base_color = 160
+    # Generate concrete texture with varied noise per tile
+    for tile_y in range(0, size, tile_size):
+        for tile_x in range(0, size, tile_size):
+            # Each tile has its own random seed for variation
+            tile_base = random.randint(150, 170)
             
-            # Add random noise for concrete texture
-            noise = random.randint(-15, 15)
-            
-            # Add subtle pattern based on position
-            pattern = int(10 * math.sin(x * 0.1) * math.sin(y * 0.1))
-            
-            # Combine
-            color = max(0, min(255, base_color + noise + pattern))
-            
-            # Make it slightly warmer (add a bit of brown)
-            r = min(255, color + 5)
-            g = color
-            b = max(0, color - 5)
-            
-            pixels[x, y] = (r, g, b)
+            # Fill the tile
+            for y in range(tile_y, min(tile_y + tile_size, size)):
+                for x in range(tile_x, min(tile_x + tile_size, size)):
+                    # Add noise within the tile
+                    noise = random.randint(-20, 20)
+                    
+                    # Add subtle diagonal pattern
+                    pattern = int(5 * math.sin((x - tile_x) * 0.2) * math.cos((y - tile_y) * 0.2))
+                    
+                    # Combine
+                    color = max(100, min(255, tile_base + noise + pattern))
+                    
+                    # Slightly warm gray (concrete)
+                    r = min(255, color + 3)
+                    g = color
+                    b = max(0, color - 3)
+                    
+                    pixels[x, y] = (r, g, b)
     
-    # Add grid lines (warehouse floor tiles)
+    # Add grout lines between tiles
     draw = ImageDraw.Draw(img)
     
-    # Draw vertical and horizontal lines
+    # Draw grout lines (darker gray)
+    grout_color = (90, 90, 90)
     for i in range(0, size, tile_size):
-        # Vertical lines
-        draw.line([(i, 0), (i, size)], fill=(100, 100, 100), width=2)
-        # Horizontal lines
-        draw.line([(0, i), (size, i)], fill=(100, 100, 100), width=2)
+        # Vertical grout lines
+        draw.line([(i, 0), (i, size)], fill=grout_color, width=3)
+        draw.line([(i+1, 0), (i+1, size)], fill=(100, 100, 100), width=1)
+        # Horizontal grout lines
+        draw.line([(0, i), (size, i)], fill=grout_color, width=3)
+        draw.line([(0, i+1), (size, i+1)], fill=(100, 100, 100), width=1)
     
-    # Add thicker lines every 4 tiles (warehouse sections)
-    section_size = tile_size * 4
-    for i in range(0, size, section_size):
-        draw.line([(i, 0), (i, size)], fill=(80, 80, 80), width=4)
-        draw.line([(0, i), (size, i)], fill=(80, 80, 80), width=4)
-    
-    # Add some wear and tear (darker spots)
-    for _ in range(20):
+    # Add some concrete imperfections (small cracks, spots)
+    for _ in range(30):
         x = random.randint(0, size-1)
         y = random.randint(0, size-1)
-        radius = random.randint(5, 20)
+        radius = random.randint(2, 8)
+        darkness = random.randint(110, 140)
         draw.ellipse([x-radius, y-radius, x+radius, y+radius], 
-                     fill=(120, 120, 120), outline=None)
+                     fill=(darkness, darkness, darkness), outline=None)
+    
+    # Add thin random cracks in some tiles
+    for _ in range(10):
+        x1 = random.randint(0, size)
+        y1 = random.randint(0, size)
+        x2 = x1 + random.randint(-20, 20)
+        y2 = y1 + random.randint(-20, 20)
+        draw.line([(x1, y1), (x2, y2)], fill=(110, 110, 110), width=1)
     
     return img
 
