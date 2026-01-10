@@ -1,7 +1,7 @@
 // High-performance Canvas renderer for warehouse map, robots, tasks, and POIs
 import { useEffect, useRef, useState } from 'react';
 import { useFleetStore } from '../stores/fleetStore';
-import { RobotState, POI, Task } from '../services/FleetAPI';
+import { RobotState, POI, Task, ChargingStationInfo } from '../services/FleetAPI';
 
 interface WarehouseCanvasProps {
   width?: number;
@@ -25,7 +25,7 @@ const COLORS = {
   walkable: '#ffffff',
   obstacle: '#9ca3af',
   restricted: '#7b1113',
-  
+
   // Robot states
   robotIdle: '#94a3b8',
   robotMoving: '#3db86b',
@@ -33,18 +33,18 @@ const COLORS = {
   robotCharging: '#1e90ff',
   robotCollisionWait: '#ffa500',
   robotError: '#e04e4e',
-  
+
   // POI types
   poiCharging: '#1e90ff',
   poiPickup: '#3db86b',
   poiDropoff: '#e04e4e',
-  
+
   // Tasks
   taskPending: '#cbd5e1',
   taskAssigned: '#fbbf24',
   taskInProgress: '#3db86b',
   taskCompleted: '#10b981',
-  
+
   // UI
   text: '#1e293b',
   textLight: '#64748b'
@@ -56,12 +56,14 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  
+
   // Get data from store
   const robots = useFleetStore(state => Array.from(state.robots.values()));
   const tasks = useFleetStore(state => Array.from(state.tasks.values()));
   const pois = useFleetStore(state => state.pois);
   const dynamicObstacles = useFleetStore(state => state.dynamicObstacles);
+  const chargingStations = useFleetStore(state => state.chargingStations);
+  const taskStats = useFleetStore(state => state.taskStats);
 
   // Calculate scale to fit map
   useEffect(() => {
@@ -92,16 +94,19 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
 
       // Draw grid
       drawGrid(ctx);
-      
-      // Draw POIs
+
+      // Draw charging stations (always visible, from robots.json)
+      drawChargingStations(ctx, chargingStations);
+
+      // Draw POIs (pickup/dropoff points)
       drawPOIs(ctx, pois);
-      
+
       // Draw tasks
       drawTasks(ctx, tasks, pois);
-      
+
       // Draw dynamic obstacles
       drawObstacles(ctx, dynamicObstacles);
-      
+
       // Draw robots
       drawRobots(ctx, robots);
 
@@ -115,7 +120,7 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [robots, tasks, pois, dynamicObstacles, scale, offset, width, height]);
+  }, [robots, tasks, pois, dynamicObstacles, chargingStations, taskStats, scale, offset, width, height]);
 
   // Drawing functions
   const drawGrid = (ctx: CanvasRenderingContext2D) => {
@@ -140,10 +145,9 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
   };
 
   const drawPOIs = (ctx: CanvasRenderingContext2D, pois: POI[]) => {
-    pois.forEach(poi => {
-      const color = poi.type === 'CHARGING' ? COLORS.poiCharging :
-                    poi.type === 'PICKUP' ? COLORS.poiPickup :
-                    COLORS.poiDropoff;
+    // Only draw PICKUP and DROPOFF points - charging stations are handled separately
+    pois.filter(poi => poi.type !== 'CHARGING').forEach(poi => {
+      const color = poi.type === 'PICKUP' ? COLORS.poiPickup : COLORS.poiDropoff;
 
       // Draw circle
       ctx.fillStyle = color;
@@ -159,6 +163,62 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
     });
   };
 
+  // Draw charging stations from robots.json (always visible)
+  const drawChargingStations = (ctx: CanvasRenderingContext2D, stations: ChargingStationInfo[]) => {
+    stations.forEach(station => {
+      const x = station.x;
+      const y = station.y;
+      const isOccupied = station.status === 'OCCUPIED';
+
+      // Draw station base (rounded rectangle)
+      const baseSize = 12;
+      ctx.fillStyle = isOccupied ? '#22c55e' : '#3b82f6';  // Green if occupied, Blue if available
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+
+      // Rounded rectangle
+      ctx.beginPath();
+      const radius = 3;
+      ctx.moveTo(x - baseSize / 2 + radius, y - baseSize / 2);
+      ctx.lineTo(x + baseSize / 2 - radius, y - baseSize / 2);
+      ctx.quadraticCurveTo(x + baseSize / 2, y - baseSize / 2, x + baseSize / 2, y - baseSize / 2 + radius);
+      ctx.lineTo(x + baseSize / 2, y + baseSize / 2 - radius);
+      ctx.quadraticCurveTo(x + baseSize / 2, y + baseSize / 2, x + baseSize / 2 - radius, y + baseSize / 2);
+      ctx.lineTo(x - baseSize / 2 + radius, y + baseSize / 2);
+      ctx.quadraticCurveTo(x - baseSize / 2, y + baseSize / 2, x - baseSize / 2, y + baseSize / 2 - radius);
+      ctx.lineTo(x - baseSize / 2, y - baseSize / 2 + radius);
+      ctx.quadraticCurveTo(x - baseSize / 2, y - baseSize / 2, x - baseSize / 2 + radius, y - baseSize / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw lightning bolt icon
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(x + 2, y - 4);
+      ctx.lineTo(x - 2, y);
+      ctx.lineTo(x + 1, y);
+      ctx.lineTo(x - 2, y + 4);
+      ctx.lineTo(x + 2, y);
+      ctx.lineTo(x - 1, y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw station ID label
+      ctx.fillStyle = COLORS.text;
+      ctx.font = 'bold 8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`C${station.id}`, x, y - baseSize / 2 - 4);
+
+      // If occupied, show robot ID
+      if (isOccupied && station.robot !== null) {
+        ctx.fillStyle = '#16a34a';
+        ctx.font = '7px sans-serif';
+        ctx.fillText(`R${station.robot}`, x, y + baseSize / 2 + 8);
+      }
+    });
+  };
+
   const drawTasks = (ctx: CanvasRenderingContext2D, tasks: Task[], pois: POI[]) => {
     tasks.forEach(task => {
       // Find source and destination POIs
@@ -169,9 +229,9 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
 
       // Color based on status
       const color = task.status === 'PENDING' ? COLORS.taskPending :
-                    task.status === 'ASSIGNED' ? COLORS.taskAssigned :
-                    task.status === 'IN_PROGRESS' ? COLORS.taskInProgress :
-                    COLORS.taskCompleted;
+        task.status === 'ASSIGNED' ? COLORS.taskAssigned :
+          task.status === 'IN_PROGRESS' ? COLORS.taskInProgress :
+            COLORS.taskCompleted;
 
       // Draw line
       ctx.strokeStyle = color;
@@ -200,10 +260,10 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
     robots.forEach(robot => {
       // Color based on state
       const color = robot.state === 'IDLE' ? COLORS.robotIdle :
-                    robot.state === 'MOVING' ? COLORS.robotMoving :
-                    robot.state === 'CARRYING' ? COLORS.robotCarrying :
-                    robot.state === 'COLLISION_WAIT' ? COLORS.robotCollisionWait :
-                    COLORS.robotError;
+        robot.state === 'MOVING' ? COLORS.robotMoving :
+          robot.state === 'CARRYING' ? COLORS.robotCarrying :
+            robot.state === 'COLLISION_WAIT' ? COLORS.robotCollisionWait :
+              COLORS.robotError;
 
       // Draw robot body
       ctx.fillStyle = color;
@@ -296,7 +356,7 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
       />
-      
+
       {/* Legend */}
       <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-lg text-xs">
         <div className="font-semibold mb-2">Legend</div>
@@ -310,8 +370,12 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
             <span>Idle</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.robotCharging }}></div>
-            <span>Charging</span>
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#3b82f6' }}></div>
+            <span>Charging Station (Free)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: '#22c55e' }}></div>
+            <span>Charging Station (Occupied)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.poiPickup }}></div>
@@ -326,10 +390,13 @@ export default function WarehouseCanvas({ width = 1200, height = 600, className 
           Scroll to zoom • Drag to pan
         </div>
       </div>
-      
-      {/* FPS counter */}
+
+      {/* FPS counter and task stats */}
       <div className="absolute bottom-4 right-4 bg-black/70 text-white px-2 py-1 rounded text-xs font-mono">
-        {robots.length} robots • {tasks.length} tasks
+        {robots.length} robots • {chargingStations.length} stations
+        {taskStats && (
+          <span> • {taskStats.active} active / {taskStats.completed} done</span>
+        )}
       </div>
     </div>
   );
