@@ -3,57 +3,216 @@
   "objects": [
     {
       "modelIndex": 0,
-      "center": [10, 0, 3],
+      "center": [2, 0, 2],
       "dimensions": [2.0, 1.0, 5.0],
-      "rotation": 0.0
+      "rotation": 90
+    },
+    {
+      "modelIndex": 0,
+      "center": [2, 0, 5],
+      "dimensions": [2.0, 1.0, 5.0],
+      "rotation": 90
+    },
+    {
+      "modelIndex": 0,
+      "center": [2, 0, 8],
+      "dimensions": [2.0, 1.0, 5.0],
+      "rotation": 90
+    },
+    {
+      "modelIndex": 0,
+      "center": [2, 0, 28],
+      "dimensions": [2.0, 1.0, 5.0],
+      "rotation": 90
+    },
+    {
+      "modelIndex": 0,
+      "center": [2, 0, 25],
+      "dimensions": [2.0, 1.0, 5.0],
+      "rotation": 90
+    },
+    {
+      "modelIndex": 0,
+      "center": [2, 0, 22],
+      "dimensions": [2.0, 1.0, 5.0],
+      "rotation": 90
     },
     {
       "modelIndex": 3,
       "center": [15.0, 0.0, 10.0],
       "dimensions": [2, 4, 5.0],
-      "rotation": 45.0
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [15.0, 0.0, 15.0],
+      "dimensions": [2, 4, 5.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [21.0, 0.0, 15.0],
+      "dimensions": [2, 4, 5.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [15.0, 0.0, 20.0],
+      "dimensions": [2, 4, 5.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [21.0, 0.0, 20.0],
+      "dimensions": [2, 4, 5.0],
+      "rotation": 90.0
+    },    {
+      "modelIndex": 3,
+      "center": [15.0, 0.0, 5.0],
+      "dimensions": [2, 4, 5.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 3,
+      "center": [21.0, 0.0, 5.0],
+      "dimensions": [2, 4, 5.0],
+      "rotation": 90.0
     },
     {
       "modelIndex": 4,
-      "center": [20.0, 0.0, 10.0],
-      "dimensions": [2, 4, 5.0],
-      "rotation": 0.0
+      "center": [21.0, 0.0, 10.0],
+      "dimensions": [2, 3.3, 5.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 4,
+      "center": [15.0, 0.0, 1.0],
+      "dimensions": [2, 3.3, 5.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 4,
+      "center": [21.0, 0.0, 1.0],
+      "dimensions": [2, 3.3, 5.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 4,
+      "center": [15.0, 0.0, 25.0],
+      "dimensions": [2, 3.3, 5.0],
+      "rotation": 90.0
+    },
+    {
+      "modelIndex": 4,
+      "center": [21.0, 0.0, 25.0],
+      "dimensions": [2, 3.3, 5.0],
+      "rotation": 90.0
     },
     {
       "modelIndex": 5,
-      "center": [25.0, 0.0, 15.0],
+      "center": [2.0, 0.0, 12.0],
       "dimensions": [0.5, 1, 2.5],
-      "rotation": 0.0
+      "rotation": 270.0
     }
   ],
   "pickingZones": [
     {
       "type": "PICKUP",
-      "center": [10.0, 0.0, 6.0],
+      "center": [6.0, 0.0, 2.0],
       "dimensions": [1.0, 0.0, 1.0],
-      "rotation": 0.0,
+      "rotation": 90,
+      "description": "Conveyor belt pickup area"
+    },
+    {
+      "type": "PICKUP",
+      "center": [6.0, 0.0, 5.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90,
+      "description": "Conveyor belt pickup area"
+    },   
+    {
+      "type": "PICKUP",
+      "center": [6.0, 0.0, 8.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90,
+      "description": "Conveyor belt pickup area"
+    },
+        {
+      "type": "PICKUP",
+      "center": [6.0, 0.0, 22.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90,
+      "description": "Conveyor belt pickup area"
+    },
+    {
+      "type": "PICKUP",
+      "center": [6.0, 0.0, 25.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90,
+      "description": "Conveyor belt pickup area"
+    },   
+    {
+      "type": "PICKUP",
+      "center": [6.0, 0.0, 28.0],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90,
       "description": "Conveyor belt pickup area"
     },
     {
       "type": "DROPOFF",
-      "center": [15.0, 0.0, 13.0],
+      "center": [15.0, 0.0, 12.5],
       "dimensions": [1.0, 0.0, 1.0],
-      "rotation": 45.0,
+      "rotation": 90.0,
+      "description": "Shelf dropoff zone"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [15.0, 0.0, 17.5],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90.0,
       "description": "Shelf dropoff zone"
     },
     {
       "type": "PICKUP",
-      "center": [8.0, 0.0, 20.0],
-      "dimensions": [3.0, 0.0, 2.0],
-      "rotation": 0.0,
-      "description": "Secondary pickup station"
+      "center": [21.0, 0.0, 17.5],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90.0,
+      "description": "Shelf dropoff zone"
     },
     {
       "type": "DROPOFF",
-      "center": [22.0, 0.0, 25.0],
+      "center": [21.0, 0.0, 12.5],
       "dimensions": [1.0, 0.0, 1.0],
-      "rotation": 0.0,
-      "description": "Final delivery zone"
+      "rotation": 90.0,
+      "description": "Shelf dropoff zone"
+    },    
+    {
+      "type": "DROPOFF",
+      "center": [15.0, 0.0, 22.5],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90.0,
+      "description": "Shelf dropoff zone"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [21.0, 0.0, 22.5],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90.0,
+      "description": "Shelf dropoff zone"
+    },
+   {
+      "type": "PICKUP",
+      "center": [15.0, 0.0, 7.5],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90.0,
+      "description": "Shelf dropoff zone"
+    },
+    {
+      "type": "DROPOFF",
+      "center": [21.0, 0.0, 7.5],
+      "dimensions": [1.0, 0.0, 1.0],
+      "rotation": 90.0,
+      "description": "Shelf dropoff zone"
     }
   ]
 }

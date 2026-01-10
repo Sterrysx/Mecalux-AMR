@@ -192,6 +192,6 @@ bool TelemetryReader::parseOrcaFile(const QString& filepath)
         currentRobots_[robot.id] = robot;
     }
     
-    qDebug() << "Parsed tick" << tick << "with" << currentRobots_.size() << "robots";
+    //qDebug() << "Parsed tick" << tick << "with" << currentRobots_.size() << "robots";
     return true;
 }
