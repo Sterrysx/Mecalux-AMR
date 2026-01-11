@@ -383,6 +383,12 @@ public:
     std::vector<int> GetDropoffNodes() const;
     
     /**
+     * @brief Get all charging station node IDs.
+     * @return Vector of NavMesh node IDs that are charging stations
+     */
+    std::vector<int> GetChargingNodes() const;
+    
+    /**
      * @brief Get the batch threshold for scheduling decisions.
      * @return Threshold value (tasks <= threshold use cheap insertion)
      */

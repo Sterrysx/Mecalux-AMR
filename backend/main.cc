@@ -294,11 +294,13 @@ int main(int argc, char* argv[]) {
         // CLI MODE: Interactive command line interface for live task injection
         std::cout << "\n[CLI] ═══════════════ INTERACTIVE CLI MODE ═══════════════\n";
         std::cout << "[CLI] Available commands:\n";
-        std::cout << "       inject <N>  - Inject N random tasks (≤5 = Cheap Insertion, >5 = Background Re-plan)\n";
-        std::cout << "       status      - Show robot states and queue info\n";
-        std::cout << "       stats       - Show system statistics\n";
-        std::cout << "       help        - Show this help message\n";
-        std::cout << "       quit        - Stop the system and exit\n";
+        std::cout << "       inject <N>         - Inject N random tasks\n";
+        std::cout << "       inject <N> <x> <y> - Inject N tasks from node x to node y\n";
+        std::cout << "       nodes              - Show all POI nodes (pickup/dropoff/charging)\n";
+        std::cout << "       status             - Show robot states and queue info\n";
+        std::cout << "       stats              - Show system statistics\n";
+        std::cout << "       help               - Show this help message\n";
+        std::cout << "       quit               - Stop the system and exit\n";
         std::cout << "\n[CLI] Threshold: ≤5 tasks triggers Cheap Insertion, >5 triggers Background Re-plan\n";
         std::cout << "\n";
         
@@ -343,40 +345,82 @@ int main(int argc, char* argv[]) {
                 
             } else if (cmd == "help" || cmd == "h" || cmd == "?") {
                 std::cout << "\n[CLI] Available commands:\n";
-                std::cout << "       inject <N>  - Inject N random tasks\n";
-                std::cout << "                     (≤5 = Cheap Insertion, >5 = Background Re-plan)\n";
-                std::cout << "       status      - Show robot states and queue info\n";
-                std::cout << "       stats       - Show system statistics\n";
-                std::cout << "       help        - Show this help message\n";
-                std::cout << "       quit        - Stop the system and exit\n\n";
+                std::cout << "       inject <N>         - Inject N random tasks\n";
+                std::cout << "       inject <N> <x> <y> - Inject N tasks from node x to node y\n";
+                std::cout << "                           (≤5 = Cheap Insertion, >5 = Background Re-plan)\n";
+                std::cout << "       nodes              - Show all POI nodes (pickup/dropoff/charging)\n";
+                std::cout << "       status             - Show robot states and queue info\n";
+                std::cout << "       stats              - Show system statistics\n";
+                std::cout << "       help               - Show this help message\n";
+                std::cout << "       quit               - Stop the system and exit\n\n";
                 
             } else if (cmd == "inject") {
                 int count = 0;
+                int sourceNode = -1;
+                int destNode = -1;
+                
                 if (iss >> count && count > 0) {
-                    std::cout << "\n[CLI] Injecting " << count << " random tasks...\n";
-                    
-                    // Announce which strategy will be used
-                    if (count <= 5) {
-                        std::cout << "[CLI] Strategy: CHEAP INSERTION (≤5 tasks)\n";
+                    // Check if source and destination nodes are also provided
+                    if (iss >> sourceNode >> destNode) {
+                        // inject N x y - specific source and destination
+                        std::cout << "\n[CLI] Injecting " << count << " tasks from node " << sourceNode << " to node " << destNode << "...\n";
+                        
+                        // Announce which strategy will be used
+                        if (count <= 5) {
+                            std::cout << "[CLI] Strategy: CHEAP INSERTION (≤5 tasks)\n";
+                        } else {
+                            std::cout << "[CLI] Strategy: BACKGROUND RE-PLAN (>5 tasks)\n";
+                        }
+                        
+                        // Create tasks with specified source and destination
+                        std::vector<Backend::Layer2::Task> tasks;
+                        for (int i = 0; i < count; ++i) {
+                            Backend::Layer2::Task t;
+                            t.taskId = taskIdCounter + i;
+                            t.sourceNode = sourceNode;
+                            t.destinationNode = destNode;
+                            tasks.push_back(t);
+                        }
+                        taskIdCounter += count;
+                        
+                        // Print task details
+                        std::cout << "[CLI] Generated tasks:\n";
+                        for (const auto& t : tasks) {
+                            std::cout << "       Task " << t.taskId << ": pickup=" << t.sourceNode 
+                                      << " -> dropoff=" << t.destinationNode << "\n";
+                        }
+                        
+                        manager.InjectTasks(tasks);
+                        std::cout << "[CLI] Tasks injected successfully!\n\n";
+                        
                     } else {
-                        std::cout << "[CLI] Strategy: BACKGROUND RE-PLAN (>5 tasks)\n";
+                        // inject N - random source and destination
+                        std::cout << "\n[CLI] Injecting " << count << " random tasks...\n";
+                        
+                        // Announce which strategy will be used
+                        if (count <= 5) {
+                            std::cout << "[CLI] Strategy: CHEAP INSERTION (≤5 tasks)\n";
+                        } else {
+                            std::cout << "[CLI] Strategy: BACKGROUND RE-PLAN (>5 tasks)\n";
+                        }
+                        
+                        auto tasks = createRandomTasks(count, taskIdCounter, pickupNodes, dropoffNodes);
+                        taskIdCounter += count;
+                        
+                        // Print task details
+                        std::cout << "[CLI] Generated tasks:\n";
+                        for (const auto& t : tasks) {
+                            std::cout << "       Task " << t.taskId << ": pickup=" << t.sourceNode 
+                                      << " -> dropoff=" << t.destinationNode << "\n";
+                        }
+                        
+                        manager.InjectTasks(tasks);
+                        std::cout << "[CLI] Tasks injected successfully!\n\n";
                     }
-                    
-                    auto tasks = createRandomTasks(count, taskIdCounter, pickupNodes, dropoffNodes);
-                    taskIdCounter += count;
-                    
-                    // Print task details
-                    std::cout << "[CLI] Generated tasks:\n";
-                    for (const auto& t : tasks) {
-                        std::cout << "       Task " << t.taskId << ": pickup=" << t.sourceNode 
-                                  << " -> dropoff=" << t.destinationNode << "\n";
-                    }
-                    
-                    manager.InjectTasks(tasks);
-                    std::cout << "[CLI] Tasks injected successfully!\n\n";
-                    
                 } else {
-                    std::cout << "[CLI] Usage: inject <N> where N is a positive integer\n";
+                    std::cout << "[CLI] Usage: inject <N> [source] [dest]\n";
+                    std::cout << "       inject <N>           - Inject N tasks with random source/dest\n";
+                    std::cout << "       inject <N> <x> <y>   - Inject N tasks from node x to node y\n";
                 }
                 
             } else if (cmd == "status") {
@@ -393,6 +437,37 @@ int main(int argc, char* argv[]) {
                 std::cout << "[CLI] Tasks completed: " << stats.completedTasks 
                           << " / " << stats.totalTasks << "\n";
                 std::cout << "[CLI] Dynamic tasks injected: " << (taskIdCounter - 1000) << "\n\n";
+                
+            } else if (cmd == "nodes") {
+                std::cout << "\n[CLI] ═══════════════ POI NODES ═══════════════\n";
+                
+                // Get charging nodes
+                std::vector<int> chargingNodes = manager.GetChargingNodes();
+                std::cout << "\n[CLI] CHARGING STATIONS (" << chargingNodes.size() << " nodes):\n";
+                for (size_t i = 0; i < chargingNodes.size(); ++i) {
+                    std::cout << "       Node " << chargingNodes[i];
+                    if (i < chargingNodes.size() - 1) std::cout << ",";
+                    if ((i + 1) % 8 == 0) std::cout << "\n";  // Line break every 8 nodes
+                }
+                std::cout << "\n";
+                
+                // Pickup nodes (source/sortida)
+                std::cout << "\n[CLI] PICKUP NODES - Source/Sortida (" << pickupNodes.size() << " nodes):\n";
+                for (size_t i = 0; i < pickupNodes.size(); ++i) {
+                    std::cout << "       Node " << pickupNodes[i];
+                    if (i < pickupNodes.size() - 1) std::cout << ",";
+                    if ((i + 1) % 8 == 0) std::cout << "\n";
+                }
+                std::cout << "\n";
+                
+                // Dropoff nodes (destination/arribada)
+                std::cout << "\n[CLI] DROPOFF NODES - Destination/Arribada (" << dropoffNodes.size() << " nodes):\n";
+                for (size_t i = 0; i < dropoffNodes.size(); ++i) {
+                    std::cout << "       Node " << dropoffNodes[i];
+                    if (i < dropoffNodes.size() - 1) std::cout << ",";
+                    if ((i + 1) % 8 == 0) std::cout << "\n";
+                }
+                std::cout << "\n\n";
                 
             } else if (!cmd.empty()) {
                 std::cout << "[CLI] Unknown command: '" << cmd << "'. Type 'help' for commands.\n";

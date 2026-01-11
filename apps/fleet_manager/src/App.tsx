@@ -234,6 +234,10 @@ function App() {
     if (line.includes('amr>')) {
       return { icon: '💻', color: 'text-gray-300', bg: darkMode ? 'bg-zinc-800/50' : 'bg-gray-50', border: 'border-l-4 border-gray-500' };
     }
+    // Help command lines - indented lines starting with spaces (command descriptions)
+    if (line.match(/^\s{3,}\w/) || line.includes('inject <N>') || line.includes('Available commands')) {
+      return { icon: '📖', color: 'text-cyan-400', bg: darkMode ? 'bg-cyan-900/10' : 'bg-cyan-50', border: 'border-l-4 border-cyan-500' };
+    }
     return { icon: '•', color: 'text-gray-400', bg: 'transparent', border: 'border-l-4 border-transparent' };
   };
 
@@ -339,9 +343,12 @@ function App() {
                 console.log('[DEBUG] Updating stats from', prev.stats.completedTasks, '/', prev.stats.totalTasks, 'to', newCompletedTasks, '/', newTotalTasks);
               }
 
+              // Split multi-line output into individual lines for proper formatting
+              const lines = message.data.split('\n').filter((line: string) => line.trim() !== '');
+
               return {
                 ...prev,
-                output: [...prev.output, message.data],
+                output: [...prev.output, ...lines],
                 stats: {
                   ...prev.stats,
                   completedTasks: newCompletedTasks,
@@ -1002,6 +1009,7 @@ function App() {
                         {state.output.map((line, i) => {
                           const style = getMessageStyle(line);
                           const isTableLine = line.includes('╔') || line.includes('║') || line.includes('╚') || line.includes('═') || line.includes('╠') || line.includes('╣');
+                          const isHelpLine = line.match(/^\s{3,}\w/) || line.includes('inject <N>') || line.includes('Available commands');
 
                           if (isTableLine) {
                             return (
@@ -1014,7 +1022,7 @@ function App() {
                           return (
                             <div key={i} className={`${style.bg} ${style.border} rounded-lg px-4 py-2 font-mono text-xs flex items-start gap-3 transition-all hover:scale-[1.01]`}>
                               <span className="text-lg leading-none mt-0.5">{style.icon}</span>
-                              <span className={`${style.color} flex-1 break-all`}>{line}</span>
+                              <span className={`${style.color} flex-1 ${isHelpLine ? 'whitespace-pre-wrap' : 'break-all'}`}>{line}</span>
                             </div>
                           );
                         })}

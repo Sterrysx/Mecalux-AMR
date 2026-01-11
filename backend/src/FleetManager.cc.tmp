@@ -60,7 +60,7 @@ SystemConfig SystemConfig::LoadFromJSON(const std::string& filepath) {
     config.robotRadiusMeters = parseFloat("robot_radius_meters", 0.3f);
     config.poiConfigPath = parseString("poi_config_path", "layer1/assets/poi_config.json");
     
-    std::cout << "[FleetManager] Loaded config from: " << filepath << "\n";
+    std::cerr << "[FleetManager] Loaded config from: " << filepath << "\n";
     
     return config;
 }
@@ -110,7 +110,7 @@ FleetManager::FleetManager(const SystemConfig& config, const std::string& basePa
     if (std::filesystem::exists(robotsJsonPath, ec)) {
         std::filesystem::remove(robotsJsonPath, ec);
         if (!ec) {
-            std::cout << "[FleetManager] Cleared previous robots.json for fresh start\n";
+            std::cerr << "[FleetManager] Cleared previous robots.json for fresh start\n";
         }
     }
 }
@@ -155,13 +155,13 @@ bool FleetManager::Initialize() {
     // Create robots
     createRobots();
     
-    std::cout << "[FleetManager] System initialized successfully!\n";
+    std::cerr << "[FleetManager] System initialized successfully!\n";
     return true;
 }
 
 void FleetManager::Start() {
     if (running_.load()) {
-        std::cout << "[FleetManager] Already running!\n";
+        std::cerr << "[FleetManager] Already running!\n";
         return;
     }
     
@@ -175,7 +175,7 @@ void FleetManager::Start() {
     fleetThread_ = std::thread(&FleetManager::runFleetLoop, this);
     obstacleThread_ = std::thread(&FleetManager::runObstacleLoop, this);
     
-    std::cout << "[FleetManager] All threads started:\n";
+    std::cerr << "[FleetManager] All threads started:\n";
     std::cout << "  - Main Thread (Strategic Loop): 1 Hz\n";
     std::cout << "  - Fleet Thread (Physics Loop): 20 Hz\n";
     std::cout << "  - Obstacle Thread (Map Loop): 1 Hz\n";
@@ -207,7 +207,7 @@ void FleetManager::Stop() {
     // Cleanup Layer 3 service
     Layer3::Pathfinding::PathfindingService::DestroyInstance();
     
-    std::cout << "[FleetManager] All threads stopped.\n";
+    std::cerr << "[FleetManager] All threads stopped.\n";
     
     // Print final stats
     stats_.Print();
@@ -223,17 +223,17 @@ bool FleetManager::initializeLayer1() {
     try {
         // Load static map
         std::string mapPath = basePath_ + "/" + config_.mapPath;
-        std::cout << "[Layer 1] Loading map from: " << mapPath << "\n";
+        std::cerr << "[Layer 1] Loading map from: " << mapPath << "\n";
         
         staticMap_ = std::make_unique<Layer1::StaticBitMap>(
             Layer1::StaticBitMap::CreateFromFile(mapPath, config_.mapResolution)
         );
         
         auto [width, height] = staticMap_->GetDimensions();
-        std::cout << "[Layer 1] Map size: " << width << "x" << height << " pixels\n";
+        std::cerr << "[Layer 1] Map size: " << width << "x" << height << " pixels\n";
         
         // Create inflated map
-        std::cout << "[Layer 1] Creating inflated map (robot radius: " 
+        std::cerr << "[Layer 1] Creating inflated map (robot radius: " 
                   << config_.robotRadiusMeters << "m)...\n";
         inflatedMap_ = std::make_unique<Layer1::InflatedBitMap>(
             *staticMap_, config_.robotRadiusMeters
@@ -243,21 +243,21 @@ bool FleetManager::initializeLayer1() {
         dynamicMap_ = std::make_unique<Layer1::DynamicBitMap>(*staticMap_);
         
         // Generate NavMesh
-        std::cout << "[Layer 1] Generating NavMesh...\n";
+        std::cerr << "[Layer 1] Generating NavMesh...\n";
         navMesh_ = std::make_unique<Layer1::NavMesh>();
         Layer1::NavMeshGenerator generator;
         generator.ComputeRecast(*inflatedMap_, *navMesh_);
         
-        std::cout << "[Layer 1] NavMesh: " << navMesh_->GetAllNodes().size() << " nodes\n";
+        std::cerr << "[Layer 1] NavMesh: " << navMesh_->GetAllNodes().size() << " nodes\n";
         
         // Load POI Registry
         std::string poiPath = basePath_ + "/" + config_.poiConfigPath;
-        std::cout << "[Layer 1] Loading POIs from: " << poiPath << "\n";
+        std::cerr << "[Layer 1] Loading POIs from: " << poiPath << "\n";
         
         poiRegistry_ = std::make_unique<Layer1::POIRegistry>();
         if (poiRegistry_->LoadFromJSON(poiPath)) {
             poiRegistry_->MapToNavMesh(*navMesh_);
-            std::cout << "[Layer 1] POIs loaded: " << poiRegistry_->GetPOICount() << " total\n";
+            std::cerr << "[Layer 1] POIs loaded: " << poiRegistry_->GetPOICount() << " total\n";
             std::cout << "          - Charging: " << poiRegistry_->GetNodesByType(Layer1::POIType::CHARGING).size() << "\n";
             std::cout << "          - Pickup:   " << poiRegistry_->GetNodesByType(Layer1::POIType::PICKUP).size() << "\n";
             std::cout << "          - Dropoff:  " << poiRegistry_->GetNodesByType(Layer1::POIType::DROPOFF).size() << "\n";
@@ -278,7 +278,7 @@ bool FleetManager::initializeLayer2() {
     
     try {
         // Create cost matrix provider
-        std::cout << "[Layer 2] Creating cost matrix provider...\n";
+        std::cerr << "[Layer 2] Creating cost matrix provider...\n";
         costMatrix_ = std::make_unique<Layer2::CostMatrixProvider>(*navMesh_);
         
         // Precompute costs for POI nodes
@@ -297,16 +297,16 @@ bool FleetManager::initializeLayer2() {
             }
             
             if (!poiNodes.empty()) {
-                std::cout << "[Layer 2] Precomputing costs for " << poiNodes.size() << " POI nodes...\n";
+                std::cerr << "[Layer 2] Precomputing costs for " << poiNodes.size() << " POI nodes...\n";
                 int computed = costMatrix_->PrecomputeForNodes(poiNodes);
-                std::cout << "[Layer 2] Computed " << computed << " node pairs\n";
+                std::cerr << "[Layer 2] Computed " << computed << " node pairs\n";
             }
         }
         
         // Create VRP solver (ALNS - Adaptive Large Neighborhood Search)
         // ALNS uses "Destroy and Repair" with Regret-2 insertion
         // Parameters: iterations=100, destruction=25%, seed=42
-        std::cout << "[Layer 2] Creating VRP solver (ALNS)...\n";
+        std::cerr << "[Layer 2] Creating VRP solver (ALNS)...\n";
         vrpSolver_ = std::make_unique<Layer2::ALNS>(100, 0.25, 42);
         
         return true;
@@ -322,11 +322,11 @@ bool FleetManager::initializeLayer3() {
     
     try {
         // Initialize pathfinding service
-        std::cout << "[Layer 3] Initializing PathfindingService...\n";
+        std::cerr << "[Layer 3] Initializing PathfindingService...\n";
         auto& pathService = Layer3::Pathfinding::PathfindingService::GetInstance();
         pathService.Initialize(*inflatedMap_);
         
-        std::cout << "[Layer 3] PathfindingService ready\n";
+        std::cerr << "[Layer 3] PathfindingService ready\n";
         
         return true;
         
@@ -349,7 +349,7 @@ void FleetManager::createRobots() {
     int numRobots = config_.numRobots;
     if (numRobots <= 0) {
         numRobots = static_cast<int>(chargingNodes.size());
-        std::cout << "[FleetManager] Auto-sizing fleet to " << numRobots 
+        std::cerr << "[FleetManager] Auto-sizing fleet to " << numRobots 
                   << " robots (matching charging stations)\n";
     }
     
@@ -369,7 +369,7 @@ void FleetManager::createRobots() {
         numRobots = static_cast<int>(chargingNodes.size());
     }
     
-    std::cout << "[FleetManager] Creating " << numRobots << " robots...\n";
+    std::cerr << "[FleetManager] Creating " << numRobots << " robots...\n";
     
     for (int i = 0; i < numRobots; ++i) {
         // Each robot gets its own unique charging station
@@ -412,7 +412,7 @@ void FleetManager::createRobots() {
         
         // Set goal reached callback
         driver->SetOnGoalReached([this](int robotId, int goalNode) {
-            std::cout << "[FleetManager] Robot " << robotId << " reached node " << goalNode << "\n";
+            std::cerr << "[FleetManager] Robot " << robotId << " reached node " << goalNode << "\n";
             
             // Track waypoints for task completion (2 waypoints = 1 task)
             totalWaypointsVisited_.fetch_add(1);
@@ -425,11 +425,11 @@ void FleetManager::createRobots() {
                     
                     if (poiRegistry_->NodeHasPOIType(goalNode, Layer1::POIType::PICKUP)) {
                         driver->SetHasPackage(true);
-                        std::cout << "[FleetManager] Robot " << robotId << " picked up package at node " << goalNode << "\n";
+                        std::cerr << "[FleetManager] Robot " << robotId << " picked up package at node " << goalNode << "\n";
                     }
                     else if (poiRegistry_->NodeHasPOIType(goalNode, Layer1::POIType::DROPOFF)) {
                         driver->SetHasPackage(false);
-                        std::cout << "[FleetManager] Robot " << robotId << " dropped off package at node " << goalNode << "\n";
+                        std::cerr << "[FleetManager] Robot " << robotId << " dropped off package at node " << goalNode << "\n";
                     }
                     // If it's a CHARGING station or intermediate waypoint, hasPackage stays the same
                 }
@@ -448,7 +448,7 @@ void FleetManager::createRobots() {
                   << ", Position=(" << startPos.x << "," << startPos.y << ")\n";
     }
     
-    std::cout << "[FleetManager] " << numRobots << " robots created\n";
+    std::cerr << "[FleetManager] " << numRobots << " robots created\n";
 }
 
 // =============================================================================
@@ -474,7 +474,7 @@ int FleetManager::LoadTasks(const std::string& filepath) {
         stats_.pendingTasks = static_cast<int>(tasks.size());
     }
     
-    std::cout << "[FleetManager] Loaded " << tasks.size() << " tasks\n";
+    std::cerr << "[FleetManager] Loaded " << tasks.size() << " tasks\n";
     return static_cast<int>(tasks.size());
 }
 
@@ -498,7 +498,7 @@ void FleetManager::InjectTasks(const std::vector<Layer2::Task>& tasks) {
         injectionQueue_.push(task);
     }
     
-    std::cout << "[FleetManager] Injected " << tasks.size() << " new tasks (queue size: " 
+    std::cerr << "[FleetManager] Injected " << tasks.size() << " new tasks (queue size: " 
               << injectionQueue_.size() << ")\n";
 }
 
@@ -511,7 +511,7 @@ void FleetManager::InjectTask(int sourceNodeId, int destNodeId) {
     std::lock_guard<std::mutex> lock(injectionMutex_);
     injectionQueue_.push(task);
     
-    std::cout << "[FleetManager] Injected task " << task.taskId 
+    std::cerr << "[FleetManager] Injected task " << task.taskId 
               << " (" << sourceNodeId << " → " << destNodeId << ")\n";
 }
 
@@ -640,17 +640,12 @@ std::vector<int> FleetManager::GetDropoffNodes() const {
     return poiRegistry_->GetNodesByType(Layer1::POIType::DROPOFF);
 }
 
-std::vector<int> FleetManager::GetChargingNodes() const {
-    if (!poiRegistry_) return {};
-    return poiRegistry_->GetNodesByType(Layer1::POIType::CHARGING);
-}
-
 // =============================================================================
 // THREAD ENTRY POINTS
 // =============================================================================
 
 void FleetManager::runMainLoop() {
-    std::cout << "[MainLoop] Started (1 Hz)\n";
+    std::cerr << "[MainLoop] Started (1 Hz)\n";
     
     const auto tickDuration = std::chrono::milliseconds(
         static_cast<int>(config_.warehouseTickMs)
@@ -714,11 +709,11 @@ void FleetManager::runMainLoop() {
         }
     }
     
-    std::cout << "[MainLoop] Stopped\n";
+    std::cerr << "[MainLoop] Stopped\n";
 }
 
 void FleetManager::runFleetLoop() {
-    std::cout << "[FleetLoop] Started (" << (config_.batchMode ? "BATCH" : "20 Hz") << ")\n";
+    std::cerr << "[FleetLoop] Started (" << (config_.batchMode ? "BATCH" : "20 Hz") << ")\n";
     
     const float dt = config_.orcaTickMs / 1000.0f;  // Convert to seconds
     const auto tickDuration = std::chrono::milliseconds(
@@ -915,11 +910,11 @@ void FleetManager::runFleetLoop() {
         }
     }
     
-    std::cout << "[FleetLoop] Stopped\n";
+    std::cerr << "[FleetLoop] Stopped\n";
 }
 
 void FleetManager::runObstacleLoop() {
-    std::cout << "[ObstacleLoop] Started (" << (config_.batchMode ? "BATCH" : "1 Hz") << ")\n";
+    std::cerr << "[ObstacleLoop] Started (" << (config_.batchMode ? "BATCH" : "1 Hz") << ")\n";
     
     const auto tickDuration = std::chrono::milliseconds(
         static_cast<int>(config_.obstacleTickMs)
@@ -972,7 +967,7 @@ void FleetManager::runObstacleLoop() {
         }
     }
     
-    std::cout << "[ObstacleLoop] Stopped\n";
+    std::cerr << "[ObstacleLoop] Stopped\n";
 }
 
 // =============================================================================
@@ -1049,7 +1044,7 @@ void FleetManager::feedL2toL3(int robotId) {
     int nextGoal = agent.GetMutableState().PopNextGoal();
     
     if (nextGoal >= 0) {
-        std::cout << "[Bridge] Robot " << robotId << ": L2→L3 SetGoal(" << nextGoal << ")\n";
+        std::cerr << "[Bridge] Robot " << robotId << ": L2→L3 SetGoal(" << nextGoal << ")\n";
         driver->SetGoal(nextGoal);
         agent.SetStatus(Layer2::RobotStatus::BUSY);
     }
@@ -1075,7 +1070,7 @@ void FleetManager::runVRPSolver() {
     }
     
     if (tasks.empty()) {
-        std::cout << "[MainLoop] No pending tasks\n";
+        std::cerr << "[MainLoop] No pending tasks\n";
         return;
     }
     
@@ -1097,7 +1092,7 @@ void FleetManager::runVRPSolver() {
             auto it = fleetRegistry_.find(robotId);
             if (it != fleetRegistry_.end()) {
                 it->second.AssignItinerary(itinerary);
-                std::cout << "[MainLoop] Robot " << robotId << " assigned " 
+                std::cerr << "[MainLoop] Robot " << robotId << " assigned " 
                           << itinerary.size() << " waypoints\n";
             }
         }
@@ -1138,14 +1133,14 @@ void FleetManager::processInjectedTasks() {
     // Decision: Scenario B (cheap insertion) or Scenario C (background re-plan)?
     if (static_cast<int>(newTasks.size()) <= config_.batchThreshold) {
         // SCENARIO B: Small batch - use cheap insertion
-        std::cout << "[MainLoop] ══════════ SCENARIO B: Cheap Insertion ══════════\n";
-        std::cout << "[MainLoop] " << newTasks.size() << " tasks <= threshold (" 
+        std::cerr << "[MainLoop] ══════════ SCENARIO B: Cheap Insertion ══════════\n";
+        std::cerr << "[MainLoop] " << newTasks.size() << " tasks <= threshold (" 
                   << config_.batchThreshold << "), using insertion heuristic\n";
         runCheapInsertion(newTasks);
     } else {
         // SCENARIO C: Large batch - use background re-planning
-        std::cout << "[MainLoop] ══════════ SCENARIO C: Background Re-plan ══════════\n";
-        std::cout << "[MainLoop] " << newTasks.size() << " tasks > threshold (" 
+        std::cerr << "[MainLoop] ══════════ SCENARIO C: Background Re-plan ══════════\n";
+        std::cerr << "[MainLoop] " << newTasks.size() << " tasks > threshold (" 
                   << config_.batchThreshold << "), launching background solver\n";
         
         // STEP 1: Assign "starter" tasks immediately so robots don't stay idle
@@ -1165,14 +1160,14 @@ void FleetManager::processInjectedTasks() {
             }
         }
         
-        std::cout << "[MainLoop] Splitting " << newTasks.size() << " tasks:\n";
+        std::cerr << "[MainLoop] Splitting " << newTasks.size() << " tasks:\n";
         std::cout << "           - Starter tasks (immediate): " << starterTasks.size() 
                   << " (" << config_.starterTasksPerRobot << " per robot)\n";
         std::cout << "           - For background solver: " << tasksForSolver.size() << "\n";
         
         // Assign starter tasks using cheap insertion (immediate, no waiting)
         if (!starterTasks.empty()) {
-            std::cout << "[MainLoop] Assigning starter tasks to keep robots busy...\n";
+            std::cerr << "[MainLoop] Assigning starter tasks to keep robots busy...\n";
             runCheapInsertion(starterTasks);
         }
         
@@ -1183,7 +1178,7 @@ void FleetManager::processInjectedTasks() {
             // (Starter tasks are already assigned and won't be re-optimized)
             launchBackgroundReplan(tasksForSolver);
         } else {
-            std::cout << "[MainLoop] All tasks assigned as starters, no background solve needed\n";
+            std::cerr << "[MainLoop] All tasks assigned as starters, no background solve needed\n";
         }
     }
 }
@@ -1393,3 +1388,4 @@ int FleetManager::findNearestNode(const Common::Coordinates& pos) const {
 }
 
 } // namespace Backend
+

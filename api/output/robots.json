@@ -1,36 +1,36 @@
 {
-  "timestamp": 1768064888975,
+  "timestamp": 1768127810831,
   "robotCount": 1,
   "robots": [
     {
       "id": 0,
-      "x": 111,
-      "y": 91,
-      "vx": -3.41,
-      "vy": -15.02,
+      "x": 106,
+      "y": 142,
+      "vx": -10.12,
+      "vy": 11.16,
       "state": "MOVING",
       "batteryLevel": 100,
-      "goal": 591,
-      "itinerary": 29
+      "goal": 1429,
+      "itinerary": 33
     }
   ],
   "tasks": {
     "active": 1,
-    "completed": 5,
+    "completed": 3,
     "pending": 0
   },
   "charging_stations": [
     {
       "id": 0,
-      "x": 252,
-      "y": 152,
+      "x": 22,
+      "y": 122,
       "status": "AVAILABLE",
       "robot": null
     }
   ],
   "history": [
     {
-      "timestamp": 1768064837081,
+      "timestamp": 1768127800252,
       "completedDelta": 2,
       "activeCount": 1
     }
