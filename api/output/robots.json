@@ -1,49 +1,38 @@
 {
+  "timestamp": 1768064888975,
+  "robotCount": 1,
   "robots": [
     {
       "id": 0,
-      "x": 1467,
-      "y": 207,
-      "vx": 0,
-      "vy": 0,
-      "state": "IDLE",
-      "goal": null,
-      "itinerary": [],
-      "batteryLevel": 95
-    },
-    {
-      "id": 1,
-      "x": 1467,
-      "y": 257,
-      "vx": 0,
-      "vy": 0,
-      "state": "IDLE",
-      "goal": null,
-      "itinerary": [],
-      "batteryLevel": 88
-    },
-    {
-      "id": 2,
-      "x": 1467,
-      "y": 307,
-      "vx": 0,
-      "vy": 0,
-      "state": "IDLE",
-      "goal": null,
-      "itinerary": [],
-      "batteryLevel": 92
-    },
-    {
-      "id": 3,
-      "x": 1467,
-      "y": 357,
-      "vx": 0,
-      "vy": 0,
-      "state": "IDLE",
-      "goal": null,
-      "itinerary": [],
-      "batteryLevel": 76
+      "x": 111,
+      "y": 91,
+      "vx": -3.41,
+      "vy": -15.02,
+      "state": "MOVING",
+      "batteryLevel": 100,
+      "goal": 591,
+      "itinerary": 29
     }
   ],
-  "timestamp": 1765722229409
+  "tasks": {
+    "active": 1,
+    "completed": 5,
+    "pending": 0
+  },
+  "charging_stations": [
+    {
+      "id": 0,
+      "x": 252,
+      "y": 152,
+      "status": "AVAILABLE",
+      "robot": null
+    }
+  ],
+  "history": [
+    {
+      "timestamp": 1768064837081,
+      "completedDelta": 2,
+      "activeCount": 1
+    }
+  ]
 }

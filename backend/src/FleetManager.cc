@@ -93,12 +93,26 @@ FleetManager::FleetManager(const SystemConfig& config, const std::string& basePa
     , basePath_(basePath)
     , running_(false)
     , apiService_(basePath + "/../api")  // API at repo root: backend/../api
+    , history_()                          // Explicitly initialize empty history
+    , lastCompletedTotal_(0)              // Reset completed counter
+    , lastHistoryUpdate_(0)               // Reset history timestamp
 {
     std::cout << "\n";
     std::cout << "╔═══════════════════════════════════════════════════════════════════════════╗\n";
     std::cout << "║                    FLEET MANAGER - SYSTEM ORCHESTRATOR                    ║\n";
     std::cout << "║                  Bridging Layers 1, 2, and 3 together                     ║\n";
     std::cout << "╚═══════════════════════════════════════════════════════════════════════════╝\n";
+    
+    // Reset robots.json to clean state on startup
+    // This prevents stale data from previous runs
+    std::string robotsJsonPath = basePath + "/../api/output/robots.json";
+    std::error_code ec;
+    if (std::filesystem::exists(robotsJsonPath, ec)) {
+        std::filesystem::remove(robotsJsonPath, ec);
+        if (!ec) {
+            std::cout << "[FleetManager] Cleared previous robots.json for fresh start\n";
+        }
+    }
 }
 
 FleetManager::~FleetManager() {
@@ -712,6 +726,11 @@ void FleetManager::runFleetLoop() {
         // Telemetry data to broadcast (collected inside lock, sent outside)
         std::vector<API::RobotTelemetry> telemetry;
         
+        // Data for WriteRobotsJSON (collected inside lock, written outside)
+        API::TasksInfo tasksInfo;
+        std::vector<API::ChargingStationStatus> stationStatuses;
+        std::vector<API::HistoryPoint> historySnapshot;  // Atomic copy of history
+        
         // =====================================================================
         // CRITICAL SECTION: Update Physics & Gather Data
         // =====================================================================
@@ -768,6 +787,104 @@ void FleetManager::runFleetLoop() {
             }
             
             stats_.fleetLoopCount++;
+            
+            // =========================================================
+            // Gather data for robots.json every 20 ticks (~1 Hz)
+            // =========================================================
+            if (stats_.fleetLoopCount % 20 == 0) {
+                // Count active tasks (robots with non-empty itineraries or BUSY status)
+                int activeTasks = 0;
+                for (const auto& [id, agent] : fleetRegistry_) {
+                    if (agent.GetStatus() == Layer2::RobotStatus::BUSY || 
+                        !agent.GetItinerary().empty()) {
+                        activeTasks++;
+                    }
+                }
+                
+                tasksInfo.active = activeTasks;
+                tasksInfo.completed = totalWaypointsVisited_.load() / 2;  // 2 waypoints = 1 task
+                
+                // Get pending tasks count (thread-safe read)
+                {
+                    std::lock_guard<std::mutex> taskLock(const_cast<std::mutex&>(taskMutex_));
+                    tasksInfo.pending = static_cast<int>(pendingTasks_.size());
+                }
+                
+                // Get injection queue size
+                {
+                    std::lock_guard<std::mutex> injLock(const_cast<std::mutex&>(injectionMutex_));
+                    tasksInfo.pending += static_cast<int>(injectionQueue_.size());
+                }
+                
+                // Build charging station statuses
+                if (poiRegistry_ && navMesh_) {
+                    std::vector<int> chargingNodes = poiRegistry_->GetNodesByType(Layer1::POIType::CHARGING);
+                    
+                    for (size_t sIdx = 0; sIdx < chargingNodes.size(); ++sIdx) {
+                        int nodeId = chargingNodes[sIdx];
+                        const auto& node = navMesh_->GetAllNodes()[nodeId];
+                        
+                        API::ChargingStationStatus station;
+                        station.id = static_cast<int>(sIdx);
+                        station.x = node.coords.x;
+                        station.y = node.coords.y;
+                        station.status = "AVAILABLE";
+                        station.robotId = -1;
+                        
+                        // Check if any robot is at this charging station
+                        for (const auto& driver : drivers_) {
+                            if (!driver) continue;
+                            
+                            const auto& pos = driver->GetPosition();
+                            // Check if robot is within 50 pixels (~5 decimeters) of station
+                            float dx = static_cast<float>(pos.x - node.coords.x);
+                            float dy = static_cast<float>(pos.y - node.coords.y);
+                            float distSq = dx * dx + dy * dy;
+                            
+                            if (distSq < 2500.0f) {  // 50^2 = 2500
+                                station.status = "OCCUPIED";
+                                station.robotId = driver->GetRobotId();
+                                break;
+                            }
+                        }
+                        
+                        stationStatuses.push_back(station);
+                    }
+                }
+                
+                // =========================================================
+                // ATOMIC HISTORY UPDATE (inside fleetMutex_)
+                // =========================================================
+                auto now = std::chrono::system_clock::now();
+                auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    now.time_since_epoch()).count();
+                
+                constexpr long long MINUTE_MS = 60000;
+                if (lastHistoryUpdate_ == 0) {
+                    // First call - initialize baseline
+                    lastCompletedTotal_ = tasksInfo.completed;
+                    lastHistoryUpdate_ = ms;
+                } else if (ms - lastHistoryUpdate_ >= MINUTE_MS) {
+                    // One minute has passed - record new history point
+                    API::HistoryPoint point;
+                    point.timestamp = ms;
+                    point.completedDelta = std::max(0, tasksInfo.completed - lastCompletedTotal_);
+                    point.activeCount = tasksInfo.active;
+                    
+                    // Add to sliding window buffer
+                    history_.push_back(point);
+                    if (static_cast<int>(history_.size()) > HISTORY_LIMIT) {
+                        history_.erase(history_.begin()); // FIFO: remove oldest
+                    }
+                    
+                    // Update tracking for next delta
+                    lastCompletedTotal_ = tasksInfo.completed;
+                    lastHistoryUpdate_ = ms;
+                }
+                
+                // Create immutable snapshot for I/O (outside lock)
+                historySnapshot = history_;
+            }
         }
         // =====================================================================
         // END CRITICAL SECTION - Mutex released here
@@ -776,6 +893,11 @@ void FleetManager::runFleetLoop() {
         // I/O SECTION: Broadcast telemetry outside the lock (skip in batch mode for speed)
         if (!config_.batchMode) {
             apiService_.BroadcastTelemetry(telemetry);
+            
+            // Write aggregated robots.json every 20 ticks (~1 Hz)
+            if (stats_.fleetLoopCount % 20 == 0) {
+                apiService_.WriteRobotsJSON(telemetry, tasksInfo, stationStatuses, historySnapshot);
+            }
         }
         
         // SLEEP: In live mode, maintain 20 Hz rate. In batch mode, skip sleep.

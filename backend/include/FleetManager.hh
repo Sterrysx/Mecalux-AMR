@@ -204,6 +204,15 @@ private:
     std::atomic<int> totalWaypointsVisited_{0};
     
     // =========================================================================
+    // HISTORY TRACKING (moved from APIService for atomicity)
+    // =========================================================================
+    
+    static constexpr int HISTORY_LIMIT = 20;     ///< Sliding window size (20 minutes)
+    std::vector<API::HistoryPoint> history_;     ///< Sliding window buffer
+    int lastCompletedTotal_ = 0;                 ///< For delta calculation
+    long long lastHistoryUpdate_ = 0;            ///< Last history update timestamp (ms)
+    
+    // =========================================================================
     // DYNAMIC SCHEDULING STATE (Scenarios A, B, C)
     // =========================================================================
     

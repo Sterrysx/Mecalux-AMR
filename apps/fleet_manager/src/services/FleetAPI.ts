@@ -1,5 +1,5 @@
 // Fleet API Service - Polls backend JSON files at different frequencies
-// robots.json: 20 Hz (every 50ms)
+// robots.json: 1 Hz (C++ backend writes at this rate)
 // tasks.json: 1 Hz (every 1000ms)
 // map.json: 1 Hz (every 1000ms)
 
@@ -11,8 +11,29 @@ export interface RobotState {
   vy: number;
   state: 'IDLE' | 'MOVING' | 'COMPUTING_PATH' | 'ARRIVED' | 'COLLISION_WAIT' | 'CARRYING';
   goal: number | null;    // Current NavMesh node ID
-  itinerary: number[];    // Ordered list of goal nodes
-  batteryLevel?: number;  // Battery percentage
+  itinerary: number;      // Remaining waypoints count
+  batteryLevel?: number;  // Battery percentage (0-100)
+}
+
+export interface TasksInfo {
+  active: number;
+  completed: number;
+  pending: number;
+}
+
+export interface ChargingStationInfo {
+  id: number;
+  x: number;
+  y: number;
+  status: 'AVAILABLE' | 'OCCUPIED';
+  robot: number | null;
+}
+
+// History point from backend (1-minute intervals, last 20 minutes)
+export interface HistoryPoint {
+  timestamp: number;
+  completedDelta: number;  // Tasks completed in this minute
+  activeCount: number;     // Active tasks at this moment
 }
 
 export interface Task {
@@ -40,6 +61,11 @@ export interface POI {
 export interface FleetData {
   robots: RobotState[];
   timestamp: number;
+  tick?: number;
+  robotCount?: number;
+  tasks?: TasksInfo;
+  charging_stations?: ChargingStationInfo[];
+  history?: HistoryPoint[];
 }
 
 export interface TaskData {
@@ -97,10 +123,10 @@ class FleetAPIService {
 
     this.isPolling = true;
 
-    // Poll robots at 20 Hz (every 50ms)
+    // Poll robots at 1 Hz (matches C++ write rate)
     this.robotsInterval = window.setInterval(() => {
       this.fetchRobots();
-    }, 50);
+    }, 1000);
 
     // Poll tasks at 1 Hz (every 1000ms)
     this.tasksInterval = window.setInterval(() => {
@@ -117,7 +143,7 @@ class FleetAPIService {
     this.fetchTasks();
     this.fetchMap();
 
-    console.log('FleetAPI: Started polling (robots: 20Hz, tasks: 1Hz, map: 1Hz)');
+    console.log('FleetAPI: Started polling (robots: 1Hz, tasks: 1Hz, map: 1Hz)');
   }
 
   // Stop all polling
@@ -136,13 +162,13 @@ class FleetAPIService {
     console.log('FleetAPI: Stopped polling');
   }
 
-  // Fetch robots data
+  // Fetch robots data from the new C++ direct-write robots.json
   private async fetchRobots() {
     try {
-      const response = await fetch(`${this.baseURL}/api/fleet/robots`, {
+      const response = await fetch(`${this.baseURL}/api/output/robots.json`, {
         cache: 'no-cache'
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch robots: ${response.status}`);
       }
@@ -151,7 +177,7 @@ class FleetAPIService {
       this.onRobotsUpdate?.(data);
     } catch (error) {
       // Only log error occasionally to avoid spam
-      if (Math.random() < 0.01) { // 1% of the time
+      if (Math.random() < 0.05) { // 5% of the time
         console.warn('FleetAPI: Error fetching robots', error);
       }
       this.onError?.(error as Error);
@@ -164,7 +190,7 @@ class FleetAPIService {
       const response = await fetch(`${this.baseURL}/api/output/tasks.json`, {
         cache: 'no-cache'
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch tasks: ${response.status}`);
       }
@@ -183,7 +209,7 @@ class FleetAPIService {
       const response = await fetch(`${this.baseURL}/api/output/map.json`, {
         cache: 'no-cache'
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch map: ${response.status}`);
       }

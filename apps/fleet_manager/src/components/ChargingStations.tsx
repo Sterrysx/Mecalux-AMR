@@ -1,14 +1,10 @@
 import { useFleetStore } from '../stores/fleetStore';
-import { shallow } from 'zustand/shallow';
-import type { POI } from '../services/FleetAPI';
 
 export default function ChargingStations() {
-  const pois = useFleetStore((state: any) => state?.pois || [], shallow);
-  
-  // Calculate charging stations locally instead of in the store
-  const chargingStations = pois.filter((p: POI) => p?.type === 'CHARGING');
+  // Use chargingStations directly from robots.json (already parsed in store)
+  const chargingStations = useFleetStore(state => state.chargingStations);
 
-  if (chargingStations.length === 0) {
+  if (!chargingStations || chargingStations.length === 0) {
     return (
       <div className="bg-gray-800 border border-gray-700 rounded-2xl shadow-lg p-6">
         <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2">
@@ -28,53 +24,55 @@ export default function ChargingStations() {
       <h3 className="text-lg font-bold text-gray-100 mb-4 flex items-center gap-2">
         <span>🔌</span>
         Charging Stations
+        <span className="ml-auto text-sm font-normal text-gray-400">
+          {chargingStations.filter(s => s.status === 'AVAILABLE').length}/{chargingStations.length} Free
+        </span>
       </h3>
+
+      {/* Vertical list layout to prevent overlap */}
       <div className="space-y-3">
-        {chargingStations.map((station: POI & { occupied: boolean; robotId?: number; timeRemaining?: number }) => (
+        {chargingStations.map((station) => (
           <div
             key={station.id}
-            className={`p-4 rounded-lg border transition-all ${
-              station.occupied
-                ? 'bg-yellow-900/20 border-yellow-700/50'
-                : 'bg-green-900/20 border-green-700/50'
-            }`}
+            className={`p-4 rounded-lg border transition-all ${station.status === 'OCCUPIED'
+                ? 'bg-green-900/20 border-green-700/50'
+                : 'bg-blue-900/20 border-blue-700/50'
+              }`}
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">
-                  {station.occupied ? '🔋' : '⚡'}
-                </span>
-                <div>
-                  <h4 className="font-semibold text-gray-100">
-                    {station.id}
-                  </h4>
-                  <p className="text-xs text-gray-400">
-                    Node {station.nodeId} • ({station.x}, {station.y})
-                  </p>
-                </div>
+            {/* Main row with flex-wrap for safety */}
+            <div className="flex items-center gap-3">
+              {/* Icon */}
+              <span className="text-2xl flex-shrink-0">
+                {station.status === 'OCCUPIED' ? '🔋' : '⚡'}
+              </span>
+
+              {/* Station info - grows to fill */}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-gray-100 truncate">
+                  Station C{station.id}
+                </h4>
+                <p className="text-xs text-gray-400">
+                  Position: ({station.x}, {station.y})
+                </p>
               </div>
+
+              {/* Status badge - fixed width, won't overlap */}
               <div
-                className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  station.occupied
-                    ? 'bg-yellow-500/20 text-yellow-400'
-                    : 'bg-green-500/20 text-green-400'
-                }`}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0 ${station.status === 'OCCUPIED'
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-blue-500/20 text-blue-400'
+                  }`}
               >
-                {station.occupied ? 'Occupied' : 'Free'}
+                {station.status === 'OCCUPIED' ? 'Charging' : 'Free'}
               </div>
             </div>
-            
-            {station.occupied && station.robotId && (
+
+            {/* Robot info when occupied */}
+            {station.status === 'OCCUPIED' && station.robot !== null && (
               <div className="mt-3 pt-3 border-t border-gray-700">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">
-                    🤖 Robot #{station.robotId}
-                  </span>
-                  {station.timeRemaining !== undefined && (
-                    <span className="text-yellow-400 font-mono">
-                      ~{station.timeRemaining}s remaining
-                    </span>
-                  )}
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <span>🤖</span>
+                  <span>Robot #{station.robot} is charging</span>
                 </div>
               </div>
             )}
