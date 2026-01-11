@@ -102,6 +102,16 @@
      </item>
      <item>
       <widget class="QPushButton" name="pushButton">
+       <property name="autoFillBackground">
+        <bool>false</bool>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">background-color: #d32f2f;
+color: white;
+border-radius: 5px;
+padding: 5px;
+border: 1px solid #8f8f91;</string>
+       </property>
        <property name="text">
         <string>Sortir</string>
        </property>

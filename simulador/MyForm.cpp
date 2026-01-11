@@ -11,6 +11,7 @@ MyForm::MyForm (QWidget* parent) : QWidget(parent)
   // Add a "Connect to Backend" button to the UI
   QPushButton* connectButton = new QPushButton("Connect to Backend", this);
   connectButton->setObjectName("backendConnectButton");
+  connectButton->setStyleSheet("border-radius: 5px; padding: 5px; border: 1px solid #8f8f91;");
   
   // Add it to the vertical layout (if available)
   if (ui.verticalLayout) {
@@ -40,7 +41,7 @@ void MyForm::onConnectBackendClicked()
     ui.widget->stopBackendMonitoring();
     if (button) {
       button->setText("Connect to Backend");
-      button->setStyleSheet("");
+      button->setStyleSheet("border-radius: 5px; padding: 5px; border: 1px solid #8f8f91;");
     }
     QMessageBox::information(this, "Backend Connection", 
                             "Disconnected from backend telemetry.\n\n"
@@ -51,7 +52,7 @@ void MyForm::onConnectBackendClicked()
     ui.widget->startBackendMonitoring(telemetryDir);
     if (button) {
       button->setText("Disconnect Backend");
-      button->setStyleSheet("background-color: #90EE90;");
+      button->setStyleSheet("background-color: #90EE90; border-radius: 5px; padding: 5px; border: 1px solid #8f8f91;");
     }
     QMessageBox::information(this, "Backend Connection", 
                             "Connected to backend telemetry!\n\n"

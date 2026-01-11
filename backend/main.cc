@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
     Backend::SystemConfig config;
     config.numRobots = numRobots;
     config.robotSpeedMps = 1.6f;  // Consistent with Layer 3
-    config.robotRadiusMeters = 0.3f;
+    config.robotRadiusMeters = 0.2f;
     config.orcaTickMs = 50.0f;   // 20 Hz physics
     config.warehouseTickMs = 1000.0f;  // 1 Hz strategic
     config.batchMode = batchMode;

@@ -74,7 +74,7 @@ void SimuladorGLWidget::initializeGL ()
   // Cal inicialitzar l'ús de les funcions d'OpenGL
   initializeOpenGLFunctions();  
 
-  glClearColor(0.3, 0.3, 0.3, 1.0); // defineix color de fons (d'esborrat) - grey
+  glClearColor(0.7, 0.7, 0.75, 1.0); // defineix color de fons (d'esborrat) - grey
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
   glEnable(GL_STENCIL_TEST);  // Enable stencil testing

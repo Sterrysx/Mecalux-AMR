@@ -113,6 +113,18 @@
       "center": [2.0, 0.0, 12.0],
       "dimensions": [0.5, 1, 2.5],
       "rotation": 270.0
+    },
+    {
+      "modelIndex": 5,
+      "center": [2.0, 0.0, 15.0],
+      "dimensions": [0.5, 1, 2.5],
+      "rotation": 270.0
+    },
+    {
+      "modelIndex": 5,
+      "center": [27.0, 0.0, 2.0],
+      "dimensions": [0.5, 1, 2.5],
+      "rotation": 90.0
     }
   ],
   "pickingZones": [
