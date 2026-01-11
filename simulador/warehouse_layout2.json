@@ -45,18 +45,6 @@
     },
     {
       "modelIndex": 3,
-      "center": [15.0, 0.0, 15.0],
-      "dimensions": [2, 4, 5.0],
-      "rotation": 90.0
-    },
-    {
-      "modelIndex": 3,
-      "center": [21.0, 0.0, 15.0],
-      "dimensions": [2, 4, 5.0],
-      "rotation": 90.0
-    },
-    {
-      "modelIndex": 3,
       "center": [15.0, 0.0, 20.0],
       "dimensions": [2, 4, 5.0],
       "rotation": 90.0
@@ -64,17 +52,6 @@
     {
       "modelIndex": 3,
       "center": [21.0, 0.0, 20.0],
-      "dimensions": [2, 4, 5.0],
-      "rotation": 90.0
-    },    {
-      "modelIndex": 3,
-      "center": [15.0, 0.0, 5.0],
-      "dimensions": [2, 4, 5.0],
-      "rotation": 90.0
-    },
-    {
-      "modelIndex": 3,
-      "center": [21.0, 0.0, 5.0],
       "dimensions": [2, 4, 5.0],
       "rotation": 90.0
     },
@@ -98,13 +75,13 @@
     },
     {
       "modelIndex": 4,
-      "center": [15.0, 0.0, 25.0],
+      "center": [15.0, 0.0, 28.0],
       "dimensions": [2, 3.3, 5.0],
       "rotation": 90.0
     },
     {
       "modelIndex": 4,
-      "center": [21.0, 0.0, 25.0],
+      "center": [21.0, 0.0, 28.0],
       "dimensions": [2, 3.3, 5.0],
       "rotation": 90.0
     },
@@ -119,6 +96,12 @@
       "center": [2.0, 0.0, 15.0],
       "dimensions": [0.5, 1, 2.5],
       "rotation": 270.0
+    },
+    {
+      "modelIndex": 5,
+      "center": [27.0, 0.0, 2.0],
+      "dimensions": [0.5, 1, 2.5],
+      "rotation": 90.0
     }
   ],
   "pickingZones": [
@@ -173,20 +156,6 @@
     },
     {
       "type": "DROPOFF",
-      "center": [15.0, 0.0, 17.5],
-      "dimensions": [1.0, 0.0, 1.0],
-      "rotation": 90.0,
-      "description": "Shelf dropoff zone"
-    },
-    {
-      "type": "PICKUP",
-      "center": [21.0, 0.0, 17.5],
-      "dimensions": [1.0, 0.0, 1.0],
-      "rotation": 90.0,
-      "description": "Shelf dropoff zone"
-    },
-    {
-      "type": "DROPOFF",
       "center": [21.0, 0.0, 12.5],
       "dimensions": [1.0, 0.0, 1.0],
       "rotation": 90.0,
@@ -208,29 +177,20 @@
     },
    {
       "type": "PICKUP",
-      "center": [15.0, 0.0, 7.5],
+      "center": [15.0, 0.0, 3.5],
       "dimensions": [1.0, 0.0, 1.0],
       "rotation": 90.0,
       "description": "Shelf dropoff zone"
     },
     {
       "type": "DROPOFF",
-      "center": [21.0, 0.0, 7.5],
+      "center": [21.0, 0.0, 3.5],
       "dimensions": [1.0, 0.0, 1.0],
       "rotation": 90.0,
       "description": "Shelf dropoff zone"
     }
   ],
-  "prohibitedZones": [
-    {
-      "id": "conveyor_1_buffer",
-      "type": "obstacle_buffer",
-      "center": [18, 15],
-      "shape": "rectangle",
-      "dimensions": [12, 2.2],
-      "rotation": 0.0,
-      "description": "Safety buffer around conveyor belt 1"
-    },   
+  "prohibitedZones": [  
      {
       "id": "conveyor_1_buffer",
       "type": "obstacle_buffer",
@@ -240,15 +200,6 @@
       "rotation": 0.0,
       "description": "Safety buffer around conveyor belt 1"
     }, 
-    {
-      "id": "conveyor_1_buffer",
-      "type": "obstacle_buffer",
-      "center": [18, 5],
-      "shape": "rectangle",
-      "dimensions": [12, 2.2],
-      "rotation": 0.0,
-      "description": "Safety buffer around conveyor belt 1"
-    },
     {
       "id": "conveyor_1_buffer",
       "type": "obstacle_buffer",
@@ -270,7 +221,7 @@
     {
       "id": "conveyor_1_buffer",
       "type": "obstacle_buffer",
-      "center": [18, 25],
+      "center": [18, 28],
       "shape": "rectangle",
       "dimensions": [12, 2.2],
       "rotation": 0.0,

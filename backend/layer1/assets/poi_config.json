@@ -31,13 +31,6 @@
             "active": true
         },
         {
-            "id": "C2",
-            "type": "CHARGING",
-            "x": 270,
-            "y": 20,
-            "active": true
-        },
-        {
             "id": "PU0",
             "type": "PICKUP",
             "x": 60,

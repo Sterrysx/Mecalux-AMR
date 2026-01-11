@@ -19,15 +19,6 @@
       "distanceToNode": 2.82843
     },
     {
-      "id": "C2",
-      "type": "CHARGING",
-      "x": 270,
-      "y": 20,
-      "active": true,
-      "nearestNodeId": 87,
-      "distanceToNode": 2.82843
-    },
-    {
       "id": "PU0",
       "type": "PICKUP",
       "x": 60,
