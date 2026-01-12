@@ -5,9 +5,9 @@
 The authors of this project are:
 
 - **Abel Perelló**
-- **Adam Serrate**
+- **Adam Sarrate**
 - **Arnau Noguer**
-- **Oriol Farres**
+- **Oriol Farrés**
 
 ## What is this project?
 
