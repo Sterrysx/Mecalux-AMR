@@ -53,6 +53,20 @@ cd backend
 make -j4
 ```
 
+### Warehouse Layout Configuration
+
+The warehouse layout is defined in `simulador/warehouse_layout.json`, which contains the structure of the warehouse including aisles, shelves, and points of interest (POIs).
+
+To generate the bitmap required by the navigation system, run:
+
+```bash
+cd backend
+python3 warehouse_setup.py --use-json ../../../simulador/warehouse_layout.json
+./build/test_layer1
+```
+
+This creates the bitmap representation used for pathfinding and collision detection.
+
 ### Execution
 
 After that, in order to execute the project you must open three terminals:
